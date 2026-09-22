@@ -13,6 +13,9 @@ export default function MainLayout() {
         <Link to="/dashboard" className="hover:text-blue-400 transition-colors">
           Dashboard
         </Link>
+        <Link to="/settings" className="hover:text-blue-400 transition-colors">
+          Settings
+        </Link>
       </nav>
 
       <main className="flex-1 p-8 flex items-center justify-center">
