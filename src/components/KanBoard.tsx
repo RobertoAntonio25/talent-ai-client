@@ -1,20 +1,32 @@
-// KanbanBoard.tsx
 import { useState } from "react";
 import {
   DndContext,
-  type DragEndEvent,
-  type DragStartEvent,
   DragOverlay,
   useSensor,
   useSensors,
   MouseSensor,
   TouchSensor,
+  type DragEndEvent,
+  type DragStartEvent,
 } from "@dnd-kit/core";
+
+// Componentes y Tipos
 import KanbanColumn from "./KanbanColumn";
 import KanbanCard from "./KanbanCard";
 import type { JobApplication, ColumnStatus } from "../types/kanban";
 
-// Datos de prueba para maquetar
+// ==========================================
+// 1. CONSTANTES Y DATOS DE PRUEBA (MOCKS)
+// ==========================================
+// Se declaran fuera del componente para que no se recreen en cada render de React.
+
+const COLUMNS: { id: ColumnStatus; title: string }[] = [
+  { id: "por_revisar", title: "Por Revisar" },
+  { id: "aplicado", title: "Aplicado" },
+  { id: "entrevista", title: "Entrevistas" },
+  { id: "oferta", title: "Ofertas" },
+];
+
 const INITIAL_JOBS: JobApplication[] = [
   {
     id: "1",
@@ -46,67 +58,99 @@ const INITIAL_JOBS: JobApplication[] = [
   },
 ];
 
-const COLUMNS: { id: ColumnStatus; title: string }[] = [
-  { id: "por_revisar", title: "Por Revisar" },
-  { id: "aplicado", title: "Aplicado" },
-  { id: "entrevista", title: "Entrevistas" },
-  { id: "oferta", title: "Ofertas" },
-];
+// Simulación de una llamada al backend (Fetch PATCH)
+const updateJobStatusInDB = async (jobId: string, newStatus: string) => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      const success = Math.random() > 0.1; // 90% de éxito
+      if (success) resolve("Guardado exitosamente");
+      else reject(new Error("Error en el servidor al guardar el estado."));
+    }, 500);
+  });
+};
 
+// ==========================================
+// 2. COMPONENTE PRINCIPAL
+// ==========================================
 export default function KanbanBoard() {
-  // Inicializamos el estado con nuestros datos de prueba
+  // --- A. ESTADOS ---
   const [jobs, setJobs] = useState<JobApplication[]>(INITIAL_JOBS);
-
-  //Nuevo estado: recordar que tarjeta estamos arrastrando
   const [activeJob, setActiveJob] = useState<JobApplication | null>(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
-  //Logica de sensores
+  // --- B. CONFIGURACIÓN DE SENSORES ---
   const sensors = useSensors(
     useSensor(MouseSensor, {
-      activationConstraint: {
-        distance: 5, // el raton debe moverse 5 pixeles antes de considerar "un arrastre"
-      },
+      activationConstraint: { distance: 5 }, // Previene drags accidentales al hacer clic normal
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 }, // Soporte para móviles (evita arrastrar al hacer scroll)
     }),
   );
 
-  //Nuvea funcion: se dispara el milisegundo en que empieza a arrastrar
+  // --- C. MANEJADORES DE EVENTOS (HANDLERS) ---
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-    //Buscamos cual es el trabajo exacto que acabamos de agarrar
     const job = jobs.find((j) => j.id === active.id);
     if (job) setActiveJob(job);
   };
 
-  //Esta funcion se dispara exactamente cuando el usuario suelta el click
-  const handleDragEnd = (event: DragEndEvent) => {
+  // ¡CORRECCIÓN!: Se añadió 'async' porque usamos 'await' adentro
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
 
-    setActiveJob(null); //limpiamos el estado al soltar la tarjeta
+    // Limpieza de estados temporales
+    setActiveJob(null);
+    setSyncError(null);
 
-    //Si solto la tarjeta fuera de cualquier columna valida, cancelamos if(!over) return;
+    // Cancelar si se suelta fuera de una zona válida
     if (!over) return;
 
     const jobId = active.id as string;
     const newStatus = over.id as ColumnStatus;
 
-    //Actualizamos el estado inmutablemente
+    // Verificar si realmente hubo un cambio de columna
+    const jobToMove = jobs.find((j) => j.id === jobId);
+    if (!jobToMove || jobToMove.status === newStatus) return;
+
+    // 1. BACKUP (Por si falla el servidor)
+    const previousJobs = [...jobs];
+
+    // 2. OPTIMISTIC UPDATE (Actualización instantánea en UI)
     setJobs((prevJobs) =>
       prevJobs.map((job) =>
         job.id === jobId ? { ...job, status: newStatus } : job,
       ),
     );
+
+    // 3. LLAMADA AL BACKEND
+    try {
+      await updateJobStatusInDB(jobId, newStatus);
+      console.log(
+        `✅ Backend sincronizado: Tarjeta ${jobId} movida a ${newStatus}`,
+      );
+    } catch (error: any) {
+      // 4. ROLLBACK (Restaurar si falla)
+      console.error("❌ Falló la sincronización:", error);
+      setJobs(previousJobs);
+      setSyncError(
+        "Se perdió la conexión. La tarjeta volvió a su lugar original.",
+      );
+
+      setTimeout(() => setSyncError(null), 3000);
+    }
   };
 
+  // --- D. RENDERIZADO (UI) ---
   return (
-    //Envolvemos el tablero y le pasamos nuestra funcion manejadora
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
+      {/* Contenedor principal del Kanban */}
       <div className="flex gap-6 overflow-x-auto pb-4 h-full scrollbar-thin">
         {COLUMNS.map((col) => {
-          // 1. Filtramos los trabajos que pertenecen a esta columna
           const jobsInColumn = jobs.filter((job) => job.status === col.id);
 
           return (
@@ -116,11 +160,9 @@ export default function KanbanBoard() {
               title={col.title}
               count={jobsInColumn.length}
             >
-              {/* 2. Mapeamos las tarjetas reales en lugar del recuadro punteado */}
               {jobsInColumn.length > 0 ? (
                 jobsInColumn.map((job) => <KanbanCard key={job.id} job={job} />)
               ) : (
-                // 3. Estado vacío (Empty State) para columnas sin tarjetas
                 <div className="text-xs text-slate-400 font-medium text-center py-4">
                   No hay postulaciones
                 </div>
@@ -129,9 +171,19 @@ export default function KanbanBoard() {
           );
         })}
       </div>
-      {/*Esto crea un contenedor flotante fuera del flujo normal de la pagina*/}
+
+      {/* ¡CORRECCIÓN!: Renderizado del Toast de Error */}
+      {syncError && (
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 animate-bounce">
+          <div className="bg-slate-900 text-white px-4 py-2 rounded-lg shadow-lg text-sm font-medium border border-red-500/50 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+            {syncError}
+          </div>
+        </div>
+      )}
+
+      {/* Capa flotante para la animación suave (Fantasma) */}
       <DragOverlay>
-        {/*Si hay una tarjeta activa, pintamos un clon exacto de ella flotando */}
         {activeJob ? <KanbanCard job={activeJob} /> : null}
       </DragOverlay>
     </DndContext>
