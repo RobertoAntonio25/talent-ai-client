@@ -1,15 +1,59 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
 export default function Login() {
-  const [isLoading, setIsLoading] = useState<"google" | "linkedin" | null>(
-    null,
-  );
+  const navigate = useNavigate();
+
+  const [isLoading, setIsLoading] = useState<
+    "google" | "linkedin" | "email" | null
+  >(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleOAuthLogin = (provider: "google" | "linkedin") => {
     setIsLoading(provider);
-    const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:3000";
+    const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";
     window.location.href = `${backendUrl}/api/auth/${provider}`;
+  };
+
+  const handleEmailLogin = async (e: FormEvent) => {
+    e.preventDefault();
+    setIsLoading("email");
+    setErrorMessage(null);
+
+    try {
+      const backendUrl =
+        import.meta.env.VITE_API_URL || "http://localhost:4000";
+
+      const response = await fetch(`${backendUrl}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Credenciales inválidas");
+      }
+
+      // Guardar token en localStorage
+      if (data.token) {
+        localStorage.setItem("token", data.token);
+      }
+
+      // Redirigir al Dashboard
+      navigate("/dashboard");
+    } catch (error: any) {
+      setErrorMessage(error.message || "Error al conectar con el servidor.");
+    } finally {
+      setIsLoading(null);
+    }
   };
 
   return (
@@ -17,7 +61,6 @@ export default function Login() {
       {/* Sección Izquierda */}
       <div className="hidden lg:flex lg:w-1/2 bg-slate-900 justify-center items-center flex-col p-12 text-white relative overflow-hidden">
         <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20 animate-blob"></div>
-
         <h1 className="text-5xl font-extrabold mb-6 tracking-tight z-10">
           Talent-AI
         </h1>
@@ -39,11 +82,19 @@ export default function Login() {
             </p>
           </div>
 
+          {/* Mensaje de error visual si falla */}
+          {errorMessage && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg text-center">
+              {errorMessage}
+            </div>
+          )}
+
           <div className="flex flex-col space-y-4">
             {/* Botón Google */}
             <button
               onClick={() => handleOAuthLogin("google")}
               disabled={isLoading !== null}
+              type="button"
               className="flex items-center justify-center w-full px-4 py-3.5 border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed font-medium text-gray-700 shadow-sm"
             >
               {isLoading === "google" ? (
@@ -75,6 +126,7 @@ export default function Login() {
             <button
               onClick={() => handleOAuthLogin("linkedin")}
               disabled={isLoading !== null}
+              type="button"
               className="flex items-center justify-center w-full px-4 py-3.5 bg-[#0A66C2] text-white rounded-xl hover:bg-[#004182] transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed font-medium shadow-sm"
             >
               {isLoading === "linkedin" ? (
@@ -88,15 +140,81 @@ export default function Login() {
             </button>
           </div>
 
-          <div className="mt-10 pt-6 border-t border-gray-100 flex items-center justify-center">
-            <span className="text-sm text-gray-500">
-              ¿Problemas para entrar?{" "}
+          {/* Divisor */}
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-gray-500 font-medium">
+                O continúa con tu email
+              </span>
+            </div>
+          </div>
+
+          {/* Formulario Tradicional */}
+          <form onSubmit={handleEmailLogin} className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Correo electrónico
+              </label>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all"
+                placeholder="tu@email.com"
+                disabled={isLoading !== null}
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Contraseña
+              </label>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all"
+                placeholder="••••••••"
+                disabled={isLoading !== null}
+              />
+            </div>
+
+            <div className="flex items-center justify-between mt-2">
               <a
                 href="#"
+                className="text-sm text-blue-600 font-semibold hover:underline"
+              >
+                ¿Olvidaste tu contraseña?
+              </a>
+            </div>
+
+            <button
+              type="submit"
+              disabled={isLoading !== null}
+              className="flex items-center justify-center w-full px-4 py-3.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed font-medium shadow-md"
+            >
+              {isLoading === "email" ? (
+                <Loader2 className="w-5 h-5 animate-spin mr-3 text-white" />
+              ) : null}
+              Iniciar sesión
+            </button>
+          </form>
+
+          {/* Footer */}
+          <div className="mt-8 pt-6 border-t border-gray-100 flex items-center justify-center">
+            <span className="text-sm text-gray-500">
+              ¿No tienes cuenta?{" "}
+              <Link
+                to="/register"
                 className="text-blue-600 font-semibold hover:underline"
               >
-                Contacta a soporte
-              </a>
+                Regístrate gratis
+              </Link>
             </span>
           </div>
         </div>
