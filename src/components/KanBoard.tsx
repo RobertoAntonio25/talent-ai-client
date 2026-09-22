@@ -1,6 +1,15 @@
 // KanbanBoard.tsx
 import { useState } from "react";
-import { DndContext, type DragEndEvent } from "@dnd-kit/core";
+import {
+  DndContext,
+  type DragEndEvent,
+  type DragStartEvent,
+  DragOverlay,
+  useSensor,
+  useSensors,
+  MouseSensor,
+  TouchSensor,
+} from "@dnd-kit/core";
 import KanbanColumn from "./KanbanColumn";
 import KanbanCard from "./KanbanCard";
 import type { JobApplication, ColumnStatus } from "../types/kanban";
@@ -48,9 +57,31 @@ export default function KanbanBoard() {
   // Inicializamos el estado con nuestros datos de prueba
   const [jobs, setJobs] = useState<JobApplication[]>(INITIAL_JOBS);
 
+  //Nuevo estado: recordar que tarjeta estamos arrastrando
+  const [activeJob, setActiveJob] = useState<JobApplication | null>(null);
+
+  //Logica de sensores
+  const sensors = useSensors(
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 5, // el raton debe moverse 5 pixeles antes de considerar "un arrastre"
+      },
+    }),
+  );
+
+  //Nuvea funcion: se dispara el milisegundo en que empieza a arrastrar
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    //Buscamos cual es el trabajo exacto que acabamos de agarrar
+    const job = jobs.find((j) => j.id === active.id);
+    if (job) setActiveJob(job);
+  };
+
   //Esta funcion se dispara exactamente cuando el usuario suelta el click
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
+
+    setActiveJob(null); //limpiamos el estado al soltar la tarjeta
 
     //Si solto la tarjeta fuera de cualquier columna valida, cancelamos if(!over) return;
     if (!over) return;
@@ -68,7 +99,11 @@ export default function KanbanBoard() {
 
   return (
     //Envolvemos el tablero y le pasamos nuestra funcion manejadora
-    <DndContext onDragEnd={handleDragEnd}>
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+    >
       <div className="flex gap-6 overflow-x-auto pb-4 h-full scrollbar-thin">
         {COLUMNS.map((col) => {
           // 1. Filtramos los trabajos que pertenecen a esta columna
@@ -94,6 +129,11 @@ export default function KanbanBoard() {
           );
         })}
       </div>
+      {/*Esto crea un contenedor flotante fuera del flujo normal de la pagina*/}
+      <DragOverlay>
+        {/*Si hay una tarjeta activa, pintamos un clon exacto de ella flotando */}
+        {activeJob ? <KanbanCard job={activeJob} /> : null}
+      </DragOverlay>
     </DndContext>
   );
 }

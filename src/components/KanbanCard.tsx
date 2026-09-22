@@ -29,7 +29,7 @@ export default function KanbanCard({ job }: Props) {
       {...attributes}
       {...listeners}
       className={`relative flex flex-col bg-white p-4 rounded-xl border transition-all duration-200 group cursor-grab active:cursor-grabbing
-        ${isDragging ? "border-blue-500 shadow-xl opacity-80 z-50" : "border-slate-200 shadow-sm hover:border-slate-300 hover:shadow-md"}
+        ${isDragging ? "opacity-30 border-2 border-dashed border-blue-400 shadow-none z-0" : "border-slate-200 shadow-sm hover:border-slate-300 hover:shadow-md z-10"}
       `}
     >
       <div className="absolute top-4 right-3 text-slate-300 opacity-50 group-hover:opacity-100 transition-opacity">
