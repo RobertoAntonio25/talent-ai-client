@@ -1,8 +1,40 @@
+// KanbanBoard.tsx
 import { useState } from "react";
 import KanbanColumn from "./KanbanColumn";
+import KanbanCard from "./KanbanCard";
 import type { JobApplication, ColumnStatus } from "../types/kanban";
 
-//Nuestras 4 columnas oficiales
+// Datos de prueba para maquetar
+const INITIAL_JOBS: JobApplication[] = [
+  {
+    id: "1",
+    company: "Google",
+    position: "Frontend Developer",
+    status: "por_revisar",
+    date: "12 Oct 2026",
+  },
+  {
+    id: "2",
+    company: "Spotify",
+    position: "React Engineer",
+    status: "aplicado",
+    date: "10 Oct 2026",
+  },
+  {
+    id: "3",
+    company: "Vercel",
+    position: "Senior Web Dev",
+    status: "entrevista",
+    date: "08 Oct 2026",
+  },
+  {
+    id: "4",
+    company: "Microsoft",
+    position: "Fullstack Node.js",
+    status: "por_revisar",
+    date: "15 Oct 2026",
+  },
+];
 
 const COLUMNS: { id: ColumnStatus; title: string }[] = [
   { id: "por_revisar", title: "Por Revisar" },
@@ -12,24 +44,30 @@ const COLUMNS: { id: ColumnStatus; title: string }[] = [
 ];
 
 export default function KanbanBoard() {
-  //Estado que pronto llenaremos con tarjetas reales
-  const [jobs, setJobs] = useState<JobApplication[]>([]);
+  // Inicializamos el estado con nuestros datos de prueba
+  const [jobs, setJobs] = useState<JobApplication[]>(INITIAL_JOBS);
 
   return (
     <div className="flex gap-6 overflow-x-auto pb-4 h-full scrollbar-thin">
       {COLUMNS.map((col) => {
-        //Calculamos cuantos trabajos hay en esta columna
+        // 1. Filtramos los trabajos que pertenecen a esta columna
         const jobsInColumn = jobs.filter((job) => job.status === col.id);
+
         return (
           <KanbanColumn
             key={col.id}
             title={col.title}
             count={jobsInColumn.length}
           >
-            {/* Marcador temporal para ver donde iran las tarjetas */}
-            <div className="text-sm text-slate-400 p-2 border-2 border*dashed border-slate-300 rounded-lg text-center">
-              Espacio para tarjetas
-            </div>
+            {/* 2. Mapeamos las tarjetas reales en lugar del recuadro punteado */}
+            {jobsInColumn.length > 0 ? (
+              jobsInColumn.map((job) => <KanbanCard key={job.id} job={job} />)
+            ) : (
+              // 3. Estado vacío (Empty State) para columnas sin tarjetas
+              <div className="text-xs text-slate-400 font-medium text-center py-4">
+                No hay postulaciones
+              </div>
+            )}
           </KanbanColumn>
         );
       })}
