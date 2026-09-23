@@ -11,7 +11,10 @@ export default function MainLayout() {
           Login
         </Link>
         <Link to="/dashboard" className="hover:text-blue-400 transition-colors">
-          Dasboard
+          Dashboard
+        </Link>
+        <Link to="/settings" className="hover:text-blue-400 transition-colors">
+          Settings
         </Link>
       </nav>
 
