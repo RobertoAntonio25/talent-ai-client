@@ -59,7 +59,7 @@ const INITIAL_JOBS: JobApplication[] = [
 ];
 
 // Simulación de una llamada al backend (Fetch PATCH)
-const updateJobStatusInDB = async (jobId: string, newStatus: string) => {
+const updateJobStatusInDB = async (_jobId: string, _newStatus: string) => {
   return new Promise((resolve, reject) => {
     setTimeout(() => {
       const success = Math.random() > 0.1; // 90% de éxito
@@ -129,13 +129,14 @@ export default function KanbanBoard() {
       console.log(
         `✅ Backend sincronizado: Tarjeta ${jobId} movida a ${newStatus}`,
       );
-    } catch (error: any) {
+    } catch (error: unknown) {
       // 4. ROLLBACK (Restaurar si falla)
-      console.error("❌ Falló la sincronización:", error);
       setJobs(previousJobs);
-      setSyncError(
-        "Se perdió la conexión. La tarjeta volvió a su lugar original.",
-      );
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Se perdió la conexión. La tarjeta volvió a su lugar original.";
+      setSyncError(errorMessage);
 
       setTimeout(() => setSyncError(null), 3000);
     }
