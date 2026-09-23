@@ -57,16 +57,25 @@ const INITIAL_JOBS: JobApplication[] = [
     date: "15 Oct 2026",
   },
 ];
+const API_URL = import.meta.env.VIT_API_URL;
 
 // Simulación de una llamada al backend (Fetch PATCH)
-const updateJobStatusInDB = async (_jobId: string, _newStatus: string) => {
-  return new Promise((resolve, reject) => {
-    setTimeout(() => {
-      const success = Math.random() > 0.1; // 90% de éxito
-      if (success) resolve("Guardado exitosamente");
-      else reject(new Error("Error en el servidor al guardar el estado."));
-    }, 500);
+const updateJobStatusInDB = async (jobId: string, newStatus: string) => {
+  const response = await fetch(`${API_URL}/api/jobs/${jobId}`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      // Si tuvieras un token JWT para usuarios logueados iría aquí:
+      // "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({ status: newStatus }),
   });
+
+  if (!response.ok) {
+    throw new Error("Error en el servidor al guardar el estado.");
+  }
+
+  return response.json();
 };
 
 // ==========================================
