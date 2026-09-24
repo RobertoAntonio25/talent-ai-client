@@ -1,4 +1,5 @@
 // KanbanCard.tsx
+import { useState, useRef, useEffect } from "react";
 import { useDraggable } from "@dnd-kit/core";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -8,12 +9,16 @@ import {
   Sparkles,
   MapPin,
   DollarSign,
+  MoreVertical,
+  Edit2,
+  Trash2,
 } from "lucide-react";
 import type { JobApplication } from "../types/kanban";
 
 interface Props {
   job: JobApplication;
-  onClick?: () => void;
+  onEdit?: (job: JobApplication) => void;
+  onDelete?: (job: JobApplication) => void;
 }
 
 // Genera un color consistente según el nombre de la empresa para el avatar
@@ -33,7 +38,10 @@ const getCompanyBadgeColor = (name: string) => {
   return colors[index];
 };
 
-export default function KanbanCard({ job, onClick }: Props) {
+export default function KanbanCard({ job, onEdit, onDelete }: Props) {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: job.id,
@@ -46,13 +54,27 @@ export default function KanbanCard({ job, onClick }: Props) {
 
   const badgeColor = getCompanyBadgeColor(job.company);
 
+  // Cerrar menú al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMenuOpen(false);
+      }
+    };
+    if (menuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [menuOpen]);
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
-      onClick={onClick}
       className={`relative flex flex-col bg-slate-900/90 rounded-2xl border p-4 transition-all duration-200 group cursor-grab active:cursor-grabbing backdrop-blur-sm select-none
         ${
           isDragging
@@ -61,7 +83,7 @@ export default function KanbanCard({ job, onClick }: Props) {
         }
       `}
     >
-      {/* Top Header: Company Avatar + Name & Drag Grip */}
+      {/* Top Header: Company Avatar + Name & Drag Grip / Actions */}
       <div className="flex items-start justify-between gap-2 mb-2.5">
         <div className="flex items-center gap-2.5 min-w-0">
           <div
@@ -82,14 +104,69 @@ export default function KanbanCard({ job, onClick }: Props) {
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div className="flex items-center gap-1 flex-shrink-0">
           {job.matchScore && (
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm">
               <Sparkles className="w-2.5 h-2.5 mr-1 text-emerald-400" />
               {job.matchScore}%
             </span>
           )}
-          <div className="text-slate-600 opacity-40 group-hover:opacity-100 group-hover:text-slate-400 transition-opacity">
+
+          {/* Menú de Acciones (Editar / Eliminar) */}
+          {(onEdit || onDelete) && (
+            <div className="relative" ref={menuRef}>
+              <button
+                type="button"
+                onPointerDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen(!menuOpen);
+                }}
+                className="p-1 rounded-lg text-slate-500 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+                title="Opciones de la tarjeta"
+              >
+                <MoreVertical className="w-3.5 h-3.5" />
+              </button>
+
+              {menuOpen && (
+                <div
+                  onPointerDown={(e) => e.stopPropagation()}
+                  className="absolute right-0 top-6 z-50 w-36 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-1.5 animate-in fade-in zoom-in-95 duration-150"
+                >
+                  {onEdit && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpen(false);
+                        onEdit(job);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-blue-400 text-left transition-colors"
+                    >
+                      <Edit2 className="w-3.5 h-3.5" />
+                      <span>Editar</span>
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMenuOpen(false);
+                        onDelete(job);
+                      }}
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-red-400 hover:bg-red-500/10 hover:text-red-300 text-left transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Eliminar</span>
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="text-slate-600 opacity-40 group-hover:opacity-100 group-hover:text-slate-400 transition-opacity pl-0.5">
             <GripVertical className="w-4 h-4" />
           </div>
         </div>

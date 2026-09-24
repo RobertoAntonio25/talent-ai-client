@@ -14,13 +14,10 @@ import { AlertCircle, PlusCircle } from "lucide-react";
 // Componentes y Tipos
 import KanbanColumn from "./KanbanColumn";
 import KanbanCard from "./KanbanCard";
-import type { JobApplication, ColumnStatus } from "../types/kanban";
+import SkeletonCard from "./ui/SkeletonCard";
 import Modal from "./ui/Modal";
 import CvViewer from "./ui/CvViewer";
-
-// ==========================================
-// 1. CONSTANTES Y DATOS DE PRUEBA (MOCKS)
-// ==========================================
+import type { JobApplication, ColumnStatus } from "../types/kanban";
 
 const COLUMNS: { id: ColumnStatus; title: string }[] = [
   { id: "por_revisar", title: "Por Revisar" },
@@ -29,107 +26,29 @@ const COLUMNS: { id: ColumnStatus; title: string }[] = [
   { id: "oferta", title: "Ofertas" },
 ];
 
-const INITIAL_JOBS: JobApplication[] = [
-  {
-    id: "1",
-    company: "Google",
-    position: "Senior Frontend Developer",
-    status: "por_revisar",
-    date: "12 Oct 2026",
-    location: "Remoto (España)",
-    salary: "€65k - €78k",
-    matchScore: 96,
-    tags: ["React", "TypeScript", "Next.js"],
-  },
-  {
-    id: "2",
-    company: "Spotify",
-    position: "React Engineer (Web & Mobile)",
-    status: "aplicado",
-    date: "10 Oct 2026",
-    location: "Híbrido (Madrid)",
-    salary: "€55k - €65k",
-    matchScore: 92,
-    tags: ["React", "Redux", "Tailwind"],
-  },
-  {
-    id: "3",
-    company: "Vercel",
-    position: "Staff Frontend Architect",
-    status: "entrevista",
-    date: "08 Oct 2026",
-    location: "100% Remoto",
-    salary: "$90k - $110k",
-    matchScore: 98,
-    tags: ["Turbopack", "React 19", "Node.js"],
-  },
-  {
-    id: "4",
-    company: "Microsoft",
-    position: "Fullstack Node.js / React",
-    status: "por_revisar",
-    date: "15 Oct 2026",
-    location: "Barcelona",
-    salary: "€58k - €70k",
-    matchScore: 89,
-    tags: ["Azure", "PostgreSQL", "Prisma"],
-  },
-  {
-    id: "5",
-    company: "Stripe",
-    position: "UI/UX Engineering Lead",
-    status: "oferta",
-    date: "03 Oct 2026",
-    location: "Remoto (EU)",
-    salary: "€85k + Equity",
-    matchScore: 95,
-    tags: ["Design Systems", "TypeScript", "Accessibility"],
-  },
-];
-
-const API_URL = import.meta.env.VIT_API_URL || "http://localhost:3000";
-
-// Simulación de una llamada al backend (Fetch PATCH)
-const updateJobStatusInDB = async (jobId: string, newStatus: string) => {
-  try {
-    const response = await fetch(`${API_URL}/api/jobs/${jobId}`, {
-      method: "PATCH",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ status: newStatus }),
-    });
-
-    if (!response.ok) {
-      // Si el backend aún no está levantado en local o no existe endpoint, simulamos éxito en demo
-      return { success: true, simulated: true };
-    }
-
-    return response.json();
-  } catch {
-    // Si la conexión falla pero estamos en modo demo local
-    console.info(
-      `[Demo Mode] Estado de la tarjeta ${jobId} actualizado localmente a ${newStatus}`,
-    );
-    return { success: true, simulated: true };
-  }
-};
-
-// ==========================================
-// 2. COMPONENTE PRINCIPAL
-// ==========================================
 interface KanbanBoardProps {
+  jobs: JobApplication[];
+  isLoading?: boolean;
+  syncError?: string | null;
+  onMoveJob: (jobId: string, newStatus: ColumnStatus) => void;
+  onEditJob?: (job: JobApplication) => void;
+  onDeleteJob?: (job: JobApplication) => void;
   searchQuery?: string;
 }
 
-export default function KanbanBoard({ searchQuery = "" }: KanbanBoardProps) {
-  // --- A. ESTADOS ---
-  const [jobs, setJobs] = useState<JobApplication[]>(INITIAL_JOBS);
+export default function KanbanBoard({
+  jobs,
+  isLoading = false,
+  syncError = null,
+  onMoveJob,
+  onEditJob,
+  onDeleteJob,
+  searchQuery = "",
+}: KanbanBoardProps) {
   const [activeJob, setActiveJob] = useState<JobApplication | null>(null);
-  const [syncError, setSyncError] = useState<string | null>(null);
-  const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
+  const [viewCvJob, setViewCvJob] = useState<JobApplication | null>(null);
 
-  // --- B. CONFIGURACIÓN DE SENSORES ---
+  // Sensores para Drag & Drop
   const sensors = useSensors(
     useSensor(MouseSensor, {
       activationConstraint: { distance: 5 },
@@ -139,54 +58,25 @@ export default function KanbanBoard({ searchQuery = "" }: KanbanBoardProps) {
     }),
   );
 
-  // --- C. MANEJADORES DE EVENTOS (HANDLERS) ---
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
     const job = jobs.find((j) => j.id === active.id);
     if (job) setActiveJob(job);
   };
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-
-    // Limpieza de estados temporales
     setActiveJob(null);
-    setSyncError(null);
 
-    // Cancelar si se suelta fuera de una zona válida
     if (!over) return;
 
     const jobId = active.id as string;
     const newStatus = over.id as ColumnStatus;
 
-    // Verificar si realmente hubo un cambio de columna
     const jobToMove = jobs.find((j) => j.id === jobId);
     if (!jobToMove || jobToMove.status === newStatus) return;
 
-    // 1. BACKUP (Por si falla el servidor)
-    const previousJobs = [...jobs];
-
-    // 2. OPTIMISTIC UPDATE (Actualización instantánea en UI)
-    setJobs((prevJobs) =>
-      prevJobs.map((job) =>
-        job.id === jobId ? { ...job, status: newStatus } : job,
-      ),
-    );
-
-    // 3. LLAMADA AL BACKEND
-    try {
-      await updateJobStatusInDB(jobId, newStatus);
-    } catch (error: unknown) {
-      // 4. ROLLBACK (Restaurar si falla)
-      setJobs(previousJobs);
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Se perdió la conexión. La tarjeta volvió a su lugar original.";
-      setSyncError(errorMessage);
-
-      setTimeout(() => setSyncError(null), 3500);
-    }
+    onMoveJob(jobId, newStatus);
   };
 
   // Filtrado por búsqueda
@@ -200,14 +90,13 @@ export default function KanbanBoard({ searchQuery = "" }: KanbanBoardProps) {
     );
   });
 
-  // --- D. RENDERIZADO (UI) ---
   return (
     <DndContext
       sensors={sensors}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      {/* Contenedor principal del Kanban con scroll horizontal suave */}
+      {/* Contenedor horizontal de columnas */}
       <div className="flex gap-5 overflow-x-auto pb-6 pt-2 h-full scrollbar-thin">
         {COLUMNS.map((col) => {
           const jobsInColumn = filteredJobs.filter(
@@ -219,14 +108,21 @@ export default function KanbanBoard({ searchQuery = "" }: KanbanBoardProps) {
               key={col.id}
               id={col.id}
               title={col.title}
-              count={jobsInColumn.length}
+              count={isLoading ? 0 : jobsInColumn.length}
             >
-              {jobsInColumn.length > 0 ? (
+              {isLoading ? (
+                // 🌟 SKELETON LOADING (Animación de carga inicial)
+                <div className="space-y-3">
+                  <SkeletonCard />
+                  <SkeletonCard />
+                </div>
+              ) : jobsInColumn.length > 0 ? (
                 jobsInColumn.map((job) => (
                   <KanbanCard
                     key={job.id}
                     job={job}
-                    onClick={() => setSelectedJob(job)}
+                    onEdit={onEditJob}
+                    onDelete={onDeleteJob}
                   />
                 ))
               ) : (
@@ -247,7 +143,7 @@ export default function KanbanBoard({ searchQuery = "" }: KanbanBoardProps) {
         })}
       </div>
 
-      {/* Toast de Notificación / Error */}
+      {/* Toast de Sincronización o Error */}
       {syncError && (
         <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
           <div className="bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm font-medium border border-red-500/40 flex items-center gap-2.5">
@@ -257,7 +153,7 @@ export default function KanbanBoard({ searchQuery = "" }: KanbanBoardProps) {
         </div>
       )}
 
-      {/* Capa flotante con elevación y rotación sutil al arrastrar */}
+      {/* Fantasma de arrastre (Overlay) */}
       <DragOverlay
         dropAnimation={{
           duration: 200,
@@ -270,34 +166,41 @@ export default function KanbanBoard({ searchQuery = "" }: KanbanBoardProps) {
           </div>
         ) : null}
       </DragOverlay>
+
+      {/* Modal de CV Adaptado por Empresa si se selecciona */}
       <Modal
-        // El modal se abre si selectedJob tiene datos (true)
-        isOpen={!!selectedJob}
-        onClose={() => setSelectedJob(null)}
+        isOpen={Boolean(viewCvJob)}
+        onClose={() => setViewCvJob(null)}
         title={
-          selectedJob ? `CV Adaptado: ${selectedJob.company}` : "Cargando..."
+          viewCvJob ? `CV Adaptado para ${viewCvJob.company} ✨` : "Cargando..."
         }
+        subtitle="Currículum reestructurado con palabras clave y formato ATS según los requerimientos de la vacante."
       >
-        {selectedJob && (
+        {viewCvJob && (
           <CvViewer
             cv={{
               fullName: "Roberto Antonio López Calatayud",
-              targetRole: selectedJob.position,
-              summary: `Versión adaptada del currículum específicamente optimizada para los requerimientos del rol de ${selectedJob.position} en ${selectedJob.company}. Se ha priorizado la estructura semántica y la legibilidad para sistemas ATS.`,
+              targetRole: viewCvJob.position,
+              summary: `Versión adaptada del currículum específicamente optimizada para el rol de ${viewCvJob.position} en ${viewCvJob.company}. Estructura semántica de alta legibilidad para sistemas ATS y equipos de reclutamiento técnico.`,
               experience: [
                 {
                   id: "1",
-                  role: "Desarrollador Web (Proyecto Final)",
-                  company: "Talent-AI Bootcamp",
-                  period: "2026",
+                  role: "Frontend Engineer",
+                  company: "Talent-AI Platform",
+                  period: "2026 - Presente",
                   achievements: [
-                    "Implementación de arquitectura Frontend avanzada con React, TypeScript y @dnd-kit.",
-                    `Optimización de interfaz gráfica utilizando Tailwind CSS, enfocada en la oferta de ${selectedJob.company}.`,
-                    "Desarrollo de exportación dinámica de documentos (Client-Side Rendering) saltando restricciones del navegador.",
+                    "Implementación de arquitectura Frontend avanzada con React 19, TypeScript y @dnd-kit.",
+                    `Optimización de interfaz gráfica enfocada en las tecnologías requeridas por ${viewCvJob.company}.`,
+                    "Desarrollo de exportación dinámica de documentos A4 en PDF (Client-Side Rendering) de alta resolución.",
                   ],
                 },
               ],
-              skills: selectedJob.tags || ["React", "TypeScript", "Node.js"],
+              skills: viewCvJob.tags || [
+                "React 19",
+                "TypeScript",
+                "Tailwind CSS",
+                "Node.js",
+              ],
             }}
           />
         )}
