@@ -63,8 +63,12 @@ export default function Login() {
 
       // Redirigir al Dashboard
       navigate("/dashboard");
-    } catch (error: any) {
-      setErrorMessage(error.message || "Error al conectar con el servidor.");
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Error al conectar con el servidor.";
+      setErrorMessage(message);
     } finally {
       setIsLoading(null);
     }

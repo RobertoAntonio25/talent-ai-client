@@ -132,10 +132,12 @@ export default function Register() {
         // Redirige al login si requiere iniciar sesión manualmente
         setTimeout(() => navigate("/login"), 1500);
       }
-    } catch (error: any) {
-      setErrorMessage(
-        error.message || "Hubo un error de conexión con el servidor.",
-      );
+    } catch (error: unknown) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Hubo un error de conexión con el servidor.";
+      setErrorMessage(message);
     } finally {
       setIsLoading(null);
     }

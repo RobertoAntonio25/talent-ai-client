@@ -6,4 +6,9 @@ export interface JobApplication {
   position: string;
   status: ColumnStatus;
   date: string;
+  location?: string;
+  salary?: string;
+  matchScore?: number;
+  tags?: string[];
+  notes?: string;
 }

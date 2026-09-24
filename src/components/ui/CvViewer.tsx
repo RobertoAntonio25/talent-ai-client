@@ -1,6 +1,15 @@
 // src/components/ui/CvViewer.tsx
 import { useState, useRef } from "react";
-import { Copy, CheckCheck, Download, Loader2 } from "lucide-react";
+import {
+  Copy,
+  CheckCheck,
+  Download,
+  Loader2,
+  Sparkles,
+  Briefcase,
+  Code2,
+  User,
+} from "lucide-react";
 import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
 import type { GeneratedCV } from "../../types/cv";
@@ -11,13 +20,10 @@ interface CvViewerProps {
 
 export default function CvViewer({ cv }: CvViewerProps) {
   const [isCopied, setIsCopied] = useState(false);
-
-  // NUEVO ESTADO: Para el feedback de carga del PDF
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-
   const cvRef = useRef<HTMLDivElement>(null);
 
-  // --- LÓGICA DE COPIADO AL PORTAPAPELES (Sin cambios) ---
+  // --- COPIADO AL PORTAPAPELES ---
   const handleCopy = async () => {
     if (!cvRef.current) return;
     try {
@@ -30,7 +36,7 @@ export default function CvViewer({ cv }: CvViewerProps) {
     }
   };
 
-  // --- NUEVA LÓGICA DE PDF (Descarga Directa) ---
+  // --- DESCARGA PDF ---
   const handleDownloadPDF = async () => {
     const element = cvRef.current;
     if (!element) return;
@@ -38,115 +44,142 @@ export default function CvViewer({ cv }: CvViewerProps) {
     setIsGeneratingPdf(true);
 
     try {
-      // 1. Usamos toPng de html-to-image.
-      // pixelRatio: 2 asegura calidad Retina/4K para que el texto no se vea pixelado.
       const dataUrl = await toPng(element, {
         pixelRatio: 2,
-        backgroundColor: "#ffffff", // Forzamos fondo blanco por si acaso
+        backgroundColor: "#ffffff",
       });
 
-      // 2. Creamos el documento A4
       const pdf = new jsPDF("p", "mm", "a4");
-
-      // 3. Matemáticas para escalar la imagen al tamaño perfecto del A4
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
 
-      // 4. Inyectamos la imagen y descargamos
       pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
 
-      const fileName = `${cv.fullName.replace(/\s+/g, "_")}_CV.pdf`;
+      const fileName = `${cv.fullName.replace(/\s+/g, "_")}_CV_Optimizado.pdf`;
       pdf.save(fileName);
     } catch (error) {
       console.error("Error generando el PDF:", error);
-      alert("Hubo un error al generar el PDF. Revisa la consola.");
     } finally {
       setIsGeneratingPdf(false);
     }
   };
-  return (
-    <div className="flex flex-col gap-4">
-      {/* 🛠️ BARRA DE HERRAMIENTAS */}
-      <div className="flex items-center justify-end gap-3">
-        <button
-          onClick={handleCopy}
-          className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-semibold rounded-lg transition-colors active:scale-95"
-        >
-          {isCopied ? (
-            <>
-              <CheckCheck className="w-4 h-4 text-emerald-600" />
-              <span className="text-emerald-700">¡Copiado!</span>
-            </>
-          ) : (
-            <>
-              <Copy className="w-4 h-4" />
-              <span>Copiar Texto</span>
-            </>
-          )}
-        </button>
 
-        <button
-          onClick={handleDownloadPDF}
-          disabled={isGeneratingPdf} // Deshabilitamos para evitar doble clic
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors shadow-sm active:scale-95 disabled:bg-blue-400 disabled:cursor-not-allowed w-[150px] justify-center"
-        >
-          {/* Micro-interacción: Cambia el icono de descarga por un spinner rotando */}
-          {isGeneratingPdf ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Generando...</span>
-            </>
-          ) : (
-            <>
-              <Download className="w-4 h-4" />
-              <span>Guardar PDF</span>
-            </>
-          )}
-        </button>
+  return (
+    <div className="flex flex-col gap-5">
+      {/* 🛠️ BARRA DE HERRAMIENTAS MODERNA */}
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/90 border border-slate-800 p-3 rounded-2xl">
+        <div className="flex items-center gap-2 text-xs text-slate-300">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span className="font-semibold text-white">
+            Formato ATS Compatible
+          </span>
+          <span className="text-slate-500">•</span>
+          <span className="text-blue-400 flex items-center gap-1 font-medium">
+            <Sparkles className="w-3 h-3" /> 98% Match IA
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+          <button
+            onClick={handleCopy}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-all active:scale-95 border border-slate-700/80"
+          >
+            {isCopied ? (
+              <>
+                <CheckCheck className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="text-emerald-300">¡Copiado!</span>
+              </>
+            ) : (
+              <>
+                <Copy className="w-3.5 h-3.5 text-slate-400" />
+                <span>Copiar Texto</span>
+              </>
+            )}
+          </button>
+
+          <button
+            onClick={handleDownloadPDF}
+            disabled={isGeneratingPdf}
+            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold rounded-xl transition-all shadow-md shadow-blue-500/25 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isGeneratingPdf ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Generando PDF...</span>
+              </>
+            ) : (
+              <>
+                <Download className="w-3.5 h-3.5" />
+                <span>Descargar PDF (A4)</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
 
-      {/* 📄 EL DOCUMENTO (Ya no necesitamos las clases 'print:' de Tailwind porque ya no usamos window.print) */}
+      {/* 📄 EL DOCUMENTO CV ESTILO TECH */}
       <article
         ref={cvRef}
-        className="bg-white text-slate-800 font-sans leading-relaxed max-w-3xl mx-auto border border-slate-200 rounded-lg shadow-sm p-8 sm:p-12"
+        className="bg-white text-slate-800 font-sans leading-relaxed max-w-3xl mx-auto border border-slate-200 rounded-2xl shadow-xl p-8 sm:p-12 relative overflow-hidden"
       >
-        <header className="border-b-2 border-slate-800 pb-6 mb-6">
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight uppercase">
+        {/* Barra superior de acento decorativa */}
+        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-400" />
+
+        {/* Encabezado del CV */}
+        <header className="border-b border-slate-200 pb-6 mb-6">
+          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
             {cv.fullName}
           </h1>
-          <h2 className="text-xl sm:text-2xl font-medium text-blue-600 mt-2">
+          <h2 className="text-lg sm:text-xl font-bold text-blue-600 mt-1">
             {cv.targetRole}
           </h2>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 mt-3 font-medium">
+            <span>Madrid, España</span>
+            <span>•</span>
+            <span>roberto@talent-ai.dev</span>
+            <span>•</span>
+            <span>linkedin.com/in/roberto-lopez</span>
+            <span>•</span>
+            <span>github.com/RobertoAntonio25</span>
+          </div>
         </header>
 
-        <section className="mb-8">
-          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wider mb-3">
-            Resumen Profesional
-          </h3>
-          <p className="text-slate-600 text-sm sm:text-base text-justify">
+        {/* Resumen Profesional */}
+        <section className="mb-7">
+          <div className="flex items-center gap-2 mb-2.5">
+            <User className="w-4 h-4 text-blue-600" />
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              Resumen Profesional
+            </h3>
+          </div>
+          <p className="text-slate-600 text-xs sm:text-sm leading-relaxed text-justify">
             {cv.summary}
           </p>
         </section>
 
-        <section className="mb-8">
-          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">
-            Experiencia Relevante
-          </h3>
-          <div className="space-y-6">
+        {/* Experiencia */}
+        <section className="mb-7">
+          <div className="flex items-center gap-2 mb-3.5 border-b border-slate-100 pb-2">
+            <Briefcase className="w-4 h-4 text-blue-600" />
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              Experiencia Relevante
+            </h3>
+          </div>
+          <div className="space-y-5">
             {cv.experience.map((exp) => (
               <div key={exp.id}>
                 <div className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline mb-2">
-                  <h4 className="font-bold text-slate-800 text-base">
+                  <h4 className="font-bold text-slate-800 text-sm">
                     {exp.role}{" "}
                     <span className="font-normal text-slate-500">
-                      en {exp.company}
+                      • {exp.company}
                     </span>
                   </h4>
-                  <span className="text-sm font-semibold text-blue-600">
+                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-700 mt-1 sm:mt-0 w-fit">
                     {exp.period}
                   </span>
                 </div>
-                <ul className="list-disc list-outside ml-5 text-sm text-slate-600 space-y-1.5 marker:text-slate-400">
+                <ul className="list-disc list-outside ml-4 text-xs sm:text-sm text-slate-600 space-y-1.5 marker:text-blue-500">
                   {exp.achievements.map((achievement, index) => (
                     <li key={index} className="pl-1">
                       {achievement}
@@ -158,15 +191,19 @@ export default function CvViewer({ cv }: CvViewerProps) {
           </div>
         </section>
 
+        {/* Habilidades Técnicas */}
         <section>
-          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wider mb-4 border-b border-slate-200 pb-2">
-            Habilidades Técnicas
-          </h3>
+          <div className="flex items-center gap-2 mb-3 border-b border-slate-100 pb-2">
+            <Code2 className="w-4 h-4 text-blue-600" />
+            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
+              Habilidades Técnicas
+            </h3>
+          </div>
           <div className="flex flex-wrap gap-2">
             {cv.skills.map((skill, index) => (
               <span
                 key={index}
-                className="px-3 py-1 bg-slate-100 text-slate-700 text-sm font-medium rounded-md border border-slate-200"
+                className="px-2.5 py-1 bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200"
               >
                 {skill}
               </span>
