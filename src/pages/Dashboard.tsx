@@ -6,16 +6,73 @@ import {
   Users,
   Award,
   TrendingUp,
-  Filter,
+  Plus,
+  RefreshCw,
 } from "lucide-react";
 import KanbanBoard from "../components/KanBoard";
 import Modal from "../components/ui/Modal";
 import CvViewer from "../components/ui/CvViewer";
+import JobFormModal from "../components/kanban/JobFormModal";
+import DeleteConfirmModal from "../components/kanban/DeleteConfirmModal";
+import { useJobs } from "../hooks/useJobs";
 import type { GeneratedCV } from "../types/cv";
+import type { JobApplication } from "../types/kanban";
 
 export default function Dashboard() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const {
+    jobs,
+    isLoading,
+    syncError,
+    fetchJobs,
+    moveJob,
+    deleteJob,
+    addJob,
+    updateJob,
+  } = useJobs();
+
   const [searchQuery, setSearchQuery] = useState("");
+  const [isCvModalOpen, setIsCvModalOpen] = useState(false);
+  const [isFormModalOpen, setIsFormModalOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState<JobApplication | null>(null);
+  const [deletingJob, setDeletingJob] = useState<JobApplication | null>(null);
+
+  // Métricas calculadas dinámicamente
+  const totalJobs = jobs.length;
+  const inInterview = jobs.filter((j) => j.status === "entrevista").length;
+  const inOffer = jobs.filter((j) => j.status === "oferta").length;
+  const avgMatch =
+    totalJobs > 0
+      ? Math.round(
+          jobs.reduce((acc, j) => acc + (j.matchScore || 90), 0) / totalJobs,
+        )
+      : 94;
+
+  const handleOpenCreateModal = () => {
+    setEditingJob(null);
+    setIsFormModalOpen(true);
+  };
+
+  const handleOpenEditModal = (job: JobApplication) => {
+    setEditingJob(job);
+    setIsFormModalOpen(true);
+  };
+
+  const handleSaveJob = (
+    jobData: Omit<JobApplication, "id" | "date"> & { id?: string },
+  ) => {
+    if (jobData.id) {
+      updateJob(jobData.id, jobData);
+    } else {
+      addJob(jobData);
+    }
+  };
+
+  const handleDeleteConfirm = () => {
+    if (deletingJob) {
+      deleteJob(deletingJob.id);
+      setDeletingJob(null);
+    }
+  };
 
   const MOCK_CV: GeneratedCV = {
     fullName: "Roberto López",
@@ -63,7 +120,7 @@ export default function Dashboard() {
   return (
     <div className="space-y-6 w-full animate-in fade-in duration-300">
       {/* 🌟 ENCABEZADO Y ACCIONES RÁPIDAS */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
@@ -79,17 +136,38 @@ export default function Dashboard() {
           </p>
         </div>
 
-        {/* Botón Destacado: Ver CV con IA */}
-        <button
-          onClick={() => setIsModalOpen(true)}
-          className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-200 active:scale-95 group"
-        >
-          <Sparkles className="w-4 h-4 text-blue-200 group-hover:rotate-12 transition-transform" />
-          <span>Ver CV Optimizado con IA</span>
-        </button>
+        {/* Botones de Acción */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => fetchJobs()}
+            disabled={isLoading}
+            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-50"
+            title="Recargar postulaciones"
+          >
+            <RefreshCw
+              className={`w-4 h-4 ${isLoading ? "animate-spin text-blue-400" : ""}`}
+            />
+          </button>
+
+          <button
+            onClick={handleOpenCreateModal}
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-sm active:scale-95"
+          >
+            <Plus className="w-4 h-4 text-blue-400" />
+            <span>Nueva Postulación</span>
+          </button>
+
+          <button
+            onClick={() => setIsCvModalOpen(true)}
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-200 active:scale-95 group"
+          >
+            <Sparkles className="w-4 h-4 text-blue-200 group-hover:rotate-12 transition-transform" />
+            <span>Ver CV Optimizado con IA</span>
+          </button>
+        </div>
       </div>
 
-      {/* 📊 BARRA DE MÉTRICAS RÁPIDAS */}
+      {/* 📊 BARRA DE MÉTRICAS RÁPIDAS DINÁMICAS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex items-center gap-3.5 backdrop-blur-sm">
           <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
@@ -99,7 +177,9 @@ export default function Dashboard() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
               Total Postulaciones
             </span>
-            <span className="text-xl font-bold text-white">5</span>
+            <span className="text-xl font-bold text-white">
+              {isLoading ? "-" : totalJobs}
+            </span>
           </div>
         </div>
 
@@ -111,7 +191,9 @@ export default function Dashboard() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
               En Entrevista
             </span>
-            <span className="text-xl font-bold text-white">1</span>
+            <span className="text-xl font-bold text-white">
+              {isLoading ? "-" : inInterview}
+            </span>
           </div>
         </div>
 
@@ -123,7 +205,9 @@ export default function Dashboard() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
               Ofertas Recibidas
             </span>
-            <span className="text-xl font-bold text-emerald-400">1</span>
+            <span className="text-xl font-bold text-emerald-400">
+              {isLoading ? "-" : inOffer}
+            </span>
           </div>
         </div>
 
@@ -135,7 +219,9 @@ export default function Dashboard() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
               Match IA Promedio
             </span>
-            <span className="text-xl font-bold text-amber-300">94%</span>
+            <span className="text-xl font-bold text-amber-300">
+              {isLoading ? "-" : `${avgMatch}%`}
+            </span>
           </div>
         </div>
       </div>
@@ -154,25 +240,48 @@ export default function Dashboard() {
         </div>
 
         <div className="flex items-center gap-2 text-xs text-slate-400 self-end sm:self-auto">
-          <Filter className="w-3.5 h-3.5 text-slate-500" />
-          <span>Arrastra y suelta tarjetas para actualizar el estado</span>
+          <span>Arrastra y suelta tarjetas para mover de estado</span>
         </div>
       </div>
 
-      {/* 📋 TABLERO KANBAN */}
+      {/* 📋 TABLERO KANBAN CON SKELETONS Y MANEJADORES */}
       <div className="w-full">
-        <KanbanBoard searchQuery={searchQuery} />
+        <KanbanBoard
+          jobs={jobs}
+          isLoading={isLoading}
+          syncError={syncError}
+          onMoveJob={moveJob}
+          onEditJob={handleOpenEditModal}
+          onDeleteJob={(job) => setDeletingJob(job)}
+          searchQuery={searchQuery}
+        />
       </div>
 
       {/* ✨ MODAL DE CV OPTIMIZADO */}
       <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        isOpen={isCvModalOpen}
+        onClose={() => setIsCvModalOpen(false)}
         title="Currículum Optimizado por Talent-AI ✨"
         subtitle="Generado automáticamente con palabras clave y formato ATS según tu perfil profesional."
       >
         <CvViewer cv={MOCK_CV} />
       </Modal>
+
+      {/* 📝 MODAL DE CREACIÓN / EDICIÓN DE POSTULACIÓN */}
+      <JobFormModal
+        isOpen={isFormModalOpen}
+        onClose={() => setIsFormModalOpen(false)}
+        onSubmit={handleSaveJob}
+        initialJob={editingJob}
+      />
+
+      {/* 🗑️ MODAL DE CONFIRMACIÓN DE BORRADO */}
+      <DeleteConfirmModal
+        isOpen={Boolean(deletingJob)}
+        onClose={() => setDeletingJob(null)}
+        onConfirm={handleDeleteConfirm}
+        job={deletingJob}
+      />
     </div>
   );
 }

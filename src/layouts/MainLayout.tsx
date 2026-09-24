@@ -8,10 +8,12 @@ import {
 
 export default function MainLayout() {
   const location = useLocation();
-  const isAuthPage =
-    location.pathname === "/login" || location.pathname === "/register";
+  const isFullPage =
+    location.pathname === "/" ||
+    location.pathname === "/login" ||
+    location.pathname === "/register";
 
-  if (isAuthPage) {
+  if (isFullPage) {
     return <Outlet />;
   }
 
