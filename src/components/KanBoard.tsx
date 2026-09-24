@@ -15,6 +15,8 @@ import { AlertCircle, PlusCircle } from "lucide-react";
 import KanbanColumn from "./KanbanColumn";
 import KanbanCard from "./KanbanCard";
 import type { JobApplication, ColumnStatus } from "../types/kanban";
+import Modal from "./ui/Modal";
+import CvViewer from "./ui/CvViewer";
 
 // ==========================================
 // 1. CONSTANTES Y DATOS DE PRUEBA (MOCKS)
@@ -85,7 +87,7 @@ const INITIAL_JOBS: JobApplication[] = [
   },
 ];
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+const API_URL = import.meta.env.VIT_API_URL || "http://localhost:3000";
 
 // Simulación de una llamada al backend (Fetch PATCH)
 const updateJobStatusInDB = async (jobId: string, newStatus: string) => {
@@ -125,6 +127,7 @@ export default function KanbanBoard({ searchQuery = "" }: KanbanBoardProps) {
   const [jobs, setJobs] = useState<JobApplication[]>(INITIAL_JOBS);
   const [activeJob, setActiveJob] = useState<JobApplication | null>(null);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
 
   // --- B. CONFIGURACIÓN DE SENSORES ---
   const sensors = useSensors(
@@ -219,7 +222,13 @@ export default function KanbanBoard({ searchQuery = "" }: KanbanBoardProps) {
               count={jobsInColumn.length}
             >
               {jobsInColumn.length > 0 ? (
-                jobsInColumn.map((job) => <KanbanCard key={job.id} job={job} />)
+                jobsInColumn.map((job) => (
+                  <KanbanCard
+                    key={job.id}
+                    job={job}
+                    onClick={() => setSelectedJob(job)}
+                  />
+                ))
               ) : (
                 <div className="h-40 border border-dashed border-slate-800 rounded-2xl flex flex-col items-center justify-center p-4 text-center">
                   <div className="w-8 h-8 rounded-full bg-slate-800/80 flex items-center justify-center text-slate-500 mb-2">
@@ -261,6 +270,38 @@ export default function KanbanBoard({ searchQuery = "" }: KanbanBoardProps) {
           </div>
         ) : null}
       </DragOverlay>
+      <Modal
+        // El modal se abre si selectedJob tiene datos (true)
+        isOpen={!!selectedJob}
+        onClose={() => setSelectedJob(null)}
+        title={
+          selectedJob ? `CV Adaptado: ${selectedJob.company}` : "Cargando..."
+        }
+      >
+        {selectedJob && (
+          <CvViewer
+            cv={{
+              fullName: "Roberto Antonio López Calatayud",
+              targetRole: selectedJob.position,
+              summary: `Versión adaptada del currículum específicamente optimizada para los requerimientos del rol de ${selectedJob.position} en ${selectedJob.company}. Se ha priorizado la estructura semántica y la legibilidad para sistemas ATS.`,
+              experience: [
+                {
+                  id: "1",
+                  role: "Desarrollador Web (Proyecto Final)",
+                  company: "Talent-AI Bootcamp",
+                  period: "2026",
+                  achievements: [
+                    "Implementación de arquitectura Frontend avanzada con React, TypeScript y @dnd-kit.",
+                    `Optimización de interfaz gráfica utilizando Tailwind CSS, enfocada en la oferta de ${selectedJob.company}.`,
+                    "Desarrollo de exportación dinámica de documentos (Client-Side Rendering) saltando restricciones del navegador.",
+                  ],
+                },
+              ],
+              skills: selectedJob.tags || ["React", "TypeScript", "Node.js"],
+            }}
+          />
+        )}
+      </Modal>
     </DndContext>
   );
 }
