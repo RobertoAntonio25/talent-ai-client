@@ -13,6 +13,7 @@ import type { JobApplication } from "../types/kanban";
 
 interface Props {
   job: JobApplication;
+  onClick?: () => void;
 }
 
 // Genera un color consistente según el nombre de la empresa para el avatar
@@ -32,7 +33,7 @@ const getCompanyBadgeColor = (name: string) => {
   return colors[index];
 };
 
-export default function KanbanCard({ job }: Props) {
+export default function KanbanCard({ job, onClick }: Props) {
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: job.id,
@@ -51,6 +52,7 @@ export default function KanbanCard({ job }: Props) {
       style={style}
       {...attributes}
       {...listeners}
+      onClick={onClick}
       className={`relative flex flex-col bg-slate-900/90 rounded-2xl border p-4 transition-all duration-200 group cursor-grab active:cursor-grabbing backdrop-blur-sm select-none
         ${
           isDragging
