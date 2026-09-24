@@ -40,17 +40,17 @@ export default function Modal({
   return (
     // 1. El "Backdrop" (Fondo oscuro semitransparente)
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 animate-in fade-in duration-200 print:bg-transparent print:static print:inset-auto"
       onClick={onClose} // Si hace clic afuera, se cierra
     >
       {/* 2. La Caja del Modal */}
       <div
         // StopPropagation evita que al hacer clic DENTRO de la caja blanca, se cierre el modal
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-3xl max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col animate-in zoom-in-95 duration-200"
+        className="relative w-full max-w-3xl max-h-[90vh] bg-white rounded-2xl shadow-2xl flex flex-col animate-in zoom-in-95 duration-200 print:shadow-none print:max-h-none"
       >
         {/* Cabecera (Header) */}
-        <div className="flex items-center justify-between p-5 border-b border-slate-100">
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 print:hidden">
           <h2 className="text-xl font-bold text-slate-800">{title}</h2>
           <button
             onClick={onClose}
