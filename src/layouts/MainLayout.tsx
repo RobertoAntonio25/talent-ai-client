@@ -1,4 +1,4 @@
-import { Outlet, Link, useLocation } from "react-router-dom";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
 import {
   Sparkles,
   LayoutDashboard,
@@ -8,6 +8,13 @@ import {
 
 export default function MainLayout() {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/login");
+  };
+
   const isFullPage =
     location.pathname === "/" ||
     location.pathname === "/login" ||
@@ -21,10 +28,10 @@ export default function MainLayout() {
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-blue-500 selection:text-white">
       {/* 🌟 BARRA DE NAVEGACIÓN SUPERIOR SAAS */}
       <header className="sticky top-0 z-40 bg-slate-900/80 backdrop-blur-md border-b border-slate-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo & Brand */}
           <div className="flex items-center gap-6">
-            <Link to="/dashboard" className="flex items-center space-x-3 group">
+            <Link to="/" className="flex items-center space-x-3 group" title="Ir al inicio (Landing)">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform">
                 T
               </div>
@@ -86,20 +93,20 @@ export default function MainLayout() {
               </div>
             </div>
 
-            <Link
-              to="/login"
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white px-2.5 py-1.5 rounded-lg hover:bg-slate-800 transition-colors"
-              title="Cambiar de cuenta o cerrar sesión"
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-400 px-2.5 py-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+              title="Cerrar sesión y volver al login"
             >
               <LogIn className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Salir</span>
-            </Link>
+            </button>
           </div>
         </div>
       </header>
 
       {/* 🚀 CONTENIDO PRINCIPAL */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8">
+      <main className="flex-1 max-w-[1600px] w-full mx-auto p-4 sm:p-6 lg:p-8">
         <Outlet />
       </main>
     </div>

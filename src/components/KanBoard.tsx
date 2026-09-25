@@ -9,7 +9,7 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { AlertCircle, PlusCircle } from "lucide-react";
+import { AlertCircle, PlusCircle, FileText, Mail } from "lucide-react";
 
 // Componentes y Tipos
 import KanbanColumn from "./KanbanColumn";
@@ -17,6 +17,7 @@ import KanbanCard from "./KanbanCard";
 import SkeletonCard from "./ui/SkeletonCard";
 import Modal from "./ui/Modal";
 import CvViewer from "./ui/CvViewer";
+import CoverLetterViewer from "./ui/CoverLetterViewer";
 import type { JobApplication, ColumnStatus } from "../types/kanban";
 
 const COLUMNS: { id: ColumnStatus; title: string }[] = [
@@ -46,7 +47,8 @@ export default function KanbanBoard({
   searchQuery = "",
 }: KanbanBoardProps) {
   const [activeJob, setActiveJob] = useState<JobApplication | null>(null);
-  const [viewCvJob, setViewCvJob] = useState<JobApplication | null>(null);
+  const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
+  const [activeTab, setActiveTab] = useState<"cv" | "cover_letter">("cv");
 
   // Sensores para Drag & Drop
   const sensors = useSensors(
@@ -96,8 +98,8 @@ export default function KanbanBoard({
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      {/* Contenedor horizontal de columnas */}
-      <div className="flex gap-5 overflow-x-auto pb-6 pt-2 h-full scrollbar-thin">
+      {/* Contenedor responsivo de columnas: flex táctil en móviles, grid de 4 columnas en xl+ */}
+      <div className="flex xl:grid xl:grid-cols-4 gap-4 overflow-x-auto xl:overflow-x-visible pb-6 pt-2 w-full scrollbar-thin">
         {COLUMNS.map((col) => {
           const jobsInColumn = filteredJobs.filter(
             (job) => job.status === col.id,
@@ -121,6 +123,10 @@ export default function KanbanBoard({
                   <KanbanCard
                     key={job.id}
                     job={job}
+                    onClick={() => {
+                      setSelectedJob(job);
+                      setActiveTab("cv");
+                    }}
                     onEdit={onEditJob}
                     onDelete={onDeleteJob}
                   />
@@ -167,42 +173,102 @@ export default function KanbanBoard({
         ) : null}
       </DragOverlay>
 
-      {/* Modal de CV Adaptado por Empresa si se selecciona */}
+      {/* Modal Interactivo con Tabs: CV Adaptado ATS + Carta de Presentación */}
       <Modal
-        isOpen={Boolean(viewCvJob)}
-        onClose={() => setViewCvJob(null)}
+        isOpen={Boolean(selectedJob)}
+        onClose={() => setSelectedJob(null)}
         title={
-          viewCvJob ? `CV Adaptado para ${viewCvJob.company} ✨` : "Cargando..."
+          selectedJob
+            ? `${selectedJob.position} en ${selectedJob.company}`
+            : "Postulación"
         }
-        subtitle="Currículum reestructurado con palabras clave y formato ATS según los requerimientos de la vacante."
+        subtitle="Documentos de postulación optimizados por IA con formato ATS para esta vacante."
       >
-        {viewCvJob && (
-          <CvViewer
-            cv={{
-              fullName: "Roberto Antonio López Calatayud",
-              targetRole: viewCvJob.position,
-              summary: `Versión adaptada del currículum específicamente optimizada para el rol de ${viewCvJob.position} en ${viewCvJob.company}. Estructura semántica de alta legibilidad para sistemas ATS y equipos de reclutamiento técnico.`,
-              experience: [
-                {
-                  id: "1",
-                  role: "Frontend Engineer",
-                  company: "Talent-AI Platform",
-                  period: "2026 - Presente",
-                  achievements: [
-                    "Implementación de arquitectura Frontend avanzada con React 19, TypeScript y @dnd-kit.",
-                    `Optimización de interfaz gráfica enfocada en las tecnologías requeridas por ${viewCvJob.company}.`,
-                    "Desarrollo de exportación dinámica de documentos A4 en PDF (Client-Side Rendering) de alta resolución.",
+        {selectedJob && (
+          <div className="flex flex-col gap-5">
+            {/* Selector de Pestañas (Tabs) */}
+            <div className="flex items-center gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-2xl w-fit">
+              <button
+                type="button"
+                onClick={() => setActiveTab("cv")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                  activeTab === "cv"
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/25"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                }`}
+              >
+                <FileText className="w-4 h-4" />
+                <span>Currículum Vitae ATS</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveTab("cover_letter")}
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
+                  activeTab === "cover_letter"
+                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/25"
+                    : "text-slate-400 hover:text-white hover:bg-slate-800/60"
+                }`}
+              >
+                <Mail className="w-4 h-4" />
+                <span>Carta de Presentación</span>
+              </button>
+            </div>
+
+            {/* Contenido según la pestaña activa */}
+            {activeTab === "cv" ? (
+              <CvViewer
+                cv={{
+                  fullName: "Roberto A. López Calatayud",
+                  targetRole: selectedJob.position,
+                  summary: `Desarrollador Full-Stack e Ingeniero Técnico especializado en la construcción de arquitecturas web SaaS escalables y flujos de integración continua. Currículum optimizado específicamente para el rol de ${selectedJob.position} en ${selectedJob.company}, alineando palabras clave y experiencias técnicas.`,
+                  contact: {
+                    email: "ralc.0595@gmail.com",
+                    phone: "0034 614 88 94 73",
+                    location: "Madrid, España",
+                    linkedin: "linkedin.com/in/robertoantoniolopez25",
+                    portfolio: "robertoantonioportfolio.vercel.app",
+                  },
+                  skills: selectedJob.tags || [
+                    "React",
+                    "TypeScript",
+                    "Node.js",
+                    "PostgreSQL",
+                    "Docker",
                   ],
-                },
-              ],
-              skills: viewCvJob.tags || [
-                "React 19",
-                "TypeScript",
-                "Tailwind CSS",
-                "Node.js",
-              ],
-            }}
-          />
+                  experience: [
+                    {
+                      id: "1",
+                      role: "Desarrollador Full-Stack Freelance",
+                      company:
+                        "SmartBrains - Aplicación Web SaaS de Reconocimiento Facial",
+                      period: "Noviembre 2025 – Enero 2026",
+                      achievements: [
+                        `Diseñé e implementé el ciclo de vida completo de un SaaS con tecnologías clave afines a ${selectedJob.company}, alcanzando más de 200 usuarios y 500 llamadas de API al día.`,
+                        "Integré la REST API de visión artificial de Clarifai, reduciendo tiempos de respuesta en un 20%.",
+                        "Arquitecté backend con persistencia relacional en PostgreSQL / Supabase con autenticación segura.",
+                        "Automaticé pruebas funcionales y de integración con Jest, Postman y Cypress con 85% de cobertura.",
+                      ],
+                    },
+                    {
+                      id: "2",
+                      role: "Ingeniero Técnico y Gestor de Proyectos de Sistemas (Freelance)",
+                      company: "Clientes internacionales en Estados Unidos y LATAM",
+                      period: "Marzo 2016 – Actualidad",
+                      achievements: [
+                        "Administré la arquitectura técnica y QA de más de 50 proyectos internacionales, reduciendo errores en un 30%.",
+                        "Reduje los tiempos de resolución de incidencias en un 20% mediante protocolos de troubleshooting estructurado.",
+                        "Reduje los tiempos de entrega en un 15% aplicando metodologías Agile y Scrum en sprints quincenales.",
+                        "Coordiné equipos técnicos remotos de hasta 10 personas utilizando Jira, Trello y metodologías ágiles.",
+                      ],
+                    },
+                  ],
+                }}
+              />
+            ) : (
+              <CoverLetterViewer job={selectedJob} />
+            )}
+          </div>
         )}
       </Modal>
     </DndContext>

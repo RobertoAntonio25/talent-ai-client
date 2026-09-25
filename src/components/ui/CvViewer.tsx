@@ -6,9 +6,6 @@ import {
   Download,
   Loader2,
   Sparkles,
-  Briefcase,
-  Code2,
-  User,
 } from "lucide-react";
 import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
@@ -23,20 +20,116 @@ export default function CvViewer({ cv }: CvViewerProps) {
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const cvRef = useRef<HTMLDivElement>(null);
 
-  // --- COPIADO AL PORTAPAPELES ---
+  const contact = cv.contact || {
+    email: "ralc.0595@gmail.com",
+    phone: "0034 614 88 94 73",
+    location: "Madrid, España",
+    linkedin: "linkedin.com/in/robertoantoniolopez25",
+    portfolio: "robertoantonioportfolio.vercel.app",
+  };
+
+  const skillsCat = cv.skillsCategorized || {
+    languages: ["JavaScript", "TypeScript"],
+    frameworks: [
+      "React",
+      "Next.js",
+      "Redux",
+      "Node.js",
+      "Express.js",
+      "Cypress",
+      "Jest",
+      "React Testing Library",
+    ],
+    databases: ["PostgreSQL", "MongoDB", "Supabase"],
+    tools: [
+      "Docker",
+      "Vercel",
+      "AWS S3",
+      "Git",
+      "GitHub",
+      "CI/CD Pipelines",
+      "Postman",
+      "Jira",
+      "Trello",
+      "Notion",
+      "Slack",
+    ],
+    practices: [
+      "Agile",
+      "Scrum",
+      "Kanban",
+      "System Design",
+      "Root Cause Analysis",
+      "Troubleshooting",
+    ],
+  };
+
+  const education = cv.education || [
+    {
+      institution: "Zero To Mastery Academy",
+      period: "2023 – Actualidad",
+      degree: "Certificación: Full-Stack Web Development Bootcamp (400 horas prácticas)",
+    },
+    {
+      institution: "Tecnológico de Monterrey (ITESM), México",
+      period: "2015 – 2019",
+      degree: "Ingeniería en Producción Musical Digital",
+      details:
+        "Formación técnica especializada en lógica computacional aplicada, procesamiento de señales, sistemas digitales complejos e integración de hardware y software.",
+    },
+  ];
+
+  const languages = cv.languages || [{ language: "Inglés", level: "C1" }];
+
+  const generateCleanAtsText = () => {
+    let text = `${cv.fullName.toUpperCase()}\n`;
+    text += `${cv.targetRole}\n`;
+    text += `${contact.email} | ${contact.phone} | ${contact.location} | ${contact.linkedin} | ${contact.portfolio}\n\n`;
+
+    text += `HABILIDADES\n`;
+    text += `Lenguajes: ${skillsCat.languages.join(", ")}\n`;
+    text += `Frameworks: ${skillsCat.frameworks.join(", ")}\n`;
+    text += `Bases de datos: ${skillsCat.databases.join(", ")}\n`;
+    text += `Tecnologías / Herramientas: ${skillsCat.tools.join(", ")}\n`;
+    text += `Prácticas: ${skillsCat.practices.join(", ")}\n\n`;
+
+    text += `EXPERIENCIA\n`;
+    cv.experience.forEach((exp) => {
+      text += `${exp.company} | ${exp.period}\n`;
+      text += `${exp.role}\n`;
+      exp.achievements.forEach((ach) => {
+        text += `• ${ach}\n`;
+      });
+      text += `\n`;
+    });
+
+    text += `EDUCACIÓN\n`;
+    education.forEach((edu) => {
+      text += `${edu.institution} | ${edu.period}\n`;
+      text += `${edu.degree}\n`;
+      if (edu.details) text += `${edu.details}\n`;
+      text += `\n`;
+    });
+
+    text += `IDIOMAS\n`;
+    languages.forEach((lang) => {
+      text += `${lang.language}: ${lang.level}\n`;
+    });
+
+    return text.trim();
+  };
+
   const handleCopy = async () => {
-    if (!cvRef.current) return;
     try {
-      const textToCopy = cvRef.current.innerText;
-      await navigator.clipboard.writeText(textToCopy);
+      const cleanText = generateCleanAtsText();
+      await navigator.clipboard.writeText(cleanText);
       setIsCopied(true);
       setTimeout(() => setIsCopied(false), 2000);
     } catch (err) {
-      console.error("Error al copiar al portapapeles:", err);
+      console.error("Error al copiar texto ATS:", err);
     }
   };
 
-  // --- DESCARGA PDF ---
   const handleDownloadPDF = async () => {
     const element = cvRef.current;
     if (!element) return;
@@ -45,18 +138,27 @@ export default function CvViewer({ cv }: CvViewerProps) {
 
     try {
       const dataUrl = await toPng(element, {
-        pixelRatio: 2,
+        pixelRatio: 2.5,
         backgroundColor: "#ffffff",
+        cacheBust: true,
       });
 
-      const pdf = new jsPDF("p", "mm", "a4");
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
 
-      pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
 
-      const fileName = `${cv.fullName.replace(/\s+/g, "_")}_CV_Optimizado.pdf`;
-      pdf.save(fileName);
+      const cleanFileName = cv.fullName
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "_");
+      pdf.save(`${cleanFileName}_CV_ATS.pdf`);
     } catch (error) {
       console.error("Error generando el PDF:", error);
     } finally {
@@ -118,99 +220,114 @@ export default function CvViewer({ cv }: CvViewerProps) {
       </div>
 
       {/* 📄 EL DOCUMENTO CV ESTILO TECH */}
-      <article
-        ref={cvRef}
-        className="bg-white text-slate-800 font-sans leading-relaxed max-w-3xl mx-auto border border-slate-200 rounded-2xl shadow-xl p-8 sm:p-12 relative overflow-hidden"
-      >
-        {/* Barra superior de acento decorativa */}
-        <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-400" />
+      <div className="w-full flex justify-center overflow-x-auto pb-4">
+        <article
+          ref={cvRef}
+          className="bg-white text-black font-sans leading-relaxed w-[794px] min-w-[794px] p-10 border border-slate-200 shadow-xl relative select-text"
+          style={{ boxSizing: "border-box" }}
+        >
+          {/* Encabezado ATS Oficial Roberto A. López Calatayud */}
+          <header className="text-center pb-2 mb-3">
+            <h1 className="text-2xl font-bold text-black tracking-tight uppercase">
+              {cv.fullName}
+            </h1>
+            <p className="text-xs font-semibold text-black mt-0.5">
+              {cv.targetRole}
+            </p>
+            <p className="text-[11px] text-black mt-1 leading-normal">
+              {contact.email} | {contact.phone} | {contact.location} | {contact.linkedin} | {contact.portfolio}
+            </p>
+          </header>
 
-        {/* Encabezado del CV */}
-        <header className="border-b border-slate-200 pb-6 mb-6">
-          <h1 className="text-3xl sm:text-4xl font-black text-slate-900 tracking-tight">
-            {cv.fullName}
-          </h1>
-          <h2 className="text-lg sm:text-xl font-bold text-blue-600 mt-1">
-            {cv.targetRole}
-          </h2>
-          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 mt-3 font-medium">
-            <span>Madrid, España</span>
-            <span>•</span>
-            <span>roberto@talent-ai.dev</span>
-            <span>•</span>
-            <span>linkedin.com/in/roberto-lopez</span>
-            <span>•</span>
-            <span>github.com/RobertoAntonio25</span>
-          </div>
-        </header>
+          {/* Sección Habilidades Categorizadas */}
+          <section className="mb-3.5">
+            <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
+              Habilidades
+            </h2>
+            <div className="text-[11px] text-black space-y-0.5">
+              <p>
+                <strong className="font-bold">Lenguajes:</strong> {skillsCat.languages.join(", ")}
+              </p>
+              <p>
+                <strong className="font-bold">Frameworks:</strong> {skillsCat.frameworks.join(", ")}
+              </p>
+              <p>
+                <strong className="font-bold">Bases de datos:</strong> {skillsCat.databases.join(", ")}
+              </p>
+              <p>
+                <strong className="font-bold">Tecnologías / Herramientas:</strong> {skillsCat.tools.join(", ")}
+              </p>
+              <p>
+                <strong className="font-bold">Prácticas:</strong> {skillsCat.practices.join(", ")}
+              </p>
+            </div>
+          </section>
 
-        {/* Resumen Profesional */}
-        <section className="mb-7">
-          <div className="flex items-center gap-2 mb-2.5">
-            <User className="w-4 h-4 text-blue-600" />
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-              Resumen Profesional
-            </h3>
-          </div>
-          <p className="text-slate-600 text-xs sm:text-sm leading-relaxed text-justify">
-            {cv.summary}
-          </p>
-        </section>
-
-        {/* Experiencia */}
-        <section className="mb-7">
-          <div className="flex items-center gap-2 mb-3.5 border-b border-slate-100 pb-2">
-            <Briefcase className="w-4 h-4 text-blue-600" />
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-              Experiencia Relevante
-            </h3>
-          </div>
-          <div className="space-y-5">
-            {cv.experience.map((exp) => (
-              <div key={exp.id}>
-                <div className="flex flex-col sm:flex-row sm:justify-between sm:items-baseline mb-2">
-                  <h4 className="font-bold text-slate-800 text-sm">
-                    {exp.role}{" "}
-                    <span className="font-normal text-slate-500">
-                      • {exp.company}
-                    </span>
-                  </h4>
-                  <span className="text-xs font-semibold px-2.5 py-0.5 rounded-md bg-blue-50 text-blue-700 mt-1 sm:mt-0 w-fit">
-                    {exp.period}
-                  </span>
+          {/* Sección Experiencia Laboral */}
+          <section className="mb-3.5">
+            <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
+              Experiencia
+            </h2>
+            <div className="space-y-3">
+              {cv.experience.map((exp) => (
+                <div key={exp.id}>
+                  <div className="flex justify-between items-baseline text-[11px]">
+                    <span className="font-bold text-black">{exp.company}</span>
+                    <span className="text-black font-medium">{exp.period}</span>
+                  </div>
+                  <div className="text-[11px] italic text-black mb-1">
+                    {exp.role}
+                  </div>
+                  <ul className="list-disc list-outside ml-4 text-[11px] text-black space-y-1">
+                    {exp.achievements.map((achievement, index) => (
+                      <li key={index} className="leading-snug">
+                        {achievement}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <ul className="list-disc list-outside ml-4 text-xs sm:text-sm text-slate-600 space-y-1.5 marker:text-blue-500">
-                  {exp.achievements.map((achievement, index) => (
-                    <li key={index} className="pl-1">
-                      {achievement}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </div>
-        </section>
+              ))}
+            </div>
+          </section>
 
-        {/* Habilidades Técnicas */}
-        <section>
-          <div className="flex items-center gap-2 mb-3 border-b border-slate-100 pb-2">
-            <Code2 className="w-4 h-4 text-blue-600" />
-            <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-              Habilidades Técnicas
-            </h3>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {cv.skills.map((skill, index) => (
-              <span
-                key={index}
-                className="px-2.5 py-1 bg-slate-50 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200"
-              >
-                {skill}
-              </span>
-            ))}
-          </div>
-        </section>
-      </article>
+          {/* Sección Educación */}
+          <section className="mb-3.5">
+            <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
+              Educación
+            </h2>
+            <div className="space-y-2 text-[11px] text-black">
+              {education.map((edu, idx) => (
+                <div key={idx}>
+                  <div className="flex justify-between items-baseline">
+                    <span className="font-bold">{edu.institution}</span>
+                    <span className="font-medium">{edu.period}</span>
+                  </div>
+                  <p className="leading-snug">{edu.degree}</p>
+                  {edu.details && (
+                    <p className="text-[10px] text-black leading-snug mt-0.5">
+                      {edu.details}
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Sección Idiomas */}
+          <section>
+            <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
+              Idiomas
+            </h2>
+            <div className="text-[11px] text-black">
+              {languages.map((lang, idx) => (
+                <p key={idx}>
+                  <strong className="font-bold">{lang.language}:</strong> {lang.level}
+                </p>
+              ))}
+            </div>
+          </section>
+        </article>
+      </div>
     </div>
   );
 }

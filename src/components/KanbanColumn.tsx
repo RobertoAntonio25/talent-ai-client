@@ -59,7 +59,7 @@ export default function KanbanColumn({ id, title, count, children }: Props) {
   const Icon = config.icon;
 
   return (
-    <div className="flex flex-col w-full min-w-[290px] sm:w-[320px] shrink-0">
+    <div className="flex flex-col w-full min-w-[260px] xl:min-w-0 xl:flex-1 shrink-0 xl:shrink">
       {/* Cabecera de la columna */}
       <div className="flex items-center justify-between mb-3 px-2">
         <div className="flex items-center gap-2">
