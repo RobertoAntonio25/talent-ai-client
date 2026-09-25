@@ -84,14 +84,18 @@ export default function Login() {
 
         {/* Top: Logo & Badge */}
         <div className="z-10 w-full flex items-center justify-between">
-          <div className="flex items-center space-x-3">
+          <Link
+            to="/"
+            className="flex items-center space-x-3 group transition-transform hover:scale-105"
+            title="Volver a la página principal"
+          >
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-xl shadow-lg shadow-blue-500/30">
               T
             </div>
             <span className="text-2xl font-black tracking-tight">
               Talent-AI
             </span>
-          </div>
+          </Link>
 
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 backdrop-blur-sm">
             <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Potenciado con IA
@@ -154,7 +158,26 @@ export default function Login() {
 
       {/* ⚡ SECCIÓN DERECHA: Formulario de Login */}
       <div className="flex w-full lg:w-1/2 justify-center items-center p-6 sm:p-10 lg:p-12 overflow-y-auto">
-        <div className="w-full max-w-lg bg-white rounded-3xl shadow-xl shadow-slate-200/60 p-8 sm:p-10 border border-slate-100">
+        <div className="w-full max-w-lg bg-white rounded-3xl shadow-xl shadow-slate-200/60 p-8 sm:p-10 border border-slate-100 relative">
+          {/* Botón Volver al inicio */}
+          <div className="mb-6 flex items-center justify-between">
+            <Link
+              to="/"
+              className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors group"
+            >
+              <span className="mr-1 group-hover:-translate-x-0.5 transition-transform">←</span>
+              Volver al inicio
+            </Link>
+
+            {/* Logo visible en pantallas pequeñas */}
+            <Link to="/" className="lg:hidden flex items-center space-x-2">
+              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-white text-xs shadow-md">
+                T
+              </div>
+              <span className="text-sm font-black text-slate-800">Talent-AI</span>
+            </Link>
+          </div>
+
           <div className="text-center mb-8">
             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">
               Bienvenido de nuevo

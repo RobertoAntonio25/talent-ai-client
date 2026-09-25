@@ -17,6 +17,7 @@ import type { JobApplication } from "../types/kanban";
 
 interface Props {
   job: JobApplication;
+  onClick?: (job: JobApplication) => void;
   onEdit?: (job: JobApplication) => void;
   onDelete?: (job: JobApplication) => void;
 }
@@ -38,9 +39,10 @@ const getCompanyBadgeColor = (name: string) => {
   return colors[index];
 };
 
-export default function KanbanCard({ job, onEdit, onDelete }: Props) {
+export default function KanbanCard({ job, onClick, onEdit, onDelete }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
 
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
@@ -69,17 +71,39 @@ export default function KanbanCard({ job, onEdit, onDelete }: Props) {
     };
   }, [menuOpen]);
 
+  const handlePointerDown = (e: React.PointerEvent) => {
+    dragStartPos.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const handleClick = (e: React.MouseEvent) => {
+    if (!onClick) return;
+    // Si hubo un arrastre perceptible mayor a 6px, descartar click
+    if (dragStartPos.current) {
+      const dist = Math.hypot(
+        e.clientX - dragStartPos.current.x,
+        e.clientY - dragStartPos.current.y
+      );
+      if (dist > 6) return;
+    }
+    onClick(job);
+  };
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
-      className={`relative flex flex-col bg-slate-900/90 rounded-2xl border p-4 transition-all duration-200 group cursor-grab active:cursor-grabbing backdrop-blur-sm select-none
+      onPointerDown={(e) => {
+        handlePointerDown(e);
+        listeners?.onPointerDown?.(e);
+      }}
+      onClick={handleClick}
+      className={`relative flex flex-col bg-slate-900/90 rounded-2xl border p-4 transition-all duration-200 group cursor-pointer active:cursor-grabbing backdrop-blur-sm select-none
         ${
           isDragging
             ? "opacity-30 border-2 border-dashed border-blue-500 shadow-none z-0"
-            : "border-slate-800/90 shadow-md shadow-slate-950/40 hover:border-slate-700 hover:shadow-xl hover:shadow-slate-950/60 hover:-translate-y-0.5 z-10"
+            : "border-slate-800/90 shadow-md shadow-slate-950/40 hover:border-blue-500/50 hover:shadow-xl hover:shadow-slate-950/60 hover:-translate-y-0.5 z-10"
         }
       `}
     >
