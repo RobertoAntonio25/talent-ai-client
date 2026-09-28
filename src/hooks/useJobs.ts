@@ -8,7 +8,7 @@ export function useJobs() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [syncError, setSyncError] = useState<string | null>(null);
 
-  // 1. CARGA REAL desde el backend
+  // 1. CARGA REAL desde el backend (resiliente: no vacía en error)
   const fetchJobs = useCallback(async () => {
     setIsLoading(true);
     setSyncError(null);
@@ -16,6 +16,8 @@ export function useJobs() {
     try {
       const res = await getUserResults(1, 20);
       if (res.meta.total === 0) {
+        // Tablero vacío real: solo vaciamos si antes no había error de red.
+        // Si el back dice total 0, es que no hay resultados aún (hay que lanzar manual-trigger).
         setJobs([]);
         return;
       }
@@ -24,7 +26,9 @@ export function useJobs() {
       const msg =
         e instanceof Error ? e.message : "Error al sincronizar ofertas.";
       setSyncError(msg);
-      setJobs([]);
+      // FIX 6.2: no hacemos setJobs([]) aquí.
+      // Conservamos el tablero previo (cache local) para que un cold-start
+      // de Render o un 429 no borre lo que el usuario ya veía.
     } finally {
       setIsLoading(false);
     }

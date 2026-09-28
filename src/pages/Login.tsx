@@ -12,7 +12,7 @@ import {
   ShieldCheck,
   AlertCircle,
 } from "lucide-react";
-import { apiClient } from "../services/apiClient";
+import { apiClient, ApiError } from "../services/apiClient";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
@@ -23,6 +23,7 @@ export default function Login() {
     "google" | "linkedin" | "email" | null
   >(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [errorCode, setErrorCode] = useState<string | null>(null);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -42,6 +43,7 @@ export default function Login() {
     e.preventDefault();
     setIsLoading("email");
     setErrorMessage(null);
+    setErrorCode(null);
 
     try {
       interface LoginResponse {
@@ -73,11 +75,18 @@ export default function Login() {
       // Redirigimos al Dashboard
       navigate("/dashboard");
     } catch (error: unknown) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Error al conectar con el servidor.";
-      setErrorMessage(message);
+      // 6.2: conservamos el code para mostrar CTA específico (OAuth / rate-limit)
+      if (error instanceof ApiError) {
+        setErrorCode(error.code ?? null);
+        setErrorMessage(error.message);
+      } else {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Error al conectar con el servidor.";
+        setErrorCode(null);
+        setErrorMessage(message);
+      }
     } finally {
       setIsLoading(null);
     }
@@ -200,11 +209,31 @@ export default function Login() {
             </p>
           </div>
 
-          {/* Banner de Error */}
+          {/* Banner de Error (6.2: CTA específico según code) */}
           {errorMessage && (
-            <div className="mb-5 p-3.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-center space-x-2">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500" />
-              <span>{errorMessage}</span>
+            <div className="mb-5 p-3.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex flex-col gap-2">
+              <div className="flex items-center space-x-2">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500" />
+                <span>{errorMessage}</span>
+              </div>
+              {errorCode === "OAUTH_ONLY_ACCOUNT" && (
+                <div className="flex gap-2 pl-6">
+                  <button
+                    type="button"
+                    onClick={() => handleOAuthLogin("google")}
+                    className="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-700 transition-colors"
+                  >
+                    Entrar con Google
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleOAuthLogin("linkedin")}
+                    className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-500 transition-colors"
+                  >
+                    Entrar con LinkedIn
+                  </button>
+                </div>
+              )}
             </div>
           )}
 

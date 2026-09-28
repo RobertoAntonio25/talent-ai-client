@@ -20,13 +20,6 @@ import CvViewer from "./ui/CvViewer";
 import CoverLetterViewer from "./ui/CoverLetterViewer";
 import type { JobApplication, ColumnStatus } from "../types/kanban";
 
-const COLUMNS: { id: ColumnStatus; title: string }[] = [
-  { id: "por_revisar", title: "Por Revisar" },
-  { id: "aplicado", title: "Aplicado" },
-  { id: "entrevista", title: "Entrevistas" },
-  { id: "oferta", title: "Ofertas" },
-];
-
 interface KanbanBoardProps {
   jobs: JobApplication[];
   isLoading?: boolean;
@@ -34,8 +27,16 @@ interface KanbanBoardProps {
   onMoveJob: (jobId: string, newStatus: ColumnStatus) => void;
   onEditJob?: (job: JobApplication) => void;
   onDeleteJob?: (job: JobApplication) => void;
+  onRetry?: () => void;
   searchQuery?: string;
 }
+
+const COLUMNS: { id: ColumnStatus; title: string }[] = [
+  { id: "por_revisar", title: "Por Revisar" },
+  { id: "aplicado", title: "Aplicado" },
+  { id: "entrevista", title: "Entrevistas" },
+  { id: "oferta", title: "Ofertas" },
+];
 
 export default function KanbanBoard({
   jobs,
@@ -44,6 +45,7 @@ export default function KanbanBoard({
   onMoveJob,
   onEditJob,
   onDeleteJob,
+  onRetry,
   searchQuery = "",
 }: KanbanBoardProps) {
   const [activeJob, setActiveJob] = useState<JobApplication | null>(null);
@@ -149,12 +151,21 @@ export default function KanbanBoard({
         })}
       </div>
 
-      {/* Toast de Sincronización o Error */}
+      {/* Toast de Error con Reintentar (6.2: no borra tablero, permite retry) */}
       {syncError && (
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300">
+        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 animate-in fade-in slide-in-from-bottom-5 duration-300 max-w-[92vw]">
           <div className="bg-slate-900/95 backdrop-blur-md text-white px-4 py-3 rounded-2xl shadow-2xl text-xs sm:text-sm font-medium border border-red-500/40 flex items-center gap-2.5">
             <AlertCircle className="w-4 h-4 text-red-400 flex-shrink-0" />
-            <span>{syncError}</span>
+            <span className="break-words">{syncError}</span>
+            {onRetry && (
+              <button
+                type="button"
+                onClick={onRetry}
+                className="ml-1 px-3 py-1 rounded-lg bg-red-500/20 hover:bg-red-500/30 border border-red-500/30 text-red-100 font-semibold transition-colors flex-shrink-0"
+              >
+                Reintentar
+              </button>
+            )}
           </div>
         </div>
       )}
