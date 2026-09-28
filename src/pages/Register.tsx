@@ -15,6 +15,7 @@ import {
   ShieldCheck,
   AlertCircle,
 } from "lucide-react";
+import { loginWithOAuth } from "../services/authService";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -67,10 +68,14 @@ export default function Register() {
   ];
 
   // Manejador OAuth
-  const handleOAuthRegister = (provider: "google" | "linkedin") => {
-    setIsLoading(provider);
-    const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";
-    window.location.href = `${backendUrl}/api/auth/${provider}`;
+  const handleOAuthRegister = async (provider: "google" | "linkedin") => {
+    try {
+      setIsLoading(provider);
+      await loginWithOAuth(provider);
+    } catch (e) {
+      setErrorMessage(e instanceof Error ? e.message : "Error con OAuth");
+      setIsLoading(null);
+    }
   };
 
   // Manejador Registro con Email

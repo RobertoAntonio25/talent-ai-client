@@ -1,5 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { loginWithOAuth } from "../services/authService";
 import {
   Loader2,
   Mail,
@@ -27,10 +28,14 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleOAuthLogin = (provider: "google" | "linkedin") => {
-    setIsLoading(provider);
-    const backendUrl = import.meta.env.VITE_API_URL || "http://localhost:4000";
-    window.location.href = `${backendUrl}/api/auth/${provider}`;
+  const handleOAuthLogin = async (provider: "google" | "linkedin") => {
+    try {
+      setIsLoading(provider);
+      await loginWithOAuth(provider);
+    } catch (e) {
+      setErrorMessage(e instanceof Error ? e.message : "Error con OAuth");
+      setIsLoading(null);
+    }
   };
 
   const handleEmailLogin = async (e: FormEvent) => {

@@ -3,6 +3,7 @@ import MainLayout from "../layouts/MainLayout";
 import Landing from "../pages/Landing";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
+import AuthCallback from "../pages/AuthCallback";
 import Dashboard from "../pages/Dashboard";
 import Settings from "../pages/Settings";
 import { ProtectedRoute, PublicOnlyRoute } from "./RouteGuards";
@@ -29,6 +30,14 @@ export const router = createBrowserRouter([
         element: (
           <PublicOnlyRoute>
             <Register />
+          </PublicOnlyRoute>
+        ),
+      },
+      {
+        path: "auth/callback",
+        element: (
+          <PublicOnlyRoute>
+            <AuthCallback />
           </PublicOnlyRoute>
         ),
       },
