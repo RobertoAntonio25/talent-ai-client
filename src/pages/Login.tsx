@@ -11,9 +11,12 @@ import {
   ShieldCheck,
   AlertCircle,
 } from "lucide-react";
+import { apiClient } from "../services/apiClient";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [isLoading, setIsLoading] = useState<
     "google" | "linkedin" | "email" | null
@@ -36,32 +39,33 @@ export default function Login() {
     setErrorMessage(null);
 
     try {
-      const backendUrl =
-        import.meta.env.VITE_API_URL || "http://localhost:4000";
+      interface LoginResponse {
+        success: boolean;
+        data: {
+          accessToken: string;
+          user: {
+            id: string;
+            email: string;
+            firstName: string;
+            lastName: string;
+            role: string;
+          };
+        };
+        message: string;
+      }
 
-      const response = await fetch(`${backendUrl}/api/auth/login`, {
+      const response = await apiClient<LoginResponse>("/api/auth/login", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
+        data: {
+          email: email.trim().toLowerCase(),
+          password,
         },
-        body: JSON.stringify({ email: email.trim().toLowerCase(), password }),
       });
 
-      const data = await response.json();
+      // Guardamos sesión en el Contexto Global
+      login(response.data.accessToken, response.data.user);
 
-      if (!response.ok) {
-        throw new Error(
-          data.message ||
-            "Credenciales inválidas. Verifica tu correo y contraseña.",
-        );
-      }
-
-      // Guardar token en localStorage
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-      }
-
-      // Redirigir al Dashboard
+      // Redirigimos al Dashboard
       navigate("/dashboard");
     } catch (error: unknown) {
       const message =
@@ -165,7 +169,9 @@ export default function Login() {
               to="/"
               className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors group"
             >
-              <span className="mr-1 group-hover:-translate-x-0.5 transition-transform">←</span>
+              <span className="mr-1 group-hover:-translate-x-0.5 transition-transform">
+                ←
+              </span>
               Volver al inicio
             </Link>
 
@@ -174,7 +180,9 @@ export default function Login() {
               <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-white text-xs shadow-md">
                 T
               </div>
-              <span className="text-sm font-black text-slate-800">Talent-AI</span>
+              <span className="text-sm font-black text-slate-800">
+                Talent-AI
+              </span>
             </Link>
           </div>
 

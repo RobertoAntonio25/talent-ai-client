@@ -1,5 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { apiClient } from "../services/apiClient";
+import { useAuth } from "../context/AuthContext";
 import {
   Loader2,
   Eye,
@@ -16,6 +18,7 @@ import {
 
 export default function Register() {
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   // Estados de carga y feedback
   const [isLoading, setIsLoading] = useState<
@@ -97,8 +100,20 @@ export default function Register() {
     setIsLoading("email");
 
     try {
-      const backendUrl =
-        import.meta.env.VITE_API_URL || "http://localhost:4000";
+      interface RegisterResponse {
+        success: boolean;
+        data: {
+          accessToken: string;
+          user: {
+            id: string;
+            email: string;
+            firstName: string;
+            lastName: string;
+            role: string;
+          };
+        };
+        message: string;
+      }
 
       const payload = {
         firstName: firstName.trim(),
@@ -108,30 +123,19 @@ export default function Register() {
         location: location.trim() || "No especificada",
       };
 
-      const response = await fetch(`${backendUrl}/api/auth/register`, {
+      const response = await apiClient<RegisterResponse>("/api/auth/register", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        data: payload,
       });
 
-      const data = await response.json();
+      setSuccessMessage("¡Cuenta creada exitosamente! Iniciando sesión...");
 
-      if (!response.ok) {
-        throw new Error(
-          data.message || "Error al crear la cuenta. Intenta con otro correo.",
-        );
-      }
+      // Auto-login con los datos devueltos por el backend
+      login(response.data.accessToken, response.data.user);
 
-      setSuccessMessage("¡Cuenta creada exitosamente! Redirigiendo...");
-
-      // Si el backend devuelve token directo (Auto-login)
-      if (data.token) {
-        localStorage.setItem("token", data.token);
-        setTimeout(() => navigate("/dashboard"), 1200);
-      } else {
-        // Redirige al login si requiere iniciar sesión manualmente
-        setTimeout(() => navigate("/login"), 1500);
-      }
+      setTimeout(() => {
+        navigate("/dashboard");
+      }, 1000);
     } catch (error: unknown) {
       const message =
         error instanceof Error
@@ -251,7 +255,9 @@ export default function Register() {
               to="/"
               className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors group"
             >
-              <span className="mr-1 group-hover:-translate-x-0.5 transition-transform">←</span>
+              <span className="mr-1 group-hover:-translate-x-0.5 transition-transform">
+                ←
+              </span>
               Volver al inicio
             </Link>
 
@@ -260,7 +266,9 @@ export default function Register() {
               <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-white text-xs shadow-md">
                 T
               </div>
-              <span className="text-sm font-black text-slate-800">Talent-AI</span>
+              <span className="text-sm font-black text-slate-800">
+                Talent-AI
+              </span>
             </Link>
           </div>
 

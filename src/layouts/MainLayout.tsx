@@ -1,4 +1,5 @@
 import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 import {
   Sparkles,
   LayoutDashboard,
@@ -9,8 +10,10 @@ import {
 export default function MainLayout() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user, logout } = useAuth(); // <--- obtenemos user y logout
 
   const handleLogout = () => {
+    logout();
     localStorage.removeItem("token");
     navigate("/login");
   };
@@ -31,7 +34,11 @@ export default function MainLayout() {
         <div className="max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           {/* Logo & Brand */}
           <div className="flex items-center gap-6">
-            <Link to="/" className="flex items-center space-x-3 group" title="Ir al inicio (Landing)">
+            <Link
+              to="/"
+              className="flex items-center space-x-3 group"
+              title="Ir al inicio (Landing)"
+            >
               <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform">
                 T
               </div>
@@ -80,14 +87,16 @@ export default function MainLayout() {
             <div className="hidden md:flex items-center gap-3 pl-3 border-l border-slate-800">
               <div className="flex items-center gap-2.5 bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-1.5">
                 <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-xs text-white shadow-inner">
-                  RL
+                  {user
+                    ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`
+                    : "U"}
                 </div>
                 <div className="flex flex-col text-left">
                   <span className="text-xs font-semibold text-slate-200 leading-tight">
-                    Roberto López
+                    {user ? `${user.firstName} ${user.lastName}` : "Usuario"}
                   </span>
                   <span className="text-[10px] text-blue-400 font-medium">
-                    Frontend Dev
+                    {user?.email || "Sesión activa"}
                   </span>
                 </div>
               </div>
