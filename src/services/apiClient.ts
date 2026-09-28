@@ -66,13 +66,20 @@ export async function apiClient<T>(
 
   if (!response.ok) {
     // Extraer mensaje del backend (tus controladores devuelven { message, error, etc. })
-    const errorMessage =
-      (typeof responseData === "object" && responseData?.message) ||
-      (typeof responseData === "object" && responseData?.error) ||
-      `Error HTTP ${response.status}: ${response.statusText}`;
+    let errorMessage = `Error HTTP ${response.status}: ${response.statusText}`;
+
+    if (typeof responseData === "object" && responseData !== null) {
+      const data = responseData as Record<string, unknown>;
+      if (typeof data.message === "string" && data.message) {
+        errorMessage = data.message;
+      } else if (typeof data.error === "string" && data.error) {
+        errorMessage = data.error;
+      }
+    } else if (typeof responseData === "string" && responseData) {
+      errorMessage = responseData;
+    }
 
     throw new Error(errorMessage);
   }
-
   return responseData as T;
 }
