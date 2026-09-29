@@ -15,6 +15,7 @@ import CvViewer from "../components/ui/CvViewer";
 import JobFormModal from "../components/kanban/JobFormModal";
 import DeleteConfirmModal from "../components/kanban/DeleteConfirmModal";
 import { useJobs } from "../hooks/useJobs";
+import { useCv } from "../hooks/useCv";
 import type { GeneratedCV } from "../types/cv";
 import type { JobApplication } from "../types/kanban";
 
@@ -30,6 +31,7 @@ export default function Dashboard() {
     updateJob,
   } = useJobs();
 
+  const { cv, isUploading, uploadError, upload } = useCv();
   const [searchQuery, setSearchQuery] = useState("");
   const [isCvModalOpen, setIsCvModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -41,9 +43,7 @@ export default function Dashboard() {
   const inInterview = jobs.filter((j) => j.status === "entrevista").length;
   const inOffer = jobs.filter((j) => j.status === "oferta").length;
   // 6.3: sin defaulteo engañoso. null = "sin datos" (tablero vacío real).
-  const jobsWithScore = jobs.filter(
-    (j) => typeof j.matchScore === "number",
-  );
+  const jobsWithScore = jobs.filter((j) => typeof j.matchScore === "number");
   const avgMatch: number | null =
     jobsWithScore.length > 0
       ? Math.round(
@@ -79,13 +79,11 @@ export default function Dashboard() {
     }
   };
 
-  const MOCK_CV: GeneratedCV = {
-    // TODO(6.3): conectar con POST /api/ai/cv-extractor (FormData campo "cv", PDF ≤10MB).
-    // Mock temporal solo para no romper CvViewer hasta que el endpoint esté cableado.
-    fullName: "[Tu nombre — conecta tu CV en Fase 5]",
-    targetRole: "Configura tu perfil para generar el CV optimizado",
+  const displayCv: GeneratedCV = cv ?? {
+    fullName: "[Sube tu CV en PDF para verlo aquí]",
+    targetRole: "Sin CV cargado",
     summary:
-      "Vista previa de ejemplo. Sube tu CV en PDF para generar el resumen optimizado por IA con palabras clave ATS.",
+      "Sube tu CV en PDF desde Configuración o desde este modal para generar tu perfil optimizado por IA.",
     contact: {
       email: "[tu email]",
       phone: "[tu teléfono]",
@@ -93,95 +91,8 @@ export default function Dashboard() {
       linkedin: "[tu linkedin]",
       portfolio: "[tu portfolio]",
     },
-    skillsCategorized: {
-      languages: ["JavaScript", "TypeScript"],
-      frameworks: [
-        "React",
-        "Next.js",
-        "Redux",
-        "Node.js",
-        "Express.js",
-        "Cypress",
-        "Jest",
-        "React Testing Library",
-      ],
-      databases: ["PostgreSQL", "MongoDB", "Supabase"],
-      tools: [
-        "Docker",
-        "Vercel",
-        "AWS S3",
-        "Git",
-        "GitHub",
-        "CI/CD Pipelines",
-        "Postman",
-        "Jira",
-        "Trello",
-        "Notion",
-        "Slack",
-      ],
-      practices: [
-        "Agile",
-        "Scrum",
-        "Kanban",
-        "System Design",
-        "Root Cause Analysis",
-        "Troubleshooting",
-      ],
-    },
-    skills: [
-      "JavaScript",
-      "TypeScript",
-      "React",
-      "Next.js",
-      "Node.js",
-      "PostgreSQL",
-      "Docker",
-      "AWS S3",
-      "Git",
-      "CI/CD",
-    ],
-    experience: [
-      {
-        id: "1",
-        role: "Desarrollador Full-Stack Freelance",
-        company: "SmartBrains - Aplicación Web SaaS de Reconocimiento Facial",
-        period: "Noviembre 2025 – Enero 2026",
-        achievements: [
-          "Diseñé e implementé el ciclo de vida completo de un software SaaS orientado al análisis de imágenes, alcanzando más de 200 usuarios registrados y 500 consultas de API diarias.",
-          "Integré la REST API de visión artificial de Clarifai, reduciendo el tiempo de respuesta en un 20% y mejorando la fluidez de interacción.",
-          "Arquitecté backend con autenticación segura (JWT, bcrypt) y persistencia relacional en PostgreSQL mediante Supabase, soportando sesiones concurrentes sin degradación de rendimiento.",
-          "Automaticé pruebas funcionales y de integración con Jest, Postman y Cypress en ciclos E2E, alcanzando un 85% de cobertura de código crítico.",
-        ],
-      },
-      {
-        id: "2",
-        role: "Ingeniero Técnico y Gestor de Proyectos de Sistemas (Freelance)",
-        company: "Clientes internacionales en Estados Unidos y LATAM",
-        period: "Marzo 2016 – Actualidad",
-        achievements: [
-          "Administré la arquitectura técnica y control de calidad (QA) de más de 50 proyectos internacionales, reduciendo los errores de entrega en un 30% mediante protocolos estandarizados.",
-          "Reduje los tiempos de resolución de incidencias técnicas en un 20% mediante protocolos de troubleshooting estructurado.",
-          "Reduje los tiempos de entrega (turnaround) en un 15% adoptando flujos de trabajo Agile y sprints quincenales bajo metodología Scrum.",
-          "Coordiné equipos técnicos remotos interfuncionales de hasta 10 personas utilizando Jira, Trello y herramientas de colaboración asíncrona.",
-        ],
-      },
-    ],
-    education: [
-      {
-        institution: "Zero To Mastery Academy",
-        period: "2023 – Actualidad",
-        degree:
-          "Certificación: Full-Stack Web Development Bootcamp (400 horas prácticas)",
-      },
-      {
-        institution: "Tecnológico de Monterrey (ITESM), México",
-        period: "2015 – 2019",
-        degree: "Ingeniería en Producción Musical Digital",
-        details:
-          "Formación técnica especializada en lógica computacional aplicada, procesamiento de señales, sistemas digitales complejos e integración de hardware y software.",
-      },
-    ],
-    languages: [{ language: "Inglés", level: "C1" }],
+    skills: [],
+    experience: [],
   };
 
   return (
@@ -321,6 +232,7 @@ export default function Dashboard() {
           onEditJob={handleOpenEditModal}
           onDeleteJob={(job) => setDeletingJob(job)}
           onRetry={fetchJobs}
+          onRefresh={fetchJobs}
           searchQuery={searchQuery}
         />
       </div>
@@ -332,7 +244,34 @@ export default function Dashboard() {
         title="Currículum Optimizado por Talent-AI ✨"
         subtitle="Generado automáticamente con palabras clave y formato ATS según tu perfil profesional."
       >
-        <CvViewer cv={MOCK_CV} />
+        <div className="mb-4 flex flex-col gap-2">
+          <label className="text-xs font-semibold text-slate-300">
+            Subir CV en PDF (máx 10MB)
+          </label>
+          <input
+            type="file"
+            accept="application/pdf"
+            disabled={isUploading}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) void upload(file).catch(() => {});
+              e.target.value = "";
+            }}
+            className="text-xs text-slate-400 file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:text-xs file:font-semibold hover:file:bg-blue-500 file:cursor-pointer disabled:opacity-50"
+          />
+          {isUploading && (
+            <p className="text-xs text-blue-400">
+              Analizando PDF con IA… puede tardar 1-2 min la primera vez.
+            </p>
+          )}
+          {uploadError && <p className="text-xs text-red-400">{uploadError}</p>}
+          {cv && !isUploading && (
+            <p className="text-xs text-emerald-400">
+              CV cargado desde tu último análisis.
+            </p>
+          )}
+        </div>
+        <CvViewer cv={displayCv} />
       </Modal>
 
       {/* 📝 MODAL DE CREACIÓN / EDICIÓN DE POSTULACIÓN */}
