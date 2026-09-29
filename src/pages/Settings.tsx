@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Search,
   Loader2,
@@ -6,26 +7,40 @@ import {
   CalendarClock,
   Sparkles,
   CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 import Toggle from "../components/ui/Toggle";
+import { triggerManualSearch } from "../services/jobsService";
 
 export default function Settings() {
   // --- ESTADOS ---
   const [autoSearch, setAutoSearch] = useState(false);
   const [frequency, setFrequency] = useState("diario");
   const [isSearching, setIsSearching] = useState(false);
-  const [searchSuccess, setSearchSuccess] = useState(false);
+  const [searchSuccess, setSearchSuccess] = useState<string | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   // --- LÓGICA DE SIMULACIÓN ---
-  const handleSearchNow = () => {
+  const handleSearchNow = async () => {
+    if (isSearching) return; // Evita doble click en paralelo
     setIsSearching(true);
-    setSearchSuccess(false);
-
-    setTimeout(() => {
+    setSearchSuccess(null);
+    setSearchError(null);
+    try {
+      const res = await triggerManualSearch();
+      const total = res.data.meta.total;
+      setSearchSuccess(
+        total === 0
+          ? "Búsqueda completada, pero no se encontraron ofertas con tu perfil actual. Prueba a actualizar tu CV."
+          : `¡Búsqueda completada! Se sincronizaron ${total} ofertas relevantes en el Tablero Kanban.`,
+      );
+    } catch (e) {
+      setSearchError(
+        e instanceof Error ? e.message : "Error al lanzar la búsqueda.",
+      );
+    } finally {
       setIsSearching(false);
-      setSearchSuccess(true);
-      setTimeout(() => setSearchSuccess(false), 4000);
-    }, 2500);
+    }
   };
 
   return (
@@ -47,11 +62,22 @@ export default function Settings() {
 
       {searchSuccess && (
         <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl flex items-center gap-3 text-emerald-300 text-xs sm:text-sm animate-in fade-in slide-in-from-top-2 duration-300">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-          <span>
-            ¡Búsqueda completada con éxito! Se detectaron y sincronizaron 3
-            nuevas ofertas relevantes para tu perfil en el Tablero Kanban.
-          </span>
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <span>{searchSuccess}</span>
+            <Link
+              to="/dashboard"
+              className="ml-2 font-bold underline hover:text-emerald-200"
+            >
+              Ver en Dashboard →
+            </Link>
+          </div>
+        </div>
+      )}
+      {searchError && (
+        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl flex items-start gap-3 text-red-300 text-xs sm:text-sm animate-in fade-in slide-in-from-top-2 duration-300">
+          <AlertTriangle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
+          <span>{searchError}</span>
         </div>
       )}
 
@@ -130,7 +156,7 @@ export default function Settings() {
             {isSearching ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Rastreando la web con IA...</span>
+                <span>Rastreando... puede tardar 1-3 min</span>
               </>
             ) : (
               <>

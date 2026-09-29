@@ -11,4 +11,7 @@ export interface JobApplication {
   matchScore?: number;
   tags?: string[];
   notes?: string;
+  jobOfferId?: string;
+  backendStatus?: string;
+  matchReason?: string;
 }

@@ -313,6 +313,7 @@ export default function Dashboard() {
           onMoveJob={moveJob}
           onEditJob={handleOpenEditModal}
           onDeleteJob={(job) => setDeletingJob(job)}
+          onRetry={fetchJobs}
           searchQuery={searchQuery}
         />
       </div>
