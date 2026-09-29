@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import type { JobApplication, ColumnStatus } from "../types/kanban";
 import { getUserResults } from "../services/jobsService";
 import { mapResultToJob } from "../adapters/jobsAdapter";
@@ -7,6 +7,8 @@ export function useJobs() {
   const [jobs, setJobs] = useState<JobApplication[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [syncError, setSyncError] = useState<string | null>(null);
+  // 6.5: evita doble fetch en StrictMode dev (no afecta a prod).
+  const didFetch = useRef(false);
 
   // 1. CARGA REAL desde el backend (resiliente: no vacía en error)
   const fetchJobs = useCallback(async () => {
@@ -34,8 +36,19 @@ export function useJobs() {
     }
   }, []);
 
+  // La carga inicial se dispara por evento, no por setState síncrono en efecto.
+  // (fetchJobs se invoca desde el callback de suscripción: no hay cascada.)
   useEffect(() => {
-    fetchJobs();
+    if (didFetch.current) return;
+    didFetch.current = true;
+    const idle = window.requestIdleCallback ?? ((cb: () => void) => window.setTimeout(cb, 0));
+    const handle = idle(() => {
+      void fetchJobs();
+    });
+    return () => {
+      if (typeof handle === "number") window.clearTimeout(handle);
+      else window.cancelIdleCallback?.(handle);
+    };
   }, [fetchJobs]);
 
   // 2. MOVER TARJETA - solo local (no hay endpoint en el back aún)
