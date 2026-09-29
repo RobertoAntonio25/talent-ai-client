@@ -8,9 +8,26 @@ import {
   Sparkles,
   CheckCircle2,
   AlertTriangle,
+  Upload,
+  FileText,
 } from "lucide-react";
+import { useCv } from "../hooks/useCv";
 import Toggle from "../components/ui/Toggle";
 import { triggerManualSearch } from "../services/jobsService";
+
+const LAST_SEARCH_KEY = "lastManualSearchAt";
+
+function formatLastSearch(iso: string | null): string {
+  if (!iso) return "Sin rastreos aún";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "Sin rastreos aún";
+  return d.toLocaleString("es-ES", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 export default function Settings() {
   // --- ESTADOS ---
@@ -19,8 +36,13 @@ export default function Settings() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchSuccess, setSearchSuccess] = useState<string | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
+  // 6.3: hora real del último rastreo (persistida), no texto quemado.
+  const [lastSearchAt, setLastSearchAt] = useState<string | null>(() =>
+    localStorage.getItem(LAST_SEARCH_KEY),
+  );
+  const { cv, isUploading, uploadError, upload } = useCv();
 
-  // --- LÓGICA DE SIMULACIÓN ---
+  // --- LÓGICA REAL (no simulación) ---
   const handleSearchNow = async () => {
     if (isSearching) return; // Evita doble click en paralelo
     setIsSearching(true);
@@ -29,6 +51,9 @@ export default function Settings() {
     try {
       const res = await triggerManualSearch();
       const total = res.data.meta.total;
+      const nowIso = new Date().toISOString();
+      localStorage.setItem(LAST_SEARCH_KEY, nowIso);
+      setLastSearchAt(nowIso);
       setSearchSuccess(
         total === 0
           ? "Búsqueda completada, pero no se encontraron ofertas con tu perfil actual. Prueba a actualizar tu CV."
@@ -82,6 +107,53 @@ export default function Settings() {
       )}
 
       <div className="bg-slate-900/70 border border-slate-800 rounded-3xl shadow-xl shadow-black/40 overflow-hidden backdrop-blur-sm divide-y divide-slate-800/80">
+        {/* SECCIÓN 0: Perfil / CV (Fase 5.4) */}
+        <div className="p-6 flex flex-col gap-3">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-2xl flex-shrink-0">
+              <FileText className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-bold text-white text-sm sm:text-base">
+                Tu CV para la IA
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-400 mt-0.5">
+                La IA extrae tus skills y experiencia para el matching. PDF, máx
+                10MB.
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+            <label className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-bold cursor-pointer transition-colors">
+              <Upload className="w-4 h-4" />
+              {isUploading ? "Analizando…" : cv ? "Actualizar CV" : "Subir CV"}
+              <input
+                type="file"
+                accept="application/pdf"
+                disabled={isUploading}
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) void upload(file).catch(() => {});
+                  e.target.value = "";
+                }}
+              />
+            </label>
+            {cv && !isUploading && (
+              <span className="text-xs text-emerald-400">
+                ✓ {cv.fullName} — {cv.skills.length} skills extraídas
+              </span>
+            )}
+          </div>
+          {isUploading && (
+            <p className="text-xs text-blue-400">
+              Analizando PDF con IA… puede tardar 1-2 min la primera vez (Render
+              + Groq).
+            </p>
+          )}
+          {uploadError && <p className="text-xs text-red-400">{uploadError}</p>}
+        </div>
+
         {/* SECCIÓN 1: Búsqueda Automática (El Toggle) */}
         <div className="p-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
@@ -138,7 +210,9 @@ export default function Settings() {
         <div className="p-6 bg-slate-950/30 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <Sparkles className="w-4 h-4 text-blue-400" />
-            <span>Último rastreo realizado: Hoy a las 10:45 AM</span>
+            <span>
+              Último rastreo realizado: {formatLastSearch(lastSearchAt)}
+            </span>
           </div>
 
           <button

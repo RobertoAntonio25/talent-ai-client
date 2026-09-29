@@ -19,6 +19,7 @@ import Modal from "./ui/Modal";
 import CvViewer from "./ui/CvViewer";
 import CoverLetterViewer from "./ui/CoverLetterViewer";
 import type { JobApplication, ColumnStatus } from "../types/kanban";
+import { evaluateMatch } from "../services/aiService";
 
 interface KanbanBoardProps {
   jobs: JobApplication[];
@@ -28,6 +29,7 @@ interface KanbanBoardProps {
   onEditJob?: (job: JobApplication) => void;
   onDeleteJob?: (job: JobApplication) => void;
   onRetry?: () => void;
+  onRefresh?: () => void;
   searchQuery?: string;
 }
 
@@ -46,12 +48,14 @@ export default function KanbanBoard({
   onEditJob,
   onDeleteJob,
   onRetry,
+  onRefresh,
   searchQuery = "",
 }: KanbanBoardProps) {
   const [activeJob, setActiveJob] = useState<JobApplication | null>(null);
   const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
   const [activeTab, setActiveTab] = useState<"cv" | "cover_letter">("cv");
-
+  const [isEvaluating, setIsEvaluating] = useState(false);
+  const [evalMsg, setEvalMsg] = useState<string | null>(null);
   // Sensores para Drag & Drop
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -81,6 +85,25 @@ export default function KanbanBoard({
     if (!jobToMove || jobToMove.status === newStatus) return;
 
     onMoveJob(jobId, newStatus);
+  };
+
+  const handleEvaluate = async () => {
+    if (!selectedJob?.jobOfferId || isEvaluating) return;
+    setIsEvaluating(true);
+    setEvalMsg(null);
+    try {
+      const res = await evaluateMatch(selectedJob.jobOfferId);
+      setEvalMsg(
+        res.isMatch
+          ? `✓ Match ${res.score}% — ${res.reason ?? "compatible con tu perfil."}`
+          : `✗ Sin match (${res.score}%). Faltan: ${(res.missingSkills ?? []).slice(0, 5).join(", ") || "—"}`,
+      );
+      onRefresh?.();
+    } catch (e) {
+      setEvalMsg(e instanceof Error ? e.message : "Error al evaluar.");
+    } finally {
+      setIsEvaluating(false);
+    }
   };
 
   // Filtrado por búsqueda
@@ -197,6 +220,23 @@ export default function KanbanBoard({
       >
         {selectedJob && (
           <div className="flex flex-col gap-5">
+            {/* 5.4e: Evaluar match con IA */}
+            {selectedJob.jobOfferId && (
+              <div className="mb-1">
+                <button
+                  type="button"
+                  onClick={() => void handleEvaluate()}
+                  disabled={isEvaluating}
+                  className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-bold transition-colors"
+                >
+                  {isEvaluating ? "Evaluando con IA…" : "✨ Evaluar match con mi CV"}
+                </button>
+                {evalMsg && (
+                  <p className="mt-2 text-xs text-slate-300">{evalMsg}</p>
+                )}
+              </div>
+            )}
+            
             {/* Selector de Pestañas (Tabs) */}
             <div className="flex items-center gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-2xl w-fit">
               <button
@@ -264,7 +304,8 @@ export default function KanbanBoard({
                     {
                       id: "2",
                       role: "Ingeniero Técnico y Gestor de Proyectos de Sistemas (Freelance)",
-                      company: "Clientes internacionales en Estados Unidos y LATAM",
+                      company:
+                        "Clientes internacionales en Estados Unidos y LATAM",
                       period: "Marzo 2016 – Actualidad",
                       achievements: [
                         "Administré la arquitectura técnica y QA de más de 50 proyectos internacionales, reduciendo errores en un 30%.",
