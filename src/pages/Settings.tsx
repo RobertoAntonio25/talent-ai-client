@@ -12,20 +12,6 @@ import {
 import Toggle from "../components/ui/Toggle";
 import { triggerManualSearch } from "../services/jobsService";
 
-const LAST_SEARCH_KEY = "lastManualSearchAt";
-
-function formatLastSearch(iso: string | null): string {
-  if (!iso) return "Sin rastreos aún";
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return "Sin rastreos aún";
-  return d.toLocaleString("es-ES", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 export default function Settings() {
   // --- ESTADOS ---
   const [autoSearch, setAutoSearch] = useState(false);
@@ -33,12 +19,8 @@ export default function Settings() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchSuccess, setSearchSuccess] = useState<string | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
-  // 6.3: hora real del último rastreo (persistida), no texto quemado.
-  const [lastSearchAt, setLastSearchAt] = useState<string | null>(() =>
-    localStorage.getItem(LAST_SEARCH_KEY),
-  );
 
-  // --- LÓGICA REAL (no simulación) ---
+  // --- LÓGICA DE SIMULACIÓN ---
   const handleSearchNow = async () => {
     if (isSearching) return; // Evita doble click en paralelo
     setIsSearching(true);
@@ -47,9 +29,6 @@ export default function Settings() {
     try {
       const res = await triggerManualSearch();
       const total = res.data.meta.total;
-      const nowIso = new Date().toISOString();
-      localStorage.setItem(LAST_SEARCH_KEY, nowIso);
-      setLastSearchAt(nowIso);
       setSearchSuccess(
         total === 0
           ? "Búsqueda completada, pero no se encontraron ofertas con tu perfil actual. Prueba a actualizar tu CV."
@@ -159,7 +138,7 @@ export default function Settings() {
         <div className="p-6 bg-slate-950/30 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <Sparkles className="w-4 h-4 text-blue-400" />
-            <span>Último rastreo realizado: {formatLastSearch(lastSearchAt)}</span>
+            <span>Último rastreo realizado: Hoy a las 10:45 AM</span>
           </div>
 
           <button
