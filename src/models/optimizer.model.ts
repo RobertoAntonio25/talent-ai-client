@@ -26,6 +26,9 @@ export interface OptimizedCv {
   experiences: OptimizedExperience[];
   skillsMatched: string[];
   keywordsInjected: string[];
+  // Paridad con el contrato v1 real del backend (optimize.types.ts): el
+  // optimizador informa qué keywords descartó por honestidad.
+  keywordsSkipped: string[];
   header?: OptimizedHeader;
   headline?: string;
   education?: Array<{ degree?: string; institution?: string }>;

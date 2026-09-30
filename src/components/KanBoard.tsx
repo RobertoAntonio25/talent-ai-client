@@ -9,17 +9,14 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from "@dnd-kit/core";
-import { AlertCircle, PlusCircle, FileText, Mail } from "lucide-react";
+import { AlertCircle, PlusCircle } from "lucide-react";
 
 // Componentes y Tipos
 import KanbanColumn from "./KanbanColumn";
 import KanbanCard from "./KanbanCard";
 import SkeletonCard from "./ui/SkeletonCard";
-import Modal from "./ui/Modal";
-import CvViewer from "./ui/CvViewer";
-import CoverLetterViewer from "./ui/CoverLetterViewer";
+import JobDetailModal, { type OptimizerPort } from "./kanban/JobDetailModal";
 import type { JobApplication, ColumnStatus } from "../types/kanban";
-import { evaluateMatch } from "../services/aiService";
 
 interface KanbanBoardProps {
   jobs: JobApplication[];
@@ -31,6 +28,8 @@ interface KanbanBoardProps {
   onRetry?: () => void;
   onRefresh?: () => void;
   searchQuery?: string;
+  /** Optimizador IA (hook useOptimizer) para las pestañas de CV y carta. */
+  optimizer?: OptimizerPort | null;
 }
 
 const COLUMNS: { id: ColumnStatus; title: string }[] = [
@@ -50,12 +49,15 @@ export default function KanbanBoard({
   onRetry,
   onRefresh,
   searchQuery = "",
+  optimizer = null,
 }: KanbanBoardProps) {
   const [activeJob, setActiveJob] = useState<JobApplication | null>(null);
-  const [selectedJob, setSelectedJob] = useState<JobApplication | null>(null);
-  const [activeTab, setActiveTab] = useState<"cv" | "cover_letter">("cv");
-  const [isEvaluating, setIsEvaluating] = useState(false);
-  const [evalMsg, setEvalMsg] = useState<string | null>(null);
+  // Fase 3: guardamos solo el id y derivamos la tarjeta del listado actual.
+  // Así el modal abierto ve siempre datos frescos (evaluate/matcher/edición)
+  // sin efectos de sincronización, y se cierra solo si la tarjeta desaparece.
+  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const selectedJob = jobs.find((job) => job.id === selectedJobId) ?? null;
+
   // Sensores para Drag & Drop
   const sensors = useSensors(
     useSensor(MouseSensor, {
@@ -85,25 +87,6 @@ export default function KanbanBoard({
     if (!jobToMove || jobToMove.status === newStatus) return;
 
     onMoveJob(jobId, newStatus);
-  };
-
-  const handleEvaluate = async () => {
-    if (!selectedJob?.jobOfferId || isEvaluating) return;
-    setIsEvaluating(true);
-    setEvalMsg(null);
-    try {
-      const res = await evaluateMatch(selectedJob.jobOfferId);
-      setEvalMsg(
-        res.isMatch
-          ? `✓ Match ${res.score}% — ${res.reason ?? "compatible con tu perfil."}`
-          : `✗ Sin match (${res.score}%). Faltan: ${(res.missingSkills ?? []).slice(0, 5).join(", ") || "—"}`,
-      );
-      onRefresh?.();
-    } catch (e) {
-      setEvalMsg(e instanceof Error ? e.message : "Error al evaluar.");
-    } finally {
-      setIsEvaluating(false);
-    }
   };
 
   // Filtrado por búsqueda
@@ -148,10 +131,7 @@ export default function KanbanBoard({
                   <KanbanCard
                     key={job.id}
                     job={job}
-                    onClick={() => {
-                      setSelectedJob(job);
-                      setActiveTab("cv");
-                    }}
+                    onClick={() => setSelectedJobId(job.id)}
                     onEdit={onEditJob}
                     onDelete={onDeleteJob}
                   />
@@ -207,122 +187,14 @@ export default function KanbanBoard({
         ) : null}
       </DragOverlay>
 
-      {/* Modal Interactivo con Tabs: CV Adaptado ATS + Carta de Presentación */}
-      <Modal
+      <JobDetailModal
+        job={selectedJob}
         isOpen={Boolean(selectedJob)}
-        onClose={() => setSelectedJob(null)}
-        title={
-          selectedJob
-            ? `${selectedJob.position} en ${selectedJob.company}`
-            : "Postulación"
-        }
-        subtitle="Documentos de postulación optimizados por IA con formato ATS para esta vacante."
-      >
-        {selectedJob && (
-          <div className="flex flex-col gap-5">
-            {/* 5.4e: Evaluar match con IA */}
-            {selectedJob.jobOfferId && (
-              <div className="mb-1">
-                <button
-                  type="button"
-                  onClick={() => void handleEvaluate()}
-                  disabled={isEvaluating}
-                  className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white text-xs font-bold transition-colors"
-                >
-                  {isEvaluating ? "Evaluando con IA…" : "✨ Evaluar match con mi CV"}
-                </button>
-                {evalMsg && (
-                  <p className="mt-2 text-xs text-slate-300">{evalMsg}</p>
-                )}
-              </div>
-            )}
-            
-            {/* Selector de Pestañas (Tabs) */}
-            <div className="flex items-center gap-2 p-1.5 bg-slate-900 border border-slate-800 rounded-2xl w-fit">
-              <button
-                type="button"
-                onClick={() => setActiveTab("cv")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                  activeTab === "cv"
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/25"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800/60"
-                }`}
-              >
-                <FileText className="w-4 h-4" />
-                <span>Currículum Vitae ATS</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setActiveTab("cover_letter")}
-                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                  activeTab === "cover_letter"
-                    ? "bg-blue-600 text-white shadow-md shadow-blue-500/25"
-                    : "text-slate-400 hover:text-white hover:bg-slate-800/60"
-                }`}
-              >
-                <Mail className="w-4 h-4" />
-                <span>Carta de Presentación</span>
-              </button>
-            </div>
-
-            {/* Contenido según la pestaña activa */}
-            {activeTab === "cv" ? (
-              <CvViewer
-                cv={{
-                  fullName: "Roberto A. López Calatayud",
-                  targetRole: selectedJob.position,
-                  summary: `Desarrollador Full-Stack e Ingeniero Técnico especializado en la construcción de arquitecturas web SaaS escalables y flujos de integración continua. Currículum optimizado específicamente para el rol de ${selectedJob.position} en ${selectedJob.company}, alineando palabras clave y experiencias técnicas.`,
-                  contact: {
-                    email: "ralc.0595@gmail.com",
-                    phone: "0034 614 88 94 73",
-                    location: "Madrid, España",
-                    linkedin: "linkedin.com/in/robertoantoniolopez25",
-                    portfolio: "robertoantonioportfolio.vercel.app",
-                  },
-                  skills: selectedJob.tags || [
-                    "React",
-                    "TypeScript",
-                    "Node.js",
-                    "PostgreSQL",
-                    "Docker",
-                  ],
-                  experience: [
-                    {
-                      id: "1",
-                      role: "Desarrollador Full-Stack Freelance",
-                      company:
-                        "SmartBrains - Aplicación Web SaaS de Reconocimiento Facial",
-                      period: "Noviembre 2025 – Enero 2026",
-                      achievements: [
-                        `Diseñé e implementé el ciclo de vida completo de un SaaS con tecnologías clave afines a ${selectedJob.company}, alcanzando más de 200 usuarios y 500 llamadas de API al día.`,
-                        "Integré la REST API de visión artificial de Clarifai, reduciendo tiempos de respuesta en un 20%.",
-                        "Arquitecté backend con persistencia relacional en PostgreSQL / Supabase con autenticación segura.",
-                        "Automaticé pruebas funcionales y de integración con Jest, Postman y Cypress con 85% de cobertura.",
-                      ],
-                    },
-                    {
-                      id: "2",
-                      role: "Ingeniero Técnico y Gestor de Proyectos de Sistemas (Freelance)",
-                      company:
-                        "Clientes internacionales en Estados Unidos y LATAM",
-                      period: "Marzo 2016 – Actualidad",
-                      achievements: [
-                        "Administré la arquitectura técnica y QA de más de 50 proyectos internacionales, reduciendo errores en un 30%.",
-                        "Reduje los tiempos de resolución de incidencias en un 20% mediante protocolos de troubleshooting estructurado.",
-                        "Reduje los tiempos de entrega en un 15% aplicando metodologías Agile y Scrum en sprints quincenales.",
-                        "Coordiné equipos técnicos remotos de hasta 10 personas utilizando Jira, Trello y metodologías ágiles.",
-                      ],
-                    },
-                  ],
-                }}
-              />
-            ) : (
-              <CoverLetterViewer job={selectedJob} />
-            )}
-          </div>
-        )}
-      </Modal>
+        onClose={() => setSelectedJobId(null)}
+        onMoveStatus={onMoveJob}
+        onRefresh={onRefresh}
+        optimizer={optimizer}
+      />
     </DndContext>
   );
 }

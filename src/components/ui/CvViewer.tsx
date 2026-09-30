@@ -10,111 +10,163 @@ import {
 import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
 import type { GeneratedCV } from "../../types/cv";
+import { useAuth } from "../../context/AuthContext";
+import type { OptimizedCv } from "../../services/aiService";
 
 interface CvViewerProps {
   cv: GeneratedCV;
+  optimizedData?: OptimizedCv | null;
+  isLoadingOptimized?: boolean;
+  optimizedError?: string | null;
 }
 
-export default function CvViewer({ cv }: CvViewerProps) {
+export default function CvViewer({
+  cv,
+  optimizedData,
+  isLoadingOptimized = false,
+  optimizedError = null,
+}: CvViewerProps) {
   const [isCopied, setIsCopied] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const cvRef = useRef<HTMLDivElement>(null);
+  const optimizedRef = useRef<HTMLDivElement>(null);
+  const activeExportRef = optimizedData ? optimizedRef : cvRef;
 
-  const contact = cv.contact || {
-    email: "ralc.0595@gmail.com",
-    phone: "0034 614 88 94 73",
-    location: "Madrid, España",
-    linkedin: "linkedin.com/in/robertoantoniolopez25",
-    portfolio: "robertoantonioportfolio.vercel.app",
+  const contact = cv.contact ?? {
+    email: "",
+    phone: "",
+    location: "",
+    linkedin: "",
+    portfolio: "",
   };
 
-  const skillsCat = cv.skillsCategorized || {
-    languages: ["JavaScript", "TypeScript"],
-    frameworks: [
-      "React",
-      "Next.js",
-      "Redux",
-      "Node.js",
-      "Express.js",
-      "Cypress",
-      "Jest",
-      "React Testing Library",
-    ],
-    databases: ["PostgreSQL", "MongoDB", "Supabase"],
-    tools: [
-      "Docker",
-      "Vercel",
-      "AWS S3",
-      "Git",
-      "GitHub",
-      "CI/CD Pipelines",
-      "Postman",
-      "Jira",
-      "Trello",
-      "Notion",
-      "Slack",
-    ],
-    practices: [
-      "Agile",
-      "Scrum",
-      "Kanban",
-      "System Design",
-      "Root Cause Analysis",
-      "Troubleshooting",
-    ],
+  const skillsCat = cv.skillsCategorized ?? {
+    languages: [],
+    frameworks: [],
+    databases: [],
+    tools: [],
+    practices: [],
   };
 
-  const education = cv.education || [
-    {
-      institution: "Zero To Mastery Academy",
-      period: "2023 – Actualidad",
-      degree: "Certificación: Full-Stack Web Development Bootcamp (400 horas prácticas)",
-    },
-    {
-      institution: "Tecnológico de Monterrey (ITESM), México",
-      period: "2015 – 2019",
-      degree: "Ingeniería en Producción Musical Digital",
-      details:
-        "Formación técnica especializada en lógica computacional aplicada, procesamiento de señales, sistemas digitales complejos e integración de hardware y software.",
-    },
-  ];
+  const education = cv.education ?? [];
 
-  const languages = cv.languages || [{ language: "Inglés", level: "C1" }];
+  const languages = cv.languages ?? [];
+  const classicExperience = cv.experience ?? [];
+
+  // Secciones del modo clásico con datos. Se calculan una vez para que
+  // el render, el texto ATS y el PDF usen exactamente el mismo criterio.
+  const hasClassicContact = [
+    contact.email,
+    contact.phone,
+    contact.location,
+    contact.linkedin,
+    contact.portfolio,
+  ].some((value) => value.trim().length > 0);
+  const hasClassicSkills =
+    skillsCat.languages.length +
+      skillsCat.frameworks.length +
+      skillsCat.databases.length +
+      skillsCat.tools.length +
+      skillsCat.practices.length >
+    0;
+  const hasClassicExperience = classicExperience.length > 0;
+  const hasClassicEducation = education.length > 0;
+  const hasClassicLanguages = languages.length > 0;
+
+  const { user } = useAuth();
+
+  const displayName =
+    cv.fullName && !cv.fullName.startsWith("[")
+      ? cv.fullName
+      : [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
+        "Mi CV optimizado";
+
+  const contactLine = [
+    contact.email,
+    contact.phone,
+    contact.location,
+    contact.linkedin,
+    contact.portfolio,
+  ]
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0)
+    .join(" | ");
 
   const generateCleanAtsText = () => {
-    let text = `${cv.fullName.toUpperCase()}\n`;
-    text += `${cv.targetRole}\n`;
-    text += `${contact.email} | ${contact.phone} | ${contact.location} | ${contact.linkedin} | ${contact.portfolio}\n\n`;
-
-    text += `HABILIDADES\n`;
-    text += `Lenguajes: ${skillsCat.languages.join(", ")}\n`;
-    text += `Frameworks: ${skillsCat.frameworks.join(", ")}\n`;
-    text += `Bases de datos: ${skillsCat.databases.join(", ")}\n`;
-    text += `Tecnologías / Herramientas: ${skillsCat.tools.join(", ")}\n`;
-    text += `Prácticas: ${skillsCat.practices.join(", ")}\n\n`;
-
-    text += `EXPERIENCIA\n`;
-    cv.experience.forEach((exp) => {
-      text += `${exp.company} | ${exp.period}\n`;
-      text += `${exp.role}\n`;
-      exp.achievements.forEach((ach) => {
-        text += `• ${ach}\n`;
+    if (optimizedData) {
+      let text = `${displayName.toUpperCase()}\n`;
+      text += `${cv.targetRole}\n`;
+      if (contactLine) text += `${contactLine}\n`;
+      text += `\nRESUMEN OPTIMIZADO\n${optimizedData.summary}\n\n`;
+      text += `EXPERIENCIA ADAPTADA\n`;
+      optimizedData.experiences.forEach((exp) => {
+        text += `${exp.company}\n${exp.role}\n${exp.description}\n\n`;
       });
-      text += `\n`;
-    });
+      if (optimizedData.skillsMatched.length > 0) {
+        text += `HABILIDADES VALIDADAS\n${optimizedData.skillsMatched.join(", ")}\n\n`;
+      }
+      if (optimizedData.keywordsInjected.length > 0) {
+        text += `KEYWORDS INYECTADAS\n${optimizedData.keywordsInjected.join(", ")}\n\n`;
+      }
+      if (optimizedData.keywordsSkipped.length > 0) {
+        text += `KEYWORDS OMITIDAS\n${optimizedData.keywordsSkipped.join(", ")}\n\n`;
+      }
+      return text.trim();
+    }
 
-    text += `EDUCACIÓN\n`;
-    education.forEach((edu) => {
-      text += `${edu.institution} | ${edu.period}\n`;
-      text += `${edu.degree}\n`;
-      if (edu.details) text += `${edu.details}\n`;
-      text += `\n`;
-    });
+    let text = `${displayName.toUpperCase()}\n`;
+    text += `${cv.targetRole}\n`;
+    if (contactLine) text += `${contactLine}\n`;
+    text += `\n`;
 
-    text += `IDIOMAS\n`;
-    languages.forEach((lang) => {
-      text += `${lang.language}: ${lang.level}\n`;
-    });
+    if (hasClassicSkills) {
+      text += `HABILIDADES\n`;
+      if (skillsCat.languages.length > 0) {
+        text += `Lenguajes: ${skillsCat.languages.join(", ")}\n`;
+      }
+      if (skillsCat.frameworks.length > 0) {
+        text += `Frameworks: ${skillsCat.frameworks.join(", ")}\n`;
+      }
+      if (skillsCat.databases.length > 0) {
+        text += `Bases de datos: ${skillsCat.databases.join(", ")}\n`;
+      }
+      if (skillsCat.tools.length > 0) {
+        text += `Tecnologías / Herramientas: ${skillsCat.tools.join(", ")}\n`;
+      }
+      if (skillsCat.practices.length > 0) {
+        text += `Prácticas: ${skillsCat.practices.join(", ")}\n`;
+      }
+      text += `\n`;
+    }
+
+    if (hasClassicExperience) {
+      text += `EXPERIENCIA\n`;
+      classicExperience.forEach((exp) => {
+        text += `${exp.company} | ${exp.period}\n`;
+        text += `${exp.role}\n`;
+        exp.achievements.forEach((ach) => {
+          text += `• ${ach}\n`;
+        });
+        text += `\n`;
+      });
+    }
+
+    if (hasClassicEducation) {
+      text += `EDUCACIÓN\n`;
+      education.forEach((edu) => {
+        text += `${edu.institution} | ${edu.period}\n`;
+        text += `${edu.degree}\n`;
+        if (edu.details) text += `${edu.details}\n`;
+        text += `\n`;
+      });
+    }
+
+    if (hasClassicLanguages) {
+      text += `IDIOMAS\n`;
+      languages.forEach((lang) => {
+        text += `${lang.language}: ${lang.level}\n`;
+      });
+    }
 
     return text.trim();
   };
@@ -131,7 +183,7 @@ export default function CvViewer({ cv }: CvViewerProps) {
   };
 
   const handleDownloadPDF = async () => {
-    const element = cvRef.current;
+    const element = activeExportRef.current;
     if (!element) return;
 
     setIsGeneratingPdf(true);
@@ -177,7 +229,8 @@ export default function CvViewer({ cv }: CvViewerProps) {
           </span>
           <span className="text-slate-500">•</span>
           <span className="text-blue-400 flex items-center gap-1 font-medium">
-            <Sparkles className="w-3 h-3" /> 98% Match IA
+            <Sparkles className="w-3 h-3" />{" "}
+            {optimizedData ? "CV optimizado" : "98% Match IA"}
           </span>
         </div>
 
@@ -220,56 +273,189 @@ export default function CvViewer({ cv }: CvViewerProps) {
       </div>
 
       {/* 📄 EL DOCUMENTO CV ESTILO TECH */}
+      {isLoadingOptimized ? (
+        <p className="text-xs text-blue-400">
+          Generando CV optimizado con IA…
+        </p>
+      ) : (
+        optimizedError && (
+          <p className="text-xs text-red-400">{optimizedError}</p>
+        )
+      )}
+      {!isLoadingOptimized && !optimizedError && optimizedData && (
+        <div className="w-full flex justify-center overflow-x-auto pb-4">
+          <article
+            ref={optimizedRef}
+            className="bg-white text-black font-sans leading-relaxed w-[794px] min-w-[794px] p-10 border border-slate-200 shadow-xl relative select-text"
+            style={{ boxSizing: "border-box" }}
+          >
+            <header className="text-center pb-2 mb-3">
+              <h1 className="text-2xl font-bold text-black tracking-tight uppercase">
+                {displayName}
+              </h1>
+              <p className="text-xs font-semibold text-black mt-0.5">
+                {cv.targetRole}
+              </p>
+              {contactLine && (
+                <p className="text-[11px] text-black mt-1 leading-normal">
+                  {contactLine}
+                </p>
+              )}
+            </header>
+
+            <section className="mb-3.5">
+              <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
+                Resumen optimizado
+              </h2>
+              <p className="text-[11px] text-black leading-relaxed whitespace-pre-line">
+                {optimizedData.summary}
+              </p>
+            </section>
+
+            {optimizedData.skillsMatched.length > 0 && (
+              <section className="mb-3.5">
+                <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
+                  Habilidades validadas
+                </h2>
+                <div className="flex flex-wrap gap-1.5">
+                  {optimizedData.skillsMatched.map((skill) => (
+                    <span
+                      key={skill}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-300"
+                    >
+                      {skill}
+                    </span>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <section className="mb-3.5">
+              <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
+                Experiencia adaptada
+              </h2>
+              <div className="space-y-3">
+                {optimizedData.experiences.map((exp, index) => (
+                  <div key={`${exp.role}-${exp.company}-${index}`}>
+                    <div className="flex justify-between items-baseline text-[11px]">
+                      <span className="font-bold text-black">
+                        {exp.company}
+                      </span>
+                      <span className="text-black font-medium">{exp.role}</span>
+                    </div>
+                    <p className="text-[11px] text-black leading-relaxed whitespace-pre-line mt-1">
+                      {exp.description}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            {optimizedData.keywordsInjected.length > 0 && (
+              <section className="mb-3.5">
+                <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
+                  Keywords inyectadas con IA
+                </h2>
+                <div className="flex flex-wrap gap-1.5">
+                  {optimizedData.keywordsInjected.map((keyword) => (
+                    <span
+                      key={keyword}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-100 text-emerald-900 border border-emerald-300"
+                    >
+                      + {keyword}
+                    </span>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {optimizedData.keywordsSkipped.length > 0 && (
+              <section>
+                <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
+                  Keywords omitidas por honestidad
+                </h2>
+                <div className="flex flex-wrap gap-1.5">
+                  {optimizedData.keywordsSkipped.map((keyword) => (
+                    <span
+                      key={keyword}
+                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-500 border border-slate-300"
+                    >
+                      − {keyword}
+                    </span>
+                  ))}
+                </div>
+              </section>
+            )}
+          </article>
+        </div>
+      )}
+
+      {!isLoadingOptimized && !optimizedError && !optimizedData && (
       <div className="w-full flex justify-center overflow-x-auto pb-4">
         <article
           ref={cvRef}
           className="bg-white text-black font-sans leading-relaxed w-[794px] min-w-[794px] p-10 border border-slate-200 shadow-xl relative select-text"
           style={{ boxSizing: "border-box" }}
         >
-          {/* Encabezado ATS Oficial Roberto A. López Calatayud */}
+          {/* Encabezado ATS con identidad real: nombre del CV o del usuario logueado. */}
           <header className="text-center pb-2 mb-3">
             <h1 className="text-2xl font-bold text-black tracking-tight uppercase">
-              {cv.fullName}
+              {displayName}
             </h1>
             <p className="text-xs font-semibold text-black mt-0.5">
               {cv.targetRole}
             </p>
-            <p className="text-[11px] text-black mt-1 leading-normal">
-              {contact.email} | {contact.phone} | {contact.location} | {contact.linkedin} | {contact.portfolio}
-            </p>
+            {hasClassicContact && (
+              <p className="text-[11px] text-black mt-1 leading-normal">
+                {contactLine}
+              </p>
+            )}
           </header>
 
           {/* Sección Habilidades Categorizadas */}
+          {hasClassicSkills && (
           <section className="mb-3.5">
             <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
               Habilidades
             </h2>
             <div className="text-[11px] text-black space-y-0.5">
+              {skillsCat.languages.length > 0 && (
               <p>
                 <strong className="font-bold">Lenguajes:</strong> {skillsCat.languages.join(", ")}
               </p>
+              )}
+              {skillsCat.frameworks.length > 0 && (
               <p>
                 <strong className="font-bold">Frameworks:</strong> {skillsCat.frameworks.join(", ")}
               </p>
+              )}
+              {skillsCat.databases.length > 0 && (
               <p>
                 <strong className="font-bold">Bases de datos:</strong> {skillsCat.databases.join(", ")}
               </p>
+              )}
+              {skillsCat.tools.length > 0 && (
               <p>
                 <strong className="font-bold">Tecnologías / Herramientas:</strong> {skillsCat.tools.join(", ")}
               </p>
+              )}
+              {skillsCat.practices.length > 0 && (
               <p>
                 <strong className="font-bold">Prácticas:</strong> {skillsCat.practices.join(", ")}
               </p>
+              )}
             </div>
           </section>
+          )}
 
           {/* Sección Experiencia Laboral */}
+          {hasClassicExperience && (
           <section className="mb-3.5">
             <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
               Experiencia
             </h2>
             <div className="space-y-3">
-              {cv.experience.map((exp) => (
+              {classicExperience.map((exp) => (
                 <div key={exp.id}>
                   <div className="flex justify-between items-baseline text-[11px]">
                     <span className="font-bold text-black">{exp.company}</span>
@@ -289,8 +475,10 @@ export default function CvViewer({ cv }: CvViewerProps) {
               ))}
             </div>
           </section>
+          )}
 
           {/* Sección Educación */}
+          {hasClassicEducation && (
           <section className="mb-3.5">
             <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
               Educación
@@ -312,8 +500,10 @@ export default function CvViewer({ cv }: CvViewerProps) {
               ))}
             </div>
           </section>
+          )}
 
           {/* Sección Idiomas */}
+          {hasClassicLanguages && (
           <section>
             <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
               Idiomas
@@ -326,8 +516,10 @@ export default function CvViewer({ cv }: CvViewerProps) {
               ))}
             </div>
           </section>
+          )}
         </article>
       </div>
+      )}
     </div>
   );
 }

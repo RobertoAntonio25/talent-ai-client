@@ -27,5 +27,9 @@ export function mapResultToJob(r: BackendSearchResult): JobApplication {
     jobOfferId: r.jobOfferId,
     backendStatus: r.status,
     matchReason: r.matchReason || undefined,
+    // Fase 3 (c1): detalle para el JobDetailModal (descripción, link y faltantes).
+    description: offer.description || undefined,
+    originalUrl: offer.originalUrl || undefined,
+    missingSkills: Array.isArray(r.missingSkills) ? r.missingSkills : [],
   };
 }

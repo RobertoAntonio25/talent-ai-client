@@ -16,6 +16,7 @@ import JobFormModal from "../components/kanban/JobFormModal";
 import DeleteConfirmModal from "../components/kanban/DeleteConfirmModal";
 import { useJobs } from "../hooks/useJobs";
 import { useCv } from "../hooks/useCv";
+import { useOptimizer } from "../hooks/useOptimizer.hook";
 import type { GeneratedCV } from "../types/cv";
 import type { JobApplication } from "../types/kanban";
 
@@ -32,6 +33,8 @@ export default function Dashboard() {
   } = useJobs();
 
   const { cv, isUploading, uploadError, upload } = useCv();
+  // Fase 3: optimizador ATS (Fase 2) consumido por el JobDetailModal del Kanban.
+  const optimizer = useOptimizer();
   const [searchQuery, setSearchQuery] = useState("");
   const [isCvModalOpen, setIsCvModalOpen] = useState(false);
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
@@ -234,6 +237,7 @@ export default function Dashboard() {
           onRetry={fetchJobs}
           onRefresh={fetchJobs}
           searchQuery={searchQuery}
+          optimizer={optimizer}
         />
       </div>
 
