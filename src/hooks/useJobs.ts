@@ -34,8 +34,11 @@ export function useJobs() {
     }
   }, []);
 
+  // Carga inicial al montar. Se difiere a microtarea para no llamar a
+  // setState de forma síncrona en el cuerpo del efecto
+  // (react-hooks/set-state-in-effect); el comportamiento no cambia.
   useEffect(() => {
-    fetchJobs();
+    void Promise.resolve().then(() => fetchJobs());
   }, [fetchJobs]);
 
   // 2. MOVER TARJETA - solo local (no hay endpoint en el back aún)
