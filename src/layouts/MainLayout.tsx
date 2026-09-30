@@ -1,22 +1,14 @@
-import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { Outlet, Link, useLocation } from "react-router-dom";
+
 import {
   Sparkles,
   LayoutDashboard,
   Settings as SettingsIcon,
-  LogIn,
 } from "lucide-react";
+import UserDropdown from "../components/navigation/UserDropdown";
 
 export default function MainLayout() {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { user, logout } = useAuth(); // <--- obtenemos user y logout
-
-  const handleLogout = () => {
-    logout();
-    localStorage.removeItem("token");
-    navigate("/login");
-  };
 
   const isFullPage =
     location.pathname === "/" ||
@@ -82,34 +74,9 @@ export default function MainLayout() {
             </Link>
           </nav>
 
-          {/* Perfil / Acceso Rápido */}
+          {/* Perfil / Acceso Rápido (Fase 5: dropdown de usuario) */}
           <div className="flex items-center gap-3">
-            <div className="hidden md:flex items-center gap-3 pl-3 border-l border-slate-800">
-              <div className="flex items-center gap-2.5 bg-slate-900/90 border border-slate-800 rounded-xl px-3 py-1.5">
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center font-bold text-xs text-white shadow-inner">
-                  {user
-                    ? `${user.firstName?.[0] || ""}${user.lastName?.[0] || ""}`
-                    : "U"}
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-xs font-semibold text-slate-200 leading-tight">
-                    {user ? `${user.firstName} ${user.lastName}` : "Usuario"}
-                  </span>
-                  <span className="text-[10px] text-blue-400 font-medium">
-                    {user?.email || "Sesión activa"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <button
-              onClick={handleLogout}
-              className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-red-400 px-2.5 py-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
-              title="Cerrar sesión y volver al login"
-            >
-              <LogIn className="w-3.5 h-3.5" />
-              <span className="hidden sm:inline">Salir</span>
-            </button>
+            <UserDropdown />
           </div>
         </div>
       </header>
