@@ -112,7 +112,7 @@ export interface UpdateOptimizedResult {
 
 // Funciones de comunicacion con el back
 
-//Subir PDF y extraer perfil con groq
+//Subir PDF y extraer perfil con IA
 export function uploadCv(file: File) {
   if (file.type !== "application/pdf") {
     throw new Error("Solo se permiten archivos PDF.");
@@ -127,7 +127,7 @@ export function uploadCv(file: File) {
   return apiClient<CvExtractorResponse>("/api/ai/cv-extractor", {
     method: "POST",
     data: form,
-    // Groq + cold start Render: 30-50s despertar + 30-60s extracción
+    // IA + cold start Render: 30-50s despertar + 30-60s extracción
     timeoutMs: 120000,
   });
 }
@@ -137,7 +137,7 @@ export function runMatcher() {
   return apiClient<MatcherRunResponse>("/api/ai/matcher", {
     method: "POST",
     data: {},
-    // Orquestador secuencial sobre Groq: puede tardar minutos con muchos PENDING
+    // Orquestador secuencial sobre IA: puede tardar minutos con muchos PENDING
     timeoutMs: 180000,
   });
 }

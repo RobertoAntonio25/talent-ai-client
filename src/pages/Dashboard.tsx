@@ -12,12 +12,12 @@ import {
 import KanbanBoard from "../components/KanBoard";
 import Modal from "../components/ui/Modal";
 import CvViewer from "../components/ui/CvViewer";
+import EmptyCvState from "../components/ui/EmptyCvState";
 import JobFormModal from "../components/kanban/JobFormModal";
 import DeleteConfirmModal from "../components/kanban/DeleteConfirmModal";
 import { useJobs } from "../hooks/useJobs";
 import { useCv } from "../hooks/useCv";
 import { useOptimizer } from "../hooks/useOptimizer.hook";
-import type { GeneratedCV } from "../types/cv";
 import type { JobApplication } from "../types/kanban";
 
 export default function Dashboard() {
@@ -82,20 +82,8 @@ export default function Dashboard() {
     }
   };
 
-  const displayCv: GeneratedCV = cv ?? {
-    fullName: "[Sube tu CV en PDF para verlo aquí]",
-    targetRole: "Sin CV cargado",
-    summary:
-      "Sube tu CV en PDF desde Configuración o desde este modal para generar tu perfil optimizado por IA.",
-    contact: {
-      email: "[tu email]",
-      phone: "[tu teléfono]",
-      location: "[tu ubicación]",
-      linkedin: "[tu linkedin]",
-      portfolio: "[tu portfolio]",
-    },
-    skills: [],
-    experience: [],
+  const handleCvUpload = (file: File) => {
+    void upload(file).catch(() => {});
   };
 
   return (
@@ -122,8 +110,8 @@ export default function Dashboard() {
           <button
             onClick={() => fetchJobs()}
             disabled={isLoading}
-            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-50"
-            title="Recargar postulaciones"
+            className="p-2.5 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-50 cursor-pointer"
+            title="Recargar ofertas y postulaciones"
           >
             <RefreshCw
               className={`w-4 h-4 ${isLoading ? "animate-spin text-blue-400" : ""}`}
@@ -132,15 +120,17 @@ export default function Dashboard() {
 
           <button
             onClick={handleOpenCreateModal}
-            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-sm active:scale-95"
+            className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
+            title="Agrega una nueva oferta manualmente"
           >
             <Plus className="w-4 h-4 text-blue-400" />
-            <span>Nueva Postulación</span>
+            <span>Agregar Oferta</span>
           </button>
 
           <button
             onClick={() => setIsCvModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-200 active:scale-95 group"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-200 active:scale-95 group cursor-pointer"
+            title="Tu CV genérico Potenciado con IA para pasar los filtros ATS"
           >
             <Sparkles className="w-4 h-4 text-blue-200 group-hover:rotate-12 transition-transform" />
             <span>Ver CV Optimizado con IA</span>
@@ -156,7 +146,7 @@ export default function Dashboard() {
           </div>
           <div>
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">
-              Total Postulaciones
+              Total de Ofertas
             </span>
             <span className="text-xl font-bold text-white">
               {isLoading ? "-" : totalJobs}
@@ -248,34 +238,22 @@ export default function Dashboard() {
         title="Currículum Optimizado por Talent-AI ✨"
         subtitle="Generado automáticamente con palabras clave y formato ATS según tu perfil profesional."
       >
-        <div className="mb-4 flex flex-col gap-2">
-          <label className="text-xs font-semibold text-slate-300">
-            Subir CV en PDF (máx 10MB)
-          </label>
-          <input
-            type="file"
-            accept="application/pdf"
-            disabled={isUploading}
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              if (file) void upload(file).catch(() => {});
-              e.target.value = "";
-            }}
-            className="text-xs text-slate-400 file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-blue-600 file:text-white file:text-xs file:font-semibold hover:file:bg-blue-500 file:cursor-pointer disabled:opacity-50"
+        {!cv ? (
+          <EmptyCvState
+            isUploading={isUploading}
+            uploadError={uploadError}
+            onUpload={handleCvUpload}
           />
-          {isUploading && (
-            <p className="text-xs text-blue-400">
-              Analizando PDF con IA… puede tardar 1-2 min la primera vez.
-            </p>
-          )}
-          {uploadError && <p className="text-xs text-red-400">{uploadError}</p>}
-          {cv && !isUploading && (
-            <p className="text-xs text-emerald-400">
-              CV cargado desde tu último análisis.
-            </p>
-          )}
-        </div>
-        <CvViewer cv={displayCv} />
+        ) : (
+          <>
+            {!isUploading && (
+              <p className="mb-4 text-xs text-emerald-400">
+                CV cargado desde tu último análisis.
+              </p>
+            )}
+            <CvViewer cv={cv} />
+          </>
+        )}
       </Modal>
 
       {/* 📝 MODAL DE CREACIÓN / EDICIÓN DE POSTULACIÓN */}

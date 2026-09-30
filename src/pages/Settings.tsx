@@ -161,8 +161,7 @@ export default function Settings() {
           </div>
           {isUploading && (
             <p className="text-xs text-blue-400">
-              Analizando PDF con IA… puede tardar 1-2 min la primera vez (Render
-              + Groq).
+              Analizando PDF con IA… puede tardar 1-2 min la primera vez.
             </p>
           )}
           {uploadError && <p className="text-xs text-red-400">{uploadError}</p>}

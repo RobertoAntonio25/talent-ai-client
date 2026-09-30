@@ -1,5 +1,5 @@
 // src/services/optimizer.service.ts
-// Frontend-only: consume backend Render vía apiClient (nunca Supabase/Groq directo).
+// Frontend-only: consume backend Render vía apiClient.
 import { apiClient, ApiError } from "./apiClient";
 import type {
   OptimizedCv,
@@ -31,7 +31,8 @@ interface OptimizeGetResponse {
 }
 
 function assertJobOfferId(jobOfferId: string): void {
-  if (!jobOfferId) throw new ApiError("jobOfferId es requerido.", 400, "VALIDATION_ERROR");
+  if (!jobOfferId)
+    throw new ApiError("jobOfferId es requerido.", 400, "VALIDATION_ERROR");
 }
 
 function parseCoverLetterRaw(raw: string | null): CoverLetterOutput | null {
@@ -79,21 +80,35 @@ export async function fetchOrGenerateCoverLetterByJobOffer(
   } catch (e) {
     if (!(e instanceof ApiError) || e.status !== 404) throw e;
   }
-  const generated = await apiClient<CoverLetterPostResponse>("/api/ai/cover-letter", {
-    method: "POST",
-    data: { jobOfferId },
-    timeoutMs: OPTIMIZE_TIMEOUT_MS,
-  });
+  const generated = await apiClient<CoverLetterPostResponse>(
+    "/api/ai/cover-letter",
+    {
+      method: "POST",
+      data: { jobOfferId },
+      timeoutMs: OPTIMIZE_TIMEOUT_MS,
+    },
+  );
   return generated.coverLetter;
 }
 
-export function saveOptimizedCvPatchByJobOffer(jobOfferId: string, patch: CvPatch) {
+export function saveOptimizedCvPatchByJobOffer(
+  jobOfferId: string,
+  patch: CvPatch,
+) {
   assertJobOfferId(jobOfferId);
   if (!patch || Object.keys(patch).length === 0) {
-    throw new ApiError("El patch no puede estar vacío.", 400, "VALIDATION_ERROR");
+    throw new ApiError(
+      "El patch no puede estar vacío.",
+      400,
+      "VALIDATION_ERROR",
+    );
   }
   return apiClient<{ jobOfferId: string; updated: boolean }>(
     `/api/ai/optimize/${jobOfferId}`,
-    { method: "PATCH", data: { optimizedCv: patch }, timeoutMs: READ_TIMEOUT_MS },
+    {
+      method: "PATCH",
+      data: { optimizedCv: patch },
+      timeoutMs: READ_TIMEOUT_MS,
+    },
   );
 }
