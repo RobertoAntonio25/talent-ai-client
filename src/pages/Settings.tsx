@@ -14,6 +14,7 @@ import {
 import { useCv } from "../hooks/useCv";
 import Toggle from "../components/ui/Toggle";
 import { triggerManualSearch } from "../services/jobsService";
+import { runMatcher } from "../services/aiService";
 
 const LAST_SEARCH_KEY = "lastManualSearchAt";
 
@@ -54,11 +55,24 @@ export default function Settings() {
       const nowIso = new Date().toISOString();
       localStorage.setItem(LAST_SEARCH_KEY, nowIso);
       setLastSearchAt(nowIso);
-      setSearchSuccess(
+      const baseMsg =
         total === 0
           ? "Búsqueda completada, pero no se encontraron ofertas con tu perfil actual. Prueba a actualizar tu CV."
-          : `¡Búsqueda completada! Se sincronizaron ${total} ofertas relevantes en el Tablero Kanban.`,
-      );
+          : `¡Búsqueda completada! Se sincronizaron ${total} ofertas relevantes en el Tablero Kanban.`;
+      // Fase 3: las ofertas nuevas entran como PENDING; el matcher las puntúa
+      // con IA y crea los matches (antes no lo disparaba nadie desde la app).
+      try {
+        const matcher = await runMatcher();
+        setSearchSuccess(
+          matcher.processed === 0
+            ? `${baseMsg} La IA no encontró ofertas pendientes por evaluar.`
+            : `${baseMsg} La IA evaluó ${matcher.processed} de ellas: ${matcher.matches} compatibles.`,
+        );
+      } catch {
+        setSearchSuccess(
+          `${baseMsg} El análisis de compatibilidad con IA no se pudo completar; vuelve a intentarlo en unos minutos.`,
+        );
+      }
     } catch (e) {
       setSearchError(
         e instanceof Error ? e.message : "Error al lanzar la búsqueda.",
@@ -230,7 +244,7 @@ export default function Settings() {
             {isSearching ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Rastreando... puede tardar 1-3 min</span>
+                <span>Rastreando y analizando con IA…</span>
               </>
             ) : (
               <>
