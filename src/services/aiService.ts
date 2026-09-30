@@ -51,7 +51,68 @@ export interface SingleMatchResponse {
   persisted: boolean;
   applicationCreated: boolean;
 }
+//ATS KILLER Tipos
+export interface OptimizedExperience {
+  role: string;
+  company: string;
+  description: string;
+}
 
+export interface OptimizedCv {
+  summary: string;
+  experiences: OptimizedExperience[];
+  skillsMatched: string[];
+  keywordsInjected: string[];
+  keywordsSkipped: string[];
+}
+
+export interface CoverLetterOutput {
+  letter: string;
+  emailSubject: string;
+  emailBody: string;
+}
+
+export interface OptimizeOfferResult {
+  jobOfferId: string;
+  optimizedCv: OptimizedCv;
+  cached: boolean;
+  persisted: boolean;
+}
+
+export interface CoverLetterOfferResult {
+  jobOfferId: string;
+  coverLetter: CoverLetterOutput;
+  cached: boolean;
+  persisted: boolean;
+}
+
+export interface GetOptimizedResult {
+  jobOfferId: string;
+  optimizedCv: OptimizedCv;
+  coverLetter: string | null;
+}
+
+export interface OptimizedCvPatch {
+  summary?: string;
+  experiences?: OptimizedExperience[];
+  skillsMatched?: string[];
+  keywordsInjected?: string[];
+  keywordsSkipped?: string[];
+}
+
+export interface UpdateOptimizedPayload {
+  optimizedCv?: OptimizedCvPatch;
+  adaptedCv?: OptimizedCvPatch;
+  coverLetter?: string;
+}
+export interface UpdateOptimizedResult {
+  jobOfferId: string;
+  updated: boolean;
+}
+
+// Funciones de comunicacion con el back
+
+//Subir PDF y extraer perfil con groq
 export function uploadCv(file: File) {
   if (file.type !== "application/pdf") {
     throw new Error("Solo se permiten archivos PDF.");
@@ -71,6 +132,7 @@ export function uploadCv(file: File) {
   });
 }
 
+//Orquestador por lotes
 export function runMatcher() {
   return apiClient<MatcherRunResponse>("/api/ai/matcher", {
     method: "POST",
@@ -80,6 +142,7 @@ export function runMatcher() {
   });
 }
 
+//Evaluar una oferta individual
 export function evaluateMatch(jobOfferId: string) {
   if (!jobOfferId) {
     throw new Error("jobOfferId es requerido para evaluar el match.");
@@ -88,5 +151,58 @@ export function evaluateMatch(jobOfferId: string) {
     method: "POST",
     data: { jobOfferId },
     timeoutMs: 120000,
+  });
+}
+
+//ATS Killer: Generar o recuperar de caché el cv optimizado para una oferta
+
+export function optimizeCvForOffer(jobOfferId: string) {
+  if (!jobOfferId) {
+    throw new Error("jobOfferId es requerido para optimizar el CV.");
+  }
+  return apiClient<OptimizeOfferResult>("/api/ai/optimize", {
+    method: "POST",
+    data: { jobOfferId },
+    timeoutMs: 90000,
+  });
+}
+
+//ATS Killer: Generar o recuperar de caché la carta de presentación
+export function generateCoverLetterForOffer(jobOfferId: string) {
+  if (!jobOfferId) {
+    throw new Error("jobOfferId es requerido para generar la carta.");
+  }
+  return apiClient<CoverLetterOfferResult>("/api/ai/cover-letter", {
+    method: "POST",
+    data: { jobOfferId },
+    timeoutMs: 90000,
+  });
+}
+
+// ATS Killer: Obtener el CV optimizado ya guardado en la BD
+export function getOptimizedCvForOffer(jobOfferId: string) {
+  if (!jobOfferId) {
+    throw new Error("jobOfferId es requerido para consultar el CV optimizado.");
+  }
+  return apiClient<GetOptimizedResult>(`/api/ai/optimize/${jobOfferId}`, {
+    method: "GET",
+    timeoutMs: 30000,
+  });
+}
+
+// ATS Killer: Guardar modificaciones manuales en el CV o Carta (PATCH parcial)
+export function updateOptimizedCvForOffer(
+  jobOfferId: string,
+  patch: UpdateOptimizedPayload,
+) {
+  if (!jobOfferId) {
+    throw new Error(
+      "jobOfferId es requerido para actualizar el CV optimizado.",
+    );
+  }
+  return apiClient<UpdateOptimizedResult>(`/api/ai/optimize/${jobOfferId}`, {
+    method: "PATCH",
+    data: patch,
+    timeoutMs: 30000,
   });
 }
