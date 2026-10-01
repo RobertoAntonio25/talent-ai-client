@@ -25,6 +25,7 @@ export default function Dashboard() {
     jobs,
     isLoading,
     syncError,
+    actionError,
     fetchJobs,
     moveJob,
     deleteJob,
@@ -69,15 +70,19 @@ export default function Dashboard() {
     jobData: Omit<JobApplication, "id" | "date"> & { id?: string },
   ) => {
     if (jobData.id) {
-      updateJob(jobData.id, jobData);
+      // 6.5 + 6.6: al editar se persiste TODO — contenido (PATCH de la
+      // oferta, con rollback) y estado (PUT de la aplicación, con rollback).
+      void updateJob(jobData.id, jobData);
+      void moveJob(jobData.id, jobData.status);
     } else {
-      addJob(jobData);
+      // Fase 6.5: crear es un POST real en el backend (async + refetch).
+      void addJob(jobData);
     }
   };
 
   const handleDeleteConfirm = () => {
     if (deletingJob) {
-      deleteJob(deletingJob.id);
+      void deleteJob(deletingJob.id);
       setDeletingJob(null);
     }
   };
@@ -220,7 +225,7 @@ export default function Dashboard() {
         <KanbanBoard
           jobs={jobs}
           isLoading={isLoading}
-          syncError={syncError}
+          syncError={actionError ?? syncError}
           onMoveJob={moveJob}
           onEditJob={handleOpenEditModal}
           onDeleteJob={(job) => setDeletingJob(job)}
