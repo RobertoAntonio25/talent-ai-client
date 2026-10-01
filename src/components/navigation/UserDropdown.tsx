@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useCv } from "../../hooks/useCv";
+import { ApiError } from "../../services/apiClient";
+import { getPreferences, updatePreferences } from "../../services/profileService";
 import Toggle from "../ui/Toggle";
 
 const PREFS_STORAGE_KEY = "talentPreferences";
@@ -60,6 +62,8 @@ export default function UserDropdown() {
       },
   );
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
+  const [isSavingPrefs, setIsSavingPrefs] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [cvMsg, setCvMsg] = useState<string | null>(null);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
@@ -99,6 +103,32 @@ export default function UserDropdown() {
     };
   }, []);
 
+  // Fase 6.2: el backend es la fuente de verdad; localStorage queda como cache.
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      try {
+        const server = await getPreferences();
+        if (cancelled || !server.hasProfile) return; // sin perfil: se siembra del CV (comportamiento actual)
+        const next: SearchPreferences = {
+          targetRole: server.targetRole ?? "",
+          targetCity: server.targetCity ?? "",
+          wantsRemote: server.wantsRemote ?? false,
+        };
+        setPrefs(next);
+        localStorage.setItem(
+          PREFS_STORAGE_KEY,
+          JSON.stringify({ ...next, updatedAt: new Date().toISOString() }),
+        );
+      } catch {
+        // Sin conexión: seguimos con la cache local (degradación elegante).
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const initials =
     `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`.toUpperCase() ||
     "U";
@@ -109,22 +139,51 @@ export default function UserDropdown() {
     setIsOpen((open) => !open);
     // Cada apertura arranca con feedback limpio.
     setSaveMsg(null);
+    setSaveError(null);
     setCvMsg(null);
     setIsConfirmingDelete(false);
   };
 
-  const handleSavePreferences = () => {
-    const payload: SearchPreferences = {
-      ...prefs,
-      updatedAt: new Date().toISOString(),
-    };
-    localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(payload));
-    setPrefs(payload);
-    setSaveMsg("Preferencias guardadas en este dispositivo.");
-    if (savedTimerRef.current !== null) {
-      window.clearTimeout(savedTimerRef.current);
+  const handleSavePreferences = async () => {
+    setIsSavingPrefs(true);
+    setSaveError(null);
+    setSaveMsg(null);
+
+    const cacheLocal: SearchPreferences = { ...prefs, updatedAt: new Date().toISOString() };
+
+    try {
+      const updated = await updatePreferences({
+        // undefined = "no tocar ese campo"; el back exige al menos uno (wantsRemote va siempre).
+        targetRole: prefs.targetRole.trim() || undefined,
+        targetCity: prefs.targetCity.trim() || undefined,
+        wantsRemote: prefs.wantsRemote,
+      });
+
+      const synced: SearchPreferences = {
+        targetRole: updated.targetRole ?? "",
+        targetCity: updated.targetCity ?? "",
+        wantsRemote: updated.wantsRemote ?? false,
+        updatedAt: new Date().toISOString(),
+      };
+      setPrefs(synced);
+      localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(synced));
+      setSaveMsg("Preferencias guardadas y sincronizadas con tu perfil.");
+    } catch (e) {
+      // No perdemos lo escrito: queda en cache local, pero avisamos de que no sincronizó.
+      localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(cacheLocal));
+      setSaveError(
+        e instanceof ApiError
+          ? e.message
+          : "No se pudieron sincronizar las preferencias. Revisa tu conexión.",
+      );
+    } finally {
+      setIsSavingPrefs(false);
+      if (savedTimerRef.current !== null) window.clearTimeout(savedTimerRef.current);
+      savedTimerRef.current = window.setTimeout(() => {
+        setSaveMsg(null);
+        setSaveError(null);
+      }, 4000);
     }
-    savedTimerRef.current = window.setTimeout(() => setSaveMsg(null), 2500);
   };
 
   const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -260,9 +319,11 @@ export default function UserDropdown() {
 
             <button
               type="button"
-              onClick={handleSavePreferences}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98] cursor-pointer"
+              onClick={() => void handleSavePreferences()}
+              disabled={isSavingPrefs}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
             >
+              {isSavingPrefs ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
               Guardar Preferencias
             </button>
 
@@ -272,9 +333,15 @@ export default function UserDropdown() {
                 {saveMsg}
               </p>
             )}
+            {saveError && (
+              <p className="mt-2 text-[11px] text-red-400 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" />
+                {saveError}
+              </p>
+            )}
             <p className="mt-2 text-[10px] text-slate-500 leading-relaxed">
-              Se guardan en este dispositivo. El motor de búsqueda usa tu perfil
-              base: reemplaza tu CV para sincronizarlo.
+              Se sincronizan con tu perfil. El motor de búsqueda las usará en la
+              próxima búsqueda (cron diario o búsqueda manual).
             </p>
           </div>
 
