@@ -8,6 +8,8 @@ import {
   DollarSign,
   Tag,
   FileText,
+  ExternalLink,
+  Info,
 } from "lucide-react";
 import Modal from "../ui/Modal";
 import type { JobApplication, ColumnStatus } from "../../types/kanban";
@@ -31,6 +33,10 @@ interface FormContentProps {
 
 function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
   const isEditing = Boolean(initialJob);
+  // Extensión 6.6: solo las ofertas manuales tienen contenido editable.
+  // Las del motor son compartidas entre usuarios y su contenido es de solo
+  // lectura (el estado sí se puede cambiar).
+  const contentLocked = isEditing && !initialJob?.isManual;
 
   const [company, setCompany] = useState(initialJob?.company || "");
   const [position, setPosition] = useState(initialJob?.position || "");
@@ -43,6 +49,7 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
     initialJob?.tags ? initialJob.tags.join(", ") : "",
   );
   const [notes, setNotes] = useState(initialJob?.notes || "");
+  const [originalUrl, setOriginalUrl] = useState(initialJob?.originalUrl || "");
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -62,6 +69,7 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
       salary: salary.trim() || undefined,
       tags: tags.length > 0 ? tags : undefined,
       notes: notes.trim() || undefined,
+      originalUrl: originalUrl.trim() || undefined,
     });
 
     onClose();
@@ -69,6 +77,18 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 pt-1">
+      {/* Oferta del motor: contenido de solo lectura (compartida). */}
+      {contentLocked && (
+        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
+          <Info className="w-4 h-4 text-blue-300 flex-shrink-0 mt-0.5" />
+          <p className="text-[11px] text-blue-200 leading-relaxed">
+            Esta oferta viene del motor de búsqueda y es compartida entre
+            usuarios: aquí solo puedes cambiar su <strong>estado</strong>. Las
+            tarjetas creadas a mano sí admiten edición completa.
+          </p>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {/* Empresa */}
         <div>
@@ -82,8 +102,10 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
               required
               value={company}
               onChange={(e) => setCompany(e.target.value)}
+              disabled={contentLocked}
+              maxLength={120}
               placeholder="Ej. Spotify, Stripe, Google"
-              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -100,8 +122,10 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
               required
               value={position}
               onChange={(e) => setPosition(e.target.value)}
+              disabled={contentLocked}
+              maxLength={120}
               placeholder="Ej. Senior Frontend Developer"
-              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -111,7 +135,7 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
         {/* Estado de la Columna */}
         <div>
           <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-            Estado inicial
+            {isEditing ? "Estado" : "Estado inicial"}
           </label>
           <select
             value={status}
@@ -136,8 +160,10 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+              disabled={contentLocked}
+              maxLength={120}
               placeholder="Ej. Remoto, Madrid"
-              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -153,17 +179,38 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
               type="text"
               value={salary}
               onChange={(e) => setSalary(e.target.value)}
+              disabled={contentLocked}
+              maxLength={60}
               placeholder="Ej. €50k - €60k"
-              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
+        </div>
+      </div>
+
+      {/* Enlace de la oferta */}
+      <div>
+        <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+          Enlace de la oferta (opcional)
+        </label>
+        <div className="relative">
+          <ExternalLink className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
+          <input
+            type="url"
+            value={originalUrl}
+            onChange={(e) => setOriginalUrl(e.target.value)}
+            disabled={contentLocked}
+            maxLength={500}
+            placeholder="https://empresa.com/empleo/123"
+            className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          />
         </div>
       </div>
 
       {/* Tags */}
       <div>
         <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-          Tecnologías / Etiquetas (separadas por comas)
+          Tecnologías / Etiquetas (separadas por comas, máx. 10)
         </label>
         <div className="relative">
           <Tag className="w-4 h-4 text-slate-500 absolute left-3 top-3" />
@@ -171,8 +218,9 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
             type="text"
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
+            disabled={contentLocked}
             placeholder="React, TypeScript, Tailwind, Node.js"
-            className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
       </div>
@@ -188,8 +236,10 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
             rows={2}
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
+            disabled={contentLocked}
+            maxLength={500}
             placeholder="Detalles sobre el proceso, contacto de reclutador o requisitos clave..."
-            className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
       </div>

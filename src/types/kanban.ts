@@ -13,6 +13,7 @@ export interface JobApplication {
   notes?: string;
   jobOfferId?: string;
   backendStatus?: string;
+  isManual?: boolean;
   matchReason?: string;
   // Fase 3 (c1): detalle de la oferta para el JobDetailModal.
   description?: string;
