@@ -8,6 +8,7 @@ export interface User {
   lastName?: string;
   role?: string;
   location?: string;
+  phone?: string;
 }
 
 interface AuthContextType {
@@ -17,6 +18,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
+  updateUser: (patch: Partial<User>) => void;
 }
 
 const getInitialAuth = (): { token: string | null; user: User | null } => {
@@ -69,6 +71,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setAuth({ token: newToken, user: newUser });
   };
 
+  // Edición local del perfil (persiste en este dispositivo).
+  const updateUser = useCallback(
+    (patch: Partial<User>) => {
+      setAuth((prev) => {
+        if (!prev.user) return prev;
+        const next = { ...prev.user, ...patch };
+        localStorage.setItem("user", JSON.stringify(next));
+        return { ...prev, user: next };
+      });
+    },
+    [],
+  );
+
   return (
     <AuthContext.Provider
       value={{
@@ -78,6 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         isLoading,
         login,
         logout,
+        updateUser,
       }}
     >
       {children}

@@ -1,76 +1,24 @@
 // src/components/navigation/UserDropdown.tsx
-// Fase 5 (Opción C): menú desplegable del avatar en el Navbar.
-// Permite ver el perfil, ajustar las preferencias básicas de búsqueda (rol,
-// ciudad y modalidad) y gestionar el CV base sin salir de la vista actual.
-// Fase 2b: el toggle remoto se migró al selector `workMode` (ANY por
-// defecto); el back ya no acepta `wantsRemote`.
-// NOTA (Fase 2c pendiente): simplificar este menú a opciones básicas (ver
-// perfil, ver CV, cerrar sesión) y mover las preferencias solo a Settings.
+// Fase 2c (issue edu84gp/Aplika-Jobs#148): el menú vuelve a ser un menú.
+// Solo opciones básicas: ver perfil, gestionar CV base, configuración
+// avanzada y cerrar sesión. Las preferencias de búsqueda viven únicamente
+// en Settings (Fase 2b). Sin caché local de prefs: el back es la fuente
+// de verdad (se limpian `aplikaPreferences`/`talentPreferences` legacy).
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
   AlertCircle,
-  CheckCircle2,
   ChevronDown,
   FileText,
   Loader2,
   LogOut,
-  MapPin,
   Settings as SettingsIcon,
-  Target,
   Trash2,
   Upload,
+  User as UserIcon,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useCv } from "../../hooks/useCv";
-import { ApiError } from "../../services/apiClient";
-import {
-  getPreferences,
-  updatePreferences,
-  type WorkMode,
-} from "../../services/profileService";
-import { WORK_MODE_OPTIONS } from "../../models/preferences.model";
-
-const PREFS_STORAGE_KEY = "aplikaPreferences";
-// Clave anterior (pre-rebrand Talent AI → Aplika): solo se lee para migrar datos existentes.
-const LEGACY_PREFS_STORAGE_KEY = "talentPreferences";
-
-interface SearchPreferences {
-  targetRole: string;
-  targetCity: string;
-  workMode: WorkMode;
-  updatedAt?: string;
-}
-
-function loadStoredPreferences(): SearchPreferences | null {
-  try {
-    // Clave actual (post-rebrand Aplika).
-    const raw = localStorage.getItem(PREFS_STORAGE_KEY);
-    if (raw) return normalizeStoredPreferences(JSON.parse(raw));
-    // Migración rebrand: rescatar las preferencias guardadas con la clave
-    // antigua, normalizándolas al formato actual en el mismo paso.
-    const legacyRaw = localStorage.getItem(LEGACY_PREFS_STORAGE_KEY);
-    if (!legacyRaw) return null;
-    const migrated = normalizeStoredPreferences(JSON.parse(legacyRaw));
-    localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(migrated));
-    localStorage.removeItem(LEGACY_PREFS_STORAGE_KEY);
-    return migrated;
-  } catch {
-    return null;
-  }
-}
-
-// Normaliza la caché local: la anterior a la Fase 2b trae `wantsRemote`
-// (booleano) en vez de `workMode` → true = REMOTE, false/ausente = ANY.
-function normalizeStoredPreferences(
-  parsed: SearchPreferences & { wantsRemote?: boolean },
-): SearchPreferences {
-  return {
-    targetRole: parsed.targetRole ?? "",
-    targetCity: parsed.targetCity ?? "",
-    workMode: parsed.workMode ?? (parsed.wantsRemote ? "REMOTE" : "ANY"),
-  };
-}
 
 export default function UserDropdown() {
   const navigate = useNavigate();
@@ -79,42 +27,28 @@ export default function UserDropdown() {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const savedTimerRef = useRef<number | null>(null);
 
   const [isOpen, setIsOpen] = useState(false);
-  // Preferencias: lo guardado en este dispositivo; si no hay nada aún, se
-  // siembran con lo que la IA ya extrajo del CV (rol objetivo y ubicación).
-  const [prefs, setPrefs] = useState<SearchPreferences>(
-    () =>
-      loadStoredPreferences() ?? {
-        targetRole: cv?.targetRole ?? "",
-        targetCity: cv?.contact?.location ?? "",
-        workMode: "ANY",
-      },
-  );
-  const [saveMsg, setSaveMsg] = useState<string | null>(null);
-  const [isSavingPrefs, setIsSavingPrefs] = useState(false);
-  const [saveError, setSaveError] = useState<string | null>(null);
   const [cvMsg, setCvMsg] = useState<string | null>(null);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
 
-  // Cerrar el menú al hacer click/tap fuera del contenedor, o con Escape.
-  // Los listeners solo existen mientras el menú está abierto.
+  // Fase 2c: la caché de prefs se elimina (el back es la fuente de verdad).
+  useEffect(() => {
+    localStorage.removeItem("aplikaPreferences");
+    localStorage.removeItem("talentPreferences");
+  }, []);
+
+  // Cerrar al hacer click fuera o con Escape (solo mientras está abierto).
   useEffect(() => {
     if (!isOpen) return;
-
-    const handlePointerDown = (event: MouseEvent | TouchEvent) => {
-      const container = containerRef.current;
-      const target = event.target;
-      if (container && target instanceof Node && !container.contains(target)) {
-        setIsOpen(false);
-      }
+    const handlePointerDown = (e: MouseEvent | TouchEvent) => {
+      const c = containerRef.current;
+      const t = e.target;
+      if (c && t instanceof Node && !c.contains(t)) setIsOpen(false);
     };
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsOpen(false);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setIsOpen(false);
     };
-
     document.addEventListener("mousedown", handlePointerDown);
     document.addEventListener("touchstart", handlePointerDown);
     document.addEventListener("keydown", handleKeyDown);
@@ -125,41 +59,6 @@ export default function UserDropdown() {
     };
   }, [isOpen]);
 
-  // Limpieza del temporizador del feedback al desmontar el componente.
-  useEffect(() => {
-    return () => {
-      if (savedTimerRef.current !== null) {
-        window.clearTimeout(savedTimerRef.current);
-      }
-    };
-  }, []);
-
-  // Fase 6.2: el backend es la fuente de verdad; localStorage queda como cache.
-  useEffect(() => {
-    let cancelled = false;
-    void (async () => {
-      try {
-        const server = await getPreferences();
-        if (cancelled || !server.hasProfile) return; // sin perfil: se siembra del CV (comportamiento actual)
-        const next: SearchPreferences = {
-          targetRole: server.targetRole ?? "",
-          targetCity: server.targetCity ?? "",
-          workMode: server.workMode ?? "ANY",
-        };
-        setPrefs(next);
-        localStorage.setItem(
-          PREFS_STORAGE_KEY,
-          JSON.stringify({ ...next, updatedAt: new Date().toISOString() }),
-        );
-      } catch {
-        // Sin conexión: seguimos con la cache local (degradación elegante).
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
   const initials =
     `${user?.firstName?.[0] ?? ""}${user?.lastName?.[0] ?? ""}`.toUpperCase() ||
     "U";
@@ -167,69 +66,21 @@ export default function UserDropdown() {
     [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Usuario";
 
   const handleToggleOpen = () => {
-    setIsOpen((open) => !open);
-    // Cada apertura arranca con feedback limpio.
-    setSaveMsg(null);
-    setSaveError(null);
+    setIsOpen((o) => !o);
     setCvMsg(null);
     setIsConfirmingDelete(false);
   };
 
-  const handleSavePreferences = async () => {
-    setIsSavingPrefs(true);
-    setSaveError(null);
-    setSaveMsg(null);
-
-    const cacheLocal: SearchPreferences = { ...prefs, updatedAt: new Date().toISOString() };
-
-    try {
-      const updated = await updatePreferences({
-        // undefined = "no tocar ese campo"; el back exige al menos uno
-        // (workMode viaja siempre). `wantsRemote` ya no se envía: da 400.
-        targetRole: prefs.targetRole.trim() || undefined,
-        targetCity: prefs.targetCity.trim() || undefined,
-        workMode: prefs.workMode,
-      });
-
-      const synced: SearchPreferences = {
-        targetRole: updated.targetRole ?? "",
-        targetCity: updated.targetCity ?? "",
-        workMode: updated.workMode ?? "ANY",
-        updatedAt: new Date().toISOString(),
-      };
-      setPrefs(synced);
-      localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(synced));
-      setSaveMsg("Preferencias guardadas y sincronizadas con tu perfil.");
-    } catch (e) {
-      // No perdemos lo escrito: queda en cache local, pero avisamos de que no sincronizó.
-      localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(cacheLocal));
-      setSaveError(
-        e instanceof ApiError
-          ? e.message
-          : "No se pudieron sincronizar las preferencias. Revisa tu conexión.",
-      );
-    } finally {
-      setIsSavingPrefs(false);
-      if (savedTimerRef.current !== null) window.clearTimeout(savedTimerRef.current);
-      savedTimerRef.current = window.setTimeout(() => {
-        setSaveMsg(null);
-        setSaveError(null);
-      }, 4000);
-    }
-  };
-
-  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    event.target.value = ""; // Permite volver a elegir el mismo archivo.
+  const handleFileChange = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
     setCvMsg(null);
     try {
       const uploaded = await upload(file);
-      setCvMsg(
-        `✓ CV actualizado (${uploaded.skills.length} habilidades extraídas).`,
-      );
+      setCvMsg(`✓ CV actualizado (${uploaded.skills.length} habilidades).`);
     } catch {
-      // El motivo real queda en uploadError (estado del hook useCv).
+      // El motivo real queda en uploadError (hook useCv).
     }
   };
 
@@ -248,9 +99,10 @@ export default function UserDropdown() {
     navigate("/login");
   };
 
+  const close = () => setIsOpen(false);
+
   return (
     <div ref={containerRef} className="relative">
-      {/* Disparador: avatar con iniciales (siempre visible) + nombre y correo */}
       <button
         type="button"
         onClick={handleToggleOpen}
@@ -270,25 +122,18 @@ export default function UserDropdown() {
           </span>
         </div>
         <ChevronDown
-          className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`w-3.5 h-3.5 text-slate-400 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
 
-      {/* Panel del menú. Sin role="menu" porque contiene campos de formulario
-          (ARIA desaconseja menu en paneles con inputs/switch). */}
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 max-w-[calc(100vw-2rem)] max-h-[calc(100vh-6rem)] overflow-y-auto custom-scrollbar bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl shadow-black/60 z-50 animate-in fade-in zoom-in-95 duration-150">
-          {/* 1. Cabecera: perfil + estado de sesión */}
+        <div className="absolute right-0 top-full mt-2 w-72 max-w-[calc(100vw-2rem)] max-h-[calc(100vh-6rem)] overflow-y-auto custom-scrollbar bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl shadow-black/60 z-50 animate-in fade-in zoom-in-95 duration-150">
           <div className="px-4 py-3.5 bg-slate-950/60 border-b border-slate-800 flex items-center gap-3">
             <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-aplika-lima-500 to-aplika-lima-600 flex items-center justify-center font-bold text-sm text-aplika-night-950 shadow-inner flex-shrink-0">
               {initials}
             </div>
             <div className="min-w-0">
-              <p className="text-sm font-bold text-white truncate">
-                {fullName}
-              </p>
+              <p className="text-sm font-bold text-white truncate">{fullName}</p>
               <p className="text-xs text-slate-400 truncate">
                 {user?.email ?? "Sin correo"}
               </p>
@@ -299,150 +144,71 @@ export default function UserDropdown() {
             </div>
           </div>
 
-          {/* 2. Preferencias de búsqueda */}
-          <div className="px-4 py-3.5 border-b border-slate-800">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold text-slate-300 uppercase tracking-wide mb-3">
-              <Target className="w-3.5 h-3.5 text-aplika-lima-400" />
-              Preferencias de Búsqueda de Empleo
-            </p>
-
-            <label className="block mb-2.5">
-              <span className="text-[11px] text-slate-400 font-medium">
-                Rol deseado
-              </span>
-              <input
-                type="text"
-                value={prefs.targetRole}
-                onChange={(event) =>
-                  setPrefs({ ...prefs, targetRole: event.target.value })
-                }
-                placeholder="Frontend Developer"
-                className="mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-aplika-lima-500/40 focus:border-aplika-lima-500"
-              />
-            </label>
-
-            <label className="block mb-3">
-              <span className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
-                <MapPin className="w-3 h-3" />
-                Ciudad / Ubicación
-              </span>
-              <input
-                type="text"
-                value={prefs.targetCity}
-                onChange={(event) =>
-                  setPrefs({ ...prefs, targetCity: event.target.value })
-                }
-                placeholder="Madrid, España"
-                className="mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-aplika-lima-500/40 focus:border-aplika-lima-500"
-              />
-            </label>
-
-            <label className="block mb-3">
-              <span className="text-[11px] text-slate-400 font-medium">
-                Modalidad
-              </span>
-              <select
-                value={prefs.workMode}
-                onChange={(event) =>
-                  setPrefs({
-                    ...prefs,
-                    workMode: event.target.value as WorkMode,
-                  })
-                }
-                className="mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 cursor-pointer"
-              >
-                {WORK_MODE_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>
-                    {o.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <button
-              type="button"
-              onClick={() => void handleSavePreferences()}
-              disabled={isSavingPrefs}
-              className="w-full flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold text-aplika-night-950 bg-aplika-lima-500 hover:bg-aplika-lima-400 shadow-lg shadow-aplika-lima-500/20 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          <nav className="px-2 py-2 border-b border-slate-800" aria-label="Cuenta">
+            <Link
+              to="/profile"
+              onClick={close}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
             >
-              {isSavingPrefs ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : null}
-              Guardar Preferencias
-            </button>
-
-            {saveMsg && (
-              <p className="mt-2 text-[11px] text-emerald-400 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" />
-                {saveMsg}
-              </p>
-            )}
-            {saveError && (
-              <p className="mt-2 text-[11px] text-red-400 flex items-center gap-1">
-                <AlertCircle className="w-3 h-3" />
-                {saveError}
-              </p>
-            )}
-            <p className="mt-2 text-[10px] text-slate-500 leading-relaxed">
-              Se sincronizan con tu perfil. El motor de búsqueda las usará en la
-              próxima búsqueda (cron diario o búsqueda manual).
-            </p>
-          </div>
-
-          {/* 3. Gestión del CV base */}
-          <div className="px-4 py-3.5 border-b border-slate-800">
-            <p className="flex items-center gap-1.5 text-[11px] font-bold text-slate-300 uppercase tracking-wide mb-3">
-              <FileText className="w-3.5 h-3.5 text-aplika-lima-400" />
-              Gestión de CV Base
-            </p>
-
-            <p
-              className={`text-xs mb-2.5 ${
-                cv ? "text-emerald-400" : "text-slate-500"
-              }`}
+              <UserIcon className="w-4 h-4" />
+              Ver perfil
+            </Link>
+            <Link
+              to="/profile?seccion=cv"
+              onClick={close}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
             >
-              {cv
-                ? `✓ CV Cargado (${cv.skills.length} habilidades extraídas)`
-                : "Sin CV cargado"}
-            </p>
+              <FileText className="w-4 h-4" />
+              Ver/gestionar CV base
+            </Link>
+            <Link
+              to="/settings"
+              onClick={close}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+            >
+              <SettingsIcon className="w-4 h-4" />
+              Configuración avanzada
+            </Link>
+          </nav>
 
+          <div className="px-4 py-3.5 border-b border-slate-800">
+            <p className="text-[11px] font-bold text-slate-300 uppercase tracking-wide mb-2">
+              CV base
+            </p>
+            <p className={`text-xs mb-2.5 ${cv ? "text-emerald-400" : "text-slate-500"}`}>
+              {cv ? `✓ Cargado (${cv.skills.length} habilidades)` : "Sin CV cargado"}
+            </p>
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors disabled:opacity-60 cursor-pointer"
               >
-                {isUploading ? (
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                ) : (
-                  <Upload className="w-3.5 h-3.5" />
-                )}
-                {isUploading ? "Subiendo…" : "Reemplazar CV"}
+                {isUploading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Upload className="w-3.5 h-3.5" />}
+                {isUploading ? "Subiendo…" : "Subir PDF"}
               </button>
-
               <button
                 type="button"
                 onClick={handleDeleteCv}
                 disabled={!cv || isUploading}
-                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-semibold border transition-colors disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
+                className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-semibold border transition-colors disabled:opacity-60 cursor-pointer ${
                   isConfirmingDelete
                     ? "text-white bg-red-600/80 hover:bg-red-600 border-red-500/50"
                     : "text-red-400 bg-slate-800 hover:bg-slate-700 border-slate-700"
                 }`}
               >
                 <Trash2 className="w-3.5 h-3.5" />
-                {isConfirmingDelete ? "¿Confirmar?" : "Eliminar CV"}
+                {isConfirmingDelete ? "¿Confirmar?" : "Eliminar"}
               </button>
             </div>
-
-            {/* Input real de archivo, oculto tras el botón "Reemplazar CV" */}
             <input
               ref={fileInputRef}
               type="file"
               accept="application/pdf"
               className="hidden"
-              onChange={(event) => void handleFileChange(event)}
+              onChange={(e) => void handleFileChange(e)}
             />
-
             {uploadError && (
               <p className="mt-2 text-[11px] text-red-400 flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
@@ -454,16 +220,7 @@ export default function UserDropdown() {
             )}
           </div>
 
-          {/* 4. Cuenta: configuración avanzada + cierre de sesión */}
           <div className="px-2 py-2">
-            <Link
-              to="/settings"
-              onClick={() => setIsOpen(false)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
-            >
-              <SettingsIcon className="w-4 h-4" />
-              Configuración avanzada
-            </Link>
             <button
               type="button"
               onClick={handleLogout}

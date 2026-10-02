@@ -50,5 +50,10 @@ export function mapExtractedToGeneratedCV(
       language: lang.language || "Idioma no especificado",
       level: lang.level || "",
     })),
+    projects: (data.projects ?? []).map((p) => ({
+      name: p.name || "Proyecto sin nombre",
+      technologies: p.technologies ?? [],
+      repoUrl: p.repoUrl || undefined,
+    })),
   };
 }

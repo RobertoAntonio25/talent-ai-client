@@ -59,5 +59,38 @@ export function useCv() {
     localStorage.removeItem(CV_STORAGE_KEY);
   }, []);
 
-  return { cv, isUploading, uploadError, upload, clear };
+  // Alta/edición manual del CV base (persiste en este dispositivo).
+  const saveManual = useCallback(
+    (patch: Partial<GeneratedCV> & { skillsText?: string }) => {
+      const { skillsText, ...rest } = patch;
+      const skills = skillsText?.trim()
+        ? skillsText.split(",").map((s) => s.trim()).filter(Boolean)
+        : undefined;
+      setCv((prev) => {
+        const base: GeneratedCV =
+          prev ?? { fullName: "", targetRole: "", summary: "", skills: [], experience: [] };
+        const next: GeneratedCV = {
+          ...base,
+          ...rest,
+          ...(skills ? { skills } : {}),
+        };
+        localStorage.setItem(CV_STORAGE_KEY, JSON.stringify(next));
+        return next;
+      });
+    },
+    [],
+  );
+
+  // Actualización parcial del CV (la usa la edición manual en /profile).
+  const updateCv = useCallback((patch: Partial<GeneratedCV>) => {
+    setCv((prev) => {
+      const base: GeneratedCV =
+        prev ?? { fullName: "", targetRole: "", summary: "", skills: [], experience: [] };
+      const next: GeneratedCV = { ...base, ...patch };
+      localStorage.setItem(CV_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  return { cv, isUploading, uploadError, upload, clear, saveManual, updateCv };
 }
