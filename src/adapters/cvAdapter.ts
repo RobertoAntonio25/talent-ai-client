@@ -18,7 +18,12 @@ export function mapExtractedToGeneratedCV(
   data: ExtractedCvData,
   user: User | null,
 ): GeneratedCV {
+  // Prioridad: lo que extrajo el CV (PDF) → cuenta del usuario → vacío.
+  // Nunca placeholders: CvViewer oculta la línea de contacto si todo está vacío
+  // (hasClassicContact / contactLine filtran cadenas vacías).
   const fullName =
+    data.fullName ||
+    [data.firstName, data.lastName].filter(Boolean).join(" ") ||
     [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
     "Mi CV optimizado";
 
@@ -27,11 +32,11 @@ export function mapExtractedToGeneratedCV(
     targetRole: data.targetRole || "Perfil profesional",
     summary: data.summary || "Resumen generado por IA a partir de tu PDF.",
     contact: {
-      email: user?.email || "[tu email]",
-      phone: "[tu teléfono]",
-      location: user?.location || data.targetCity || "[tu ubicación]",
-      linkedin: "[tu linkedin]",
-      portfolio: "[tu portfolio]",
+      email: data.email || user?.email || "",
+      phone: data.phone || "",
+      location: data.location || user?.location || data.targetCity || "",
+      linkedin: data.linkedin || "",
+      portfolio: data.portfolio || "",
     },
     skills: data.skills ?? [],
     experience: (data.experiences ?? []).map((exp, i) => ({

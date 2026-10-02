@@ -1,6 +1,15 @@
 import { apiClient } from "./apiClient";
 
 export interface ExtractedCvData {
+  // Datos de contacto que el extractor del backend ya devuelve (src/types/ai.types.ts)
+  fullName?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  location?: string | null;
+  linkedin?: string | null;
+  portfolio?: string | null;
   summary?: string | null;
   skills?: string[] | null;
   targetRole?: string | null;
@@ -52,25 +61,19 @@ export interface SingleMatchResponse {
   applicationCreated: boolean;
 }
 //ATS KILLER Tipos
-export interface OptimizedExperience {
-  role: string;
-  company: string;
-  description: string;
-}
+import type {
+  CoverLetterOutput,
+  OptimizedCv,
+  OptimizedCvPatch,
+  OptimizedExperience,
+} from "../models/optimizer.model";
 
-export interface OptimizedCv {
-  summary: string;
-  experiences: OptimizedExperience[];
-  skillsMatched: string[];
-  keywordsInjected: string[];
-  keywordsSkipped: string[];
-}
-
-export interface CoverLetterOutput {
-  letter: string;
-  emailSubject: string;
-  emailBody: string;
-}
+export type {
+  CoverLetterOutput,
+  OptimizedCv,
+  OptimizedCvPatch,
+  OptimizedExperience,
+};
 
 export interface OptimizeOfferResult {
   jobOfferId: string;
@@ -90,14 +93,6 @@ export interface GetOptimizedResult {
   jobOfferId: string;
   optimizedCv: OptimizedCv;
   coverLetter: string | null;
-}
-
-export interface OptimizedCvPatch {
-  summary?: string;
-  experiences?: OptimizedExperience[];
-  skillsMatched?: string[];
-  keywordsInjected?: string[];
-  keywordsSkipped?: string[];
 }
 
 export interface UpdateOptimizedPayload {

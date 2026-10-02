@@ -1,17 +1,14 @@
 // src/components/ui/CvViewer.tsx
 import { useState, useRef } from "react";
-import {
-  Copy,
-  CheckCheck,
-  Download,
-  Loader2,
-  Sparkles,
-} from "lucide-react";
+import { Copy, CheckCheck, Download, Loader2, Sparkles } from "lucide-react";
 import { toPng } from "html-to-image";
 import { jsPDF } from "jspdf";
 import type { GeneratedCV } from "../../types/cv";
 import { useAuth } from "../../context/AuthContext";
-import type { OptimizedCv } from "../../services/aiService";
+import type {
+  OptimizedCv,
+  OptimizedExperience,
+} from "../../services/aiService";
 
 interface CvViewerProps {
   cv: GeneratedCV;
@@ -92,25 +89,106 @@ export default function CvViewer({
     .filter((value) => value.length > 0)
     .join(" | ");
 
+  // === Datos del CV optimizado (contrato v2) ==============================
+  const optHeader = optimizedData?.header;
+  const optName = optHeader?.fullName || displayName;
+  const optHeadline = optHeader?.headline || cv.targetRole;
+  const optContactLine = optHeader
+    ? [
+        optHeader.email,
+        optHeader.phone,
+        optHeader.location,
+        optHeader.linkedin,
+        optHeader.portfolio,
+      ]
+        .filter((v): v is string => Boolean(v && v.trim()))
+        .map((v) => v.trim())
+        .join(" | ")
+    : contactLine;
+
+  const optSkills = optimizedData?.skills;
+  const skillCategories: Array<{ label: string; values: string[] }> = optSkills
+    ? [
+        { label: "Lenguajes", values: optSkills.languages },
+        { label: "Frameworks", values: optSkills.frameworks },
+        { label: "Bases de datos", values: optSkills.databases },
+        {
+          label: "Tecnologías / Herramientas",
+          values: optSkills.technologiesTools,
+        },
+        { label: "Prácticas", values: optSkills.practices },
+      ].filter((cat) => cat.values.length > 0)
+    : [];
+
+  const optBullets = (exp: OptimizedExperience): string[] =>
+    exp.bullets?.length > 0
+      ? exp.bullets
+      : exp.description
+        ? [exp.description]
+        : [];
+
+  const periodOf = (exp: OptimizedExperience): string => {
+    if (exp.period) return exp.period;
+    if (exp.startDate) return `${exp.startDate} – ${exp.endDate ?? "Presente"}`;
+    return exp.endDate ?? "";
+  };
+
   const generateCleanAtsText = () => {
     if (optimizedData) {
-      let text = `${displayName.toUpperCase()}\n`;
-      text += `${cv.targetRole}\n`;
-      if (contactLine) text += `${contactLine}\n`;
-      text += `\nRESUMEN OPTIMIZADO\n${optimizedData.summary}\n\n`;
-      text += `EXPERIENCIA ADAPTADA\n`;
-      optimizedData.experiences.forEach((exp) => {
-        text += `${exp.company}\n${exp.role}\n${exp.description}\n\n`;
-      });
-      if (optimizedData.skillsMatched.length > 0) {
-        text += `HABILIDADES VALIDADAS\n${optimizedData.skillsMatched.join(", ")}\n\n`;
+      let text = `${optName.toUpperCase()}\n`;
+      text += `${optHeadline}\n`;
+      if (optContactLine) text += `${optContactLine}\n`;
+      text += `\nRESUMEN\n${optimizedData.summary}\n\n`;
+
+      if (skillCategories.length > 0) {
+        text += `HABILIDADES\n`;
+        skillCategories.forEach((cat) => {
+          text += `${cat.label}: ${cat.values.join(", ")}\n`;
+        });
+        text += `\n`;
       }
-      if (optimizedData.keywordsInjected.length > 0) {
-        text += `KEYWORDS INYECTADAS\n${optimizedData.keywordsInjected.join(", ")}\n\n`;
+
+      if (optimizedData.experiences.length > 0) {
+        text += `EXPERIENCIA\n`;
+        optimizedData.experiences.forEach((exp) => {
+          text += `${exp.company} | ${periodOf(exp)}\n`;
+          text += `${exp.role}${exp.location ? ` · ${exp.location}` : ""}\n`;
+          optBullets(exp).forEach((bullet) => {
+            text += `• ${bullet}\n`;
+          });
+          text += `\n`;
+        });
       }
-      if (optimizedData.keywordsSkipped.length > 0) {
-        text += `KEYWORDS OMITIDAS\n${optimizedData.keywordsSkipped.join(", ")}\n\n`;
+
+      if (optimizedData.projects && optimizedData.projects.length > 0) {
+        text += `PROYECTOS\n`;
+        optimizedData.projects.forEach((proj) => {
+          text += `${proj.name}${proj.repoUrl ? ` | ${proj.repoUrl}` : ""}\n`;
+          if (proj.technologies && proj.technologies.length > 0) {
+            text += `${proj.technologies.join(", ")}\n`;
+          }
+          if (proj.description) text += `${proj.description}\n`;
+          text += `\n`;
+        });
       }
+
+      if (optimizedData.education && optimizedData.education.length > 0) {
+        text += `EDUCACIÓN\n`;
+        optimizedData.education.forEach((edu) => {
+          text += `${edu.institution}${edu.period ? ` | ${edu.period}` : ""}\n`;
+          text += `${edu.degree}\n`;
+          if (edu.details) text += `${edu.details}\n`;
+          text += `\n`;
+        });
+      }
+
+      if (optimizedData.languages && optimizedData.languages.length > 0) {
+        text += `IDIOMAS\n`;
+        optimizedData.languages.forEach((lang) => {
+          text += `${lang.language}: ${lang.level}\n`;
+        });
+      }
+
       return text.trim();
     }
 
@@ -204,7 +282,16 @@ export default function CvViewer({
       const pdfWidth = pdf.internal.pageSize.getWidth();
       const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
 
-      pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
+      pdf.addImage(
+        dataUrl,
+        "PNG",
+        0,
+        0,
+        pdfWidth,
+        pdfHeight,
+        undefined,
+        "FAST",
+      );
 
       const cleanFileName = cv.fullName
         .normalize("NFD")
@@ -291,40 +378,41 @@ export default function CvViewer({
           >
             <header className="text-center pb-2 mb-3">
               <h1 className="text-2xl font-bold text-black tracking-tight uppercase">
-                {displayName}
+                {optName}
               </h1>
               <p className="text-xs font-semibold text-black mt-0.5">
-                {cv.targetRole}
+                {optHeadline}
               </p>
-              {contactLine && (
+              {optContactLine && (
                 <p className="text-[11px] text-black mt-1 leading-normal">
-                  {contactLine}
+                  {optContactLine}
                 </p>
               )}
             </header>
 
             <section className="mb-3.5">
               <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                Resumen optimizado
+                Resumen
               </h2>
               <p className="text-[11px] text-black leading-relaxed whitespace-pre-line">
                 {optimizedData.summary}
               </p>
             </section>
 
-            {optimizedData.skillsMatched.length > 0 && (
+            {skillCategories.length > 0 && (
               <section className="mb-3.5">
                 <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                  Habilidades validadas
+                  Habilidades
                 </h2>
-                <div className="flex flex-wrap gap-1.5">
-                  {optimizedData.skillsMatched.map((skill) => (
-                    <span
-                      key={skill}
-                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-800 border border-slate-300"
+                <div className="space-y-1">
+                  {skillCategories.map((cat) => (
+                    <p
+                      key={cat.label}
+                      className="text-[11px] text-black leading-snug"
                     >
-                      {skill}
-                    </span>
+                      <span className="font-semibold">{cat.label}:</span>{" "}
+                      {cat.values.join(", ")}
+                    </p>
                   ))}
                 </div>
               </section>
@@ -332,7 +420,7 @@ export default function CvViewer({
 
             <section className="mb-3.5">
               <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                Experiencia adaptada
+                Experiencia
               </h2>
               <div className="space-y-3">
                 {optimizedData.experiences.map((exp, index) => (
@@ -341,49 +429,100 @@ export default function CvViewer({
                       <span className="font-bold text-black">
                         {exp.company}
                       </span>
-                      <span className="text-black font-medium">{exp.role}</span>
+                      <span className="text-black font-medium">
+                        {periodOf(exp)}
+                      </span>
                     </div>
-                    <p className="text-[11px] text-black leading-relaxed whitespace-pre-line mt-1">
-                      {exp.description}
+                    <p className="text-[11px] italic text-black">
+                      {exp.role}
+                      {exp.location ? ` · ${exp.location}` : ""}
                     </p>
+                    {optBullets(exp).length > 0 && (
+                      <ul className="list-disc pl-4 mt-1 space-y-0.5">
+                        {optBullets(exp).map((bullet, bulletIndex) => (
+                          <li
+                            key={bulletIndex}
+                            className="text-[11px] text-black leading-relaxed"
+                          >
+                            {bullet}
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 ))}
               </div>
             </section>
 
-            {optimizedData.keywordsInjected.length > 0 && (
+            {optimizedData.projects && optimizedData.projects.length > 0 && (
               <section className="mb-3.5">
                 <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                  Keywords inyectadas con IA
+                  Proyectos
                 </h2>
-                <div className="flex flex-wrap gap-1.5">
-                  {optimizedData.keywordsInjected.map((keyword) => (
-                    <span
-                      key={keyword}
-                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-emerald-100 text-emerald-900 border border-emerald-300"
-                    >
-                      + {keyword}
-                    </span>
+                <div className="space-y-2">
+                  {optimizedData.projects.map((proj) => (
+                    <div key={proj.name}>
+                      <p className="text-[11px] font-bold text-black">
+                        {proj.name}
+                        {proj.repoUrl && (
+                          <span className="font-normal"> | {proj.repoUrl}</span>
+                        )}
+                      </p>
+                      {proj.technologies && proj.technologies.length > 0 && (
+                        <p className="text-[11px] text-black">
+                          {proj.technologies.join(", ")}
+                        </p>
+                      )}
+                      {proj.description && (
+                        <p className="text-[11px] text-black leading-relaxed">
+                          {proj.description}
+                        </p>
+                      )}
+                    </div>
                   ))}
                 </div>
               </section>
             )}
 
-            {optimizedData.keywordsSkipped.length > 0 && (
-              <section>
+            {optimizedData.education && optimizedData.education.length > 0 && (
+              <section className="mb-3.5">
                 <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                  Keywords omitidas por honestidad
+                  Educación
                 </h2>
-                <div className="flex flex-wrap gap-1.5">
-                  {optimizedData.keywordsSkipped.map((keyword) => (
-                    <span
-                      key={keyword}
-                      className="px-2.5 py-1 rounded-lg text-[11px] font-semibold bg-slate-100 text-slate-500 border border-slate-300"
-                    >
-                      − {keyword}
-                    </span>
+                <div className="space-y-2">
+                  {optimizedData.education.map((edu) => (
+                    <div key={`${edu.institution}-${edu.degree}`}>
+                      <div className="flex justify-between items-baseline text-[11px]">
+                        <span className="font-bold text-black">
+                          {edu.institution}
+                        </span>
+                        <span className="text-black font-medium">
+                          {edu.period ??
+                            (edu.graduationYear
+                              ? String(edu.graduationYear)
+                              : "")}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-black">{edu.degree}</p>
+                      {edu.details && (
+                        <p className="text-[11px] text-black">{edu.details}</p>
+                      )}
+                    </div>
                   ))}
                 </div>
+              </section>
+            )}
+
+            {optimizedData.languages && optimizedData.languages.length > 0 && (
+              <section>
+                <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
+                  Idiomas
+                </h2>
+                <p className="text-[11px] text-black">
+                  {optimizedData.languages
+                    .map((lang) => `${lang.language}: ${lang.level}`)
+                    .join(" | ")}
+                </p>
               </section>
             )}
           </article>
@@ -391,134 +530,146 @@ export default function CvViewer({
       )}
 
       {!isLoadingOptimized && !optimizedError && !optimizedData && (
-      <div className="w-full flex justify-center overflow-x-auto pb-4">
-        <article
-          ref={cvRef}
-          className="bg-white text-black font-sans leading-relaxed w-[794px] min-w-[794px] p-10 border border-slate-200 shadow-xl relative select-text"
-          style={{ boxSizing: "border-box" }}
-        >
-          {/* Encabezado ATS con identidad real: nombre del CV o del usuario logueado. */}
-          <header className="text-center pb-2 mb-3">
-            <h1 className="text-2xl font-bold text-black tracking-tight uppercase">
-              {displayName}
-            </h1>
-            <p className="text-xs font-semibold text-black mt-0.5">
-              {cv.targetRole}
-            </p>
-            {hasClassicContact && (
-              <p className="text-[11px] text-black mt-1 leading-normal">
-                {contactLine}
+        <div className="w-full flex justify-center overflow-x-auto pb-4">
+          <article
+            ref={cvRef}
+            className="bg-white text-black font-sans leading-relaxed w-[794px] min-w-[794px] p-10 border border-slate-200 shadow-xl relative select-text"
+            style={{ boxSizing: "border-box" }}
+          >
+            {/* Encabezado ATS con identidad real: nombre del CV o del usuario logueado. */}
+            <header className="text-center pb-2 mb-3">
+              <h1 className="text-2xl font-bold text-black tracking-tight uppercase">
+                {displayName}
+              </h1>
+              <p className="text-xs font-semibold text-black mt-0.5">
+                {cv.targetRole}
               </p>
-            )}
-          </header>
+              {hasClassicContact && (
+                <p className="text-[11px] text-black mt-1 leading-normal">
+                  {contactLine}
+                </p>
+              )}
+            </header>
 
-          {/* Sección Habilidades Categorizadas */}
-          {hasClassicSkills && (
-          <section className="mb-3.5">
-            <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-              Habilidades
-            </h2>
-            <div className="text-[11px] text-black space-y-0.5">
-              {skillsCat.languages.length > 0 && (
-              <p>
-                <strong className="font-bold">Lenguajes:</strong> {skillsCat.languages.join(", ")}
-              </p>
-              )}
-              {skillsCat.frameworks.length > 0 && (
-              <p>
-                <strong className="font-bold">Frameworks:</strong> {skillsCat.frameworks.join(", ")}
-              </p>
-              )}
-              {skillsCat.databases.length > 0 && (
-              <p>
-                <strong className="font-bold">Bases de datos:</strong> {skillsCat.databases.join(", ")}
-              </p>
-              )}
-              {skillsCat.tools.length > 0 && (
-              <p>
-                <strong className="font-bold">Tecnologías / Herramientas:</strong> {skillsCat.tools.join(", ")}
-              </p>
-              )}
-              {skillsCat.practices.length > 0 && (
-              <p>
-                <strong className="font-bold">Prácticas:</strong> {skillsCat.practices.join(", ")}
-              </p>
-              )}
-            </div>
-          </section>
-          )}
-
-          {/* Sección Experiencia Laboral */}
-          {hasClassicExperience && (
-          <section className="mb-3.5">
-            <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-              Experiencia
-            </h2>
-            <div className="space-y-3">
-              {classicExperience.map((exp) => (
-                <div key={exp.id}>
-                  <div className="flex justify-between items-baseline text-[11px]">
-                    <span className="font-bold text-black">{exp.company}</span>
-                    <span className="text-black font-medium">{exp.period}</span>
-                  </div>
-                  <div className="text-[11px] italic text-black mb-1">
-                    {exp.role}
-                  </div>
-                  <ul className="list-disc list-outside ml-4 text-[11px] text-black space-y-1">
-                    {exp.achievements.map((achievement, index) => (
-                      <li key={index} className="leading-snug">
-                        {achievement}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </section>
-          )}
-
-          {/* Sección Educación */}
-          {hasClassicEducation && (
-          <section className="mb-3.5">
-            <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-              Educación
-            </h2>
-            <div className="space-y-2 text-[11px] text-black">
-              {education.map((edu, idx) => (
-                <div key={idx}>
-                  <div className="flex justify-between items-baseline">
-                    <span className="font-bold">{edu.institution}</span>
-                    <span className="font-medium">{edu.period}</span>
-                  </div>
-                  <p className="leading-snug">{edu.degree}</p>
-                  {edu.details && (
-                    <p className="text-[10px] text-black leading-snug mt-0.5">
-                      {edu.details}
+            {/* Sección Habilidades Categorizadas */}
+            {hasClassicSkills && (
+              <section className="mb-3.5">
+                <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
+                  Habilidades
+                </h2>
+                <div className="text-[11px] text-black space-y-0.5">
+                  {skillsCat.languages.length > 0 && (
+                    <p>
+                      <strong className="font-bold">Lenguajes:</strong>{" "}
+                      {skillsCat.languages.join(", ")}
+                    </p>
+                  )}
+                  {skillsCat.frameworks.length > 0 && (
+                    <p>
+                      <strong className="font-bold">Frameworks:</strong>{" "}
+                      {skillsCat.frameworks.join(", ")}
+                    </p>
+                  )}
+                  {skillsCat.databases.length > 0 && (
+                    <p>
+                      <strong className="font-bold">Bases de datos:</strong>{" "}
+                      {skillsCat.databases.join(", ")}
+                    </p>
+                  )}
+                  {skillsCat.tools.length > 0 && (
+                    <p>
+                      <strong className="font-bold">
+                        Tecnologías / Herramientas:
+                      </strong>{" "}
+                      {skillsCat.tools.join(", ")}
+                    </p>
+                  )}
+                  {skillsCat.practices.length > 0 && (
+                    <p>
+                      <strong className="font-bold">Prácticas:</strong>{" "}
+                      {skillsCat.practices.join(", ")}
                     </p>
                   )}
                 </div>
-              ))}
-            </div>
-          </section>
-          )}
+              </section>
+            )}
 
-          {/* Sección Idiomas */}
-          {hasClassicLanguages && (
-          <section>
-            <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-              Idiomas
-            </h2>
-            <div className="text-[11px] text-black">
-              {languages.map((lang, idx) => (
-                <p key={idx}>
-                  <strong className="font-bold">{lang.language}:</strong> {lang.level}
-                </p>
-              ))}
-            </div>
-          </section>
-          )}
-        </article>
-      </div>
+            {/* Sección Experiencia Laboral */}
+            {hasClassicExperience && (
+              <section className="mb-3.5">
+                <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
+                  Experiencia
+                </h2>
+                <div className="space-y-3">
+                  {classicExperience.map((exp) => (
+                    <div key={exp.id}>
+                      <div className="flex justify-between items-baseline text-[11px]">
+                        <span className="font-bold text-black">
+                          {exp.company}
+                        </span>
+                        <span className="text-black font-medium">
+                          {exp.period}
+                        </span>
+                      </div>
+                      <div className="text-[11px] italic text-black mb-1">
+                        {exp.role}
+                      </div>
+                      <ul className="list-disc list-outside ml-4 text-[11px] text-black space-y-1">
+                        {exp.achievements.map((achievement, index) => (
+                          <li key={index} className="leading-snug">
+                            {achievement}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Sección Educación */}
+            {hasClassicEducation && (
+              <section className="mb-3.5">
+                <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
+                  Educación
+                </h2>
+                <div className="space-y-2 text-[11px] text-black">
+                  {education.map((edu, idx) => (
+                    <div key={idx}>
+                      <div className="flex justify-between items-baseline">
+                        <span className="font-bold">{edu.institution}</span>
+                        <span className="font-medium">{edu.period}</span>
+                      </div>
+                      <p className="leading-snug">{edu.degree}</p>
+                      {edu.details && (
+                        <p className="text-[10px] text-black leading-snug mt-0.5">
+                          {edu.details}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Sección Idiomas */}
+            {hasClassicLanguages && (
+              <section>
+                <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
+                  Idiomas
+                </h2>
+                <div className="text-[11px] text-black">
+                  {languages.map((lang, idx) => (
+                    <p key={idx}>
+                      <strong className="font-bold">{lang.language}:</strong>{" "}
+                      {lang.level}
+                    </p>
+                  ))}
+                </div>
+              </section>
+            )}
+          </article>
+        </div>
       )}
     </div>
   );
