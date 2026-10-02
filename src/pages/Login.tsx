@@ -108,13 +108,10 @@ export default function Login() {
             title="Volver a la página principal"
           >
             <img
-              src="/favicon.svg"
+              src="/logo-aplika-horizontal-blanco.svg"
               alt="Aplika"
-              className="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/30"
+              className="h-14 w-auto"
             />
-            <span className="text-2xl font-black tracking-tight">
-              Aplika
-            </span>
           </Link>
 
           <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 backdrop-blur-sm">
@@ -194,13 +191,10 @@ export default function Login() {
             {/* Logo visible en pantallas pequeñas */}
             <Link to="/" className="lg:hidden flex items-center space-x-2">
               <img
-                src="/favicon.svg"
+                src="/logo-aplika-horizontal.svg"
                 alt="Aplika"
-                className="w-7 h-7 rounded-lg shadow-md"
+                className="h-8 w-auto"
               />
-              <span className="text-sm font-black text-slate-800">
-                Aplika
-              </span>
             </Link>
           </div>
 

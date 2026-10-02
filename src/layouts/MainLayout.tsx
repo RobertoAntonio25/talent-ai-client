@@ -32,15 +32,10 @@ export default function MainLayout() {
               title="Ir al inicio (Landing)"
             >
               <img
-                src="/favicon.svg"
+                src="/logo-aplika-horizontal-blanco.svg"
                 alt="Aplika"
-                className="w-9 h-9 rounded-xl shadow-lg group-hover:scale-105 transition-transform"
+                className="h-12 w-auto group-hover:scale-105 transition-transform"
               />
-              <div className="flex flex-col">
-                <span className="text-lg font-black tracking-tight text-white flex items-center gap-1.5">
-                  Aplika
-                </span>
-              </div>
             </Link>
 
             <span className="hidden sm:inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
