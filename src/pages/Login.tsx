@@ -175,13 +175,13 @@ export default function Login() {
       </div>
 
       {/* ⚡ SECCIÓN DERECHA: Formulario de Login */}
-      <div className="flex w-full lg:w-1/2 justify-center items-center p-6 sm:p-10 lg:p-12 overflow-y-auto">
-        <div className="w-full max-w-lg bg-white rounded-3xl shadow-xl shadow-slate-200/60 p-8 sm:p-10 border border-slate-100 relative">
+      <div className="flex w-full lg:w-1/2 justify-center items-center p-6 sm:p-10 lg:p-12 overflow-y-auto bg-slate-50">
+        <div className="w-full max-w-lg bg-aplika-night-950 rounded-3xl shadow-xl shadow-slate-900/40 p-8 sm:p-10 border border-slate-800 relative text-slate-200">
           {/* Botón Volver al inicio */}
           <div className="mb-6 flex items-center justify-between">
             <Link
               to="/"
-              className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-aplika-lima-600 transition-colors group"
+              className="inline-flex items-center text-xs font-semibold text-slate-400 hover:text-aplika-lima-400 transition-colors group"
             >
               <span className="mr-1 group-hover:-translate-x-0.5 transition-transform">
                 ←
@@ -192,7 +192,7 @@ export default function Login() {
             {/* Logo visible en pantallas pequeñas */}
             <Link to="/" className="lg:hidden flex items-center space-x-2">
               <img
-                src="/logo-aplika-horizontal.svg"
+                src="/logo-aplika-horizontal-blanco.svg"
                 alt="Aplika"
                 className="h-8 w-auto"
               />
@@ -200,19 +200,19 @@ export default function Login() {
           </div>
 
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">
+            <h2 className="text-3xl font-extrabold text-white tracking-tight mb-2">
               Bienvenido de nuevo
             </h2>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-400">
               Ingresa tus credenciales para acceder a tu cuenta
             </p>
           </div>
 
           {/* Banner de Error (6.2: CTA específico según code) */}
           {errorMessage && (
-            <div className="mb-5 p-3.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex flex-col gap-2">
+            <div className="mb-5 p-3.5 bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-xl flex flex-col gap-2">
               <div className="flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500" />
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-400" />
                 <span>{errorMessage}</span>
               </div>
               {errorCode === "OAUTH_ONLY_ACCOUNT" && (
@@ -220,7 +220,7 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={() => handleOAuthLogin("google")}
-                    className="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-700 transition-colors"
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-100 text-xs font-semibold hover:bg-slate-700 transition-colors"
                   >
                     Entrar con Google
                   </button>
@@ -242,10 +242,10 @@ export default function Login() {
               onClick={() => handleOAuthLogin("google")}
               disabled={isLoading !== null}
               type="button"
-              className="flex items-center justify-center px-4 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-medium text-xs sm:text-sm text-slate-700 shadow-sm"
+              className="flex items-center justify-center px-4 py-3 bg-slate-800/80 border border-slate-700 rounded-xl hover:bg-slate-800 hover:border-slate-600 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-medium text-xs sm:text-sm text-slate-200 shadow-sm"
             >
               {isLoading === "google" ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2 text-slate-600" />
+                <Loader2 className="w-4 h-4 animate-spin mr-2 text-aplika-lima-400" />
               ) : (
                 <svg className="w-4 h-4 mr-2 flex-shrink-0" viewBox="0 0 24 24">
                   <path
@@ -292,10 +292,10 @@ export default function Login() {
           {/* Divisor */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
+              <div className="w-full border-t border-slate-700"></div>
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-white text-slate-400 font-medium uppercase tracking-wider">
+              <span className="px-3 bg-aplika-night-950 text-slate-500 font-medium uppercase tracking-wider">
                 O ingresa con tu email
               </span>
             </div>
@@ -304,17 +304,17 @@ export default function Login() {
           {/* FORMULARIO */}
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Correo electrónico
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all placeholder:text-slate-400"
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500"
                   placeholder="tu@email.com"
                   disabled={isLoading !== null}
                 />
@@ -323,31 +323,31 @@ export default function Login() {
 
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="block text-xs font-semibold text-slate-700">
+                <label className="block text-xs font-semibold text-slate-300">
                   Contraseña
                 </label>
                 <a
                   href="#"
-                  className="text-xs text-aplika-lima-700 font-semibold hover:underline"
+                  className="text-xs text-aplika-lima-400 font-semibold hover:underline"
                 >
                   ¿Olvidaste tu contraseña?
                 </a>
               </div>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
                 <input
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all placeholder:text-slate-400"
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500"
                   placeholder="••••••••"
                   disabled={isLoading !== null}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 focus:outline-none"
+                  className="absolute right-3 top-3 text-slate-500 hover:text-aplika-lima-400 focus:outline-none"
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -361,22 +361,22 @@ export default function Login() {
             <button
               type="submit"
               disabled={isLoading !== null}
-              className="flex items-center justify-center w-full px-4 py-3.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-semibold text-sm shadow-md shadow-slate-900/10 hover:shadow-lg hover:shadow-slate-900/20 active:scale-[0.99] mt-2"
+              className="flex items-center justify-center w-full px-4 py-3.5 bg-aplika-lima-500 text-aplika-night-950 rounded-xl hover:bg-aplika-lima-400 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-semibold text-sm shadow-md shadow-aplika-lima-500/20 hover:shadow-lg hover:shadow-aplika-lima-500/30 active:scale-[0.99] mt-2"
             >
               {isLoading === "email" ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2 text-white" />
+                <Loader2 className="w-4 h-4 animate-spin mr-2 text-aplika-night-900" />
               ) : null}
               Iniciar sesión
             </button>
           </form>
 
           {/* Footer */}
-          <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center">
-            <span className="text-xs text-slate-500">
+          <div className="mt-8 pt-6 border-t border-slate-800 flex items-center justify-center">
+            <span className="text-xs text-slate-400">
               ¿No tienes una cuenta?{" "}
               <Link
                 to="/register"
-                className="text-aplika-lima-700 font-semibold hover:underline"
+                className="text-aplika-lima-400 font-semibold hover:underline"
               >
                 Regístrate gratis
               </Link>
