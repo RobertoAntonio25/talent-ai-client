@@ -1,7 +1,11 @@
 // src/components/navigation/UserDropdown.tsx
 // Fase 5 (Opción C): menú desplegable del avatar en el Navbar.
-// Permite ver el perfil, ajustar las preferencias de búsqueda (rol, ciudad y
-// modalidad remota) y gestionar el CV base sin salir de la vista actual.
+// Permite ver el perfil, ajustar las preferencias básicas de búsqueda (rol,
+// ciudad y modalidad) y gestionar el CV base sin salir de la vista actual.
+// Fase 2b: el toggle remoto se migró al selector `workMode` (ANY por
+// defecto); el back ya no acepta `wantsRemote`.
+// NOTA (Fase 2c pendiente): simplificar este menú a opciones básicas (ver
+// perfil, ver CV, cerrar sesión) y mover las preferencias solo a Settings.
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -20,8 +24,12 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useCv } from "../../hooks/useCv";
 import { ApiError } from "../../services/apiClient";
-import { getPreferences, updatePreferences } from "../../services/profileService";
-import Toggle from "../ui/Toggle";
+import {
+  getPreferences,
+  updatePreferences,
+  type WorkMode,
+} from "../../services/profileService";
+import { WORK_MODE_OPTIONS } from "../../models/preferences.model";
 
 const PREFS_STORAGE_KEY = "aplikaPreferences";
 // Clave anterior (pre-rebrand Talent AI → Aplika): solo se lee para migrar datos existentes.
@@ -30,26 +38,38 @@ const LEGACY_PREFS_STORAGE_KEY = "talentPreferences";
 interface SearchPreferences {
   targetRole: string;
   targetCity: string;
-  wantsRemote: boolean;
+  workMode: WorkMode;
   updatedAt?: string;
 }
 
 function loadStoredPreferences(): SearchPreferences | null {
   try {
+    // Clave actual (post-rebrand Aplika).
     const raw = localStorage.getItem(PREFS_STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as SearchPreferences;
-    // Migración rebrand: rescatar las preferencias guardadas con la clave antigua.
+    if (raw) return normalizeStoredPreferences(JSON.parse(raw));
+    // Migración rebrand: rescatar las preferencias guardadas con la clave
+    // antigua, normalizándolas al formato actual en el mismo paso.
     const legacyRaw = localStorage.getItem(LEGACY_PREFS_STORAGE_KEY);
-    if (legacyRaw) {
-      const parsed = JSON.parse(legacyRaw) as SearchPreferences;
-      localStorage.setItem(PREFS_STORAGE_KEY, legacyRaw);
-      localStorage.removeItem(LEGACY_PREFS_STORAGE_KEY);
-      return parsed;
-    }
-    return null;
+    if (!legacyRaw) return null;
+    const migrated = normalizeStoredPreferences(JSON.parse(legacyRaw));
+    localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(migrated));
+    localStorage.removeItem(LEGACY_PREFS_STORAGE_KEY);
+    return migrated;
   } catch {
     return null;
   }
+}
+
+// Normaliza la caché local: la anterior a la Fase 2b trae `wantsRemote`
+// (booleano) en vez de `workMode` → true = REMOTE, false/ausente = ANY.
+function normalizeStoredPreferences(
+  parsed: SearchPreferences & { wantsRemote?: boolean },
+): SearchPreferences {
+  return {
+    targetRole: parsed.targetRole ?? "",
+    targetCity: parsed.targetCity ?? "",
+    workMode: parsed.workMode ?? (parsed.wantsRemote ? "REMOTE" : "ANY"),
+  };
 }
 
 export default function UserDropdown() {
@@ -69,7 +89,7 @@ export default function UserDropdown() {
       loadStoredPreferences() ?? {
         targetRole: cv?.targetRole ?? "",
         targetCity: cv?.contact?.location ?? "",
-        wantsRemote: false,
+        workMode: "ANY",
       },
   );
   const [saveMsg, setSaveMsg] = useState<string | null>(null);
@@ -124,7 +144,7 @@ export default function UserDropdown() {
         const next: SearchPreferences = {
           targetRole: server.targetRole ?? "",
           targetCity: server.targetCity ?? "",
-          wantsRemote: server.wantsRemote ?? false,
+          workMode: server.workMode ?? "ANY",
         };
         setPrefs(next);
         localStorage.setItem(
@@ -164,16 +184,17 @@ export default function UserDropdown() {
 
     try {
       const updated = await updatePreferences({
-        // undefined = "no tocar ese campo"; el back exige al menos uno (wantsRemote va siempre).
+        // undefined = "no tocar ese campo"; el back exige al menos uno
+        // (workMode viaja siempre). `wantsRemote` ya no se envía: da 400.
         targetRole: prefs.targetRole.trim() || undefined,
         targetCity: prefs.targetCity.trim() || undefined,
-        wantsRemote: prefs.wantsRemote,
+        workMode: prefs.workMode,
       });
 
       const synced: SearchPreferences = {
         targetRole: updated.targetRole ?? "",
         targetCity: updated.targetCity ?? "",
-        wantsRemote: updated.wantsRemote ?? false,
+        workMode: updated.workMode ?? "ANY",
         updatedAt: new Date().toISOString(),
       };
       setPrefs(synced);
@@ -316,17 +337,27 @@ export default function UserDropdown() {
               />
             </label>
 
-            <div className="flex items-center justify-between gap-3 mb-3">
-              <span className="text-xs text-slate-300 font-medium">
-                Modalidad remota
+            <label className="block mb-3">
+              <span className="text-[11px] text-slate-400 font-medium">
+                Modalidad
               </span>
-              <Toggle
-                enabled={prefs.wantsRemote}
-                onChange={(enabled) =>
-                  setPrefs({ ...prefs, wantsRemote: enabled })
+              <select
+                value={prefs.workMode}
+                onChange={(event) =>
+                  setPrefs({
+                    ...prefs,
+                    workMode: event.target.value as WorkMode,
+                  })
                 }
-              />
-            </div>
+                className="mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500 cursor-pointer"
+              >
+                {WORK_MODE_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </label>
 
             <button
               type="button"

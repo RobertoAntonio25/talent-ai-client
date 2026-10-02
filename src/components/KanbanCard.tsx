@@ -136,6 +136,17 @@ export default function KanbanCard({ job, onClick, onEdit, onDelete }: Props) {
               {job.matchScore}%
             </span>
           )}
+          {/* Fase 2b: ofertas repescadas con score <50 avisan de match bajo. */}
+          {job.matchScore !== undefined &&
+            job.matchScore !== null &&
+            job.matchScore < 50 && (
+              <span
+                title="Esta oferta encaja poco con tu perfil"
+                className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20 shadow-sm"
+              >
+                match bajo
+              </span>
+            )}
 
           {/* Menú de Acciones (Editar / Eliminar) */}
           {(onEdit || onDelete) && (
