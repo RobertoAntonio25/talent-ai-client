@@ -36,7 +36,7 @@ export default function MainLayout() {
               </div>
               <div className="flex flex-col">
                 <span className="text-lg font-black tracking-tight text-white flex items-center gap-1.5">
-                  Talent-AI
+                  Aplika
                 </span>
               </div>
             </Link>

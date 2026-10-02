@@ -240,7 +240,7 @@ export default function Dashboard() {
       <Modal
         isOpen={isCvModalOpen}
         onClose={() => setIsCvModalOpen(false)}
-        title="Currículum Optimizado por Talent-AI ✨"
+        title="Currículum Optimizado por Aplika"
         subtitle="Generado automáticamente con palabras clave y formato ATS según tu perfil profesional."
       >
         {!cv ? (

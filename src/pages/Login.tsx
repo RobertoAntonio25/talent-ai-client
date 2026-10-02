@@ -111,7 +111,7 @@ export default function Login() {
               T
             </div>
             <span className="text-2xl font-black tracking-tight">
-              Talent-AI
+              Aplika
             </span>
           </Link>
 
@@ -195,7 +195,7 @@ export default function Login() {
                 T
               </div>
               <span className="text-sm font-black text-slate-800">
-                Talent-AI
+                Aplika
               </span>
             </Link>
           </div>

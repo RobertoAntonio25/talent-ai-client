@@ -1,4 +1,4 @@
-// Talent-AI-Front/talent-ia-client/src/context/AuthContext.tsx
+// aplika-client/src/context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 
 export interface User {

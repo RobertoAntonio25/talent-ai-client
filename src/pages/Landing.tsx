@@ -31,7 +31,7 @@ export default function Landing() {
               T
             </div>
             <span className="text-xl font-black tracking-tight text-white">
-              Talent-AI
+              Aplika
             </span>
           </Link>
 
@@ -120,7 +120,7 @@ export default function Landing() {
               <span className="w-3 h-3 rounded-full bg-amber-500/80"></span>
               <span className="w-3 h-3 rounded-full bg-emerald-500/80"></span>
               <span className="text-xs font-mono text-slate-500 ml-2">
-                talent-ai.app/dashboard
+                aplika.app/dashboard
               </span>
             </div>
             <div className="flex items-center gap-2 text-xs text-blue-400 font-semibold bg-blue-500/10 px-3 py-1 rounded-full border border-blue-500/20">
@@ -346,7 +346,7 @@ export default function Landing() {
               Acelera tu contratación hoy
             </h2>
             <p className="text-slate-300 text-sm sm:text-base mt-4 max-w-xl mx-auto font-light">
-              Empieza a usar Talent-AI de forma gratuita y lleva el control
+              Empieza a usar Aplika de forma gratuita y lleva el control
               absoluto de tus postulaciones.
             </p>
             <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -371,10 +371,10 @@ export default function Landing() {
       <footer className="border-t border-slate-800/80 py-8 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-slate-300">Talent-AI</span>
+            <span className="font-bold text-slate-300">Aplika</span>
             <span>• Plataforma de Gestión de Empleo con IA</span>
           </div>
-          <span>© 2026 Talent-AI. Desarrollado con React & Tailwind CSS.</span>
+          <span>© 2026 Aplika. Desarrollado con React & Tailwind CSS.</span>
         </div>
       </footer>
     </div>
