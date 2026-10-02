@@ -1,51 +1,65 @@
-// src/models/optimizer.model.ts
-// Tipos frontend-only del Optimizador ATS (contrato API.md §6).
-// V1 actual + campos v2 opcionales para tolerar evolución sin romper.
-
 export interface OptimizedExperience {
   role: string;
   company: string;
-  description: string;
+  location?: string;
+  startDate?: string;
+  endDate?: string;
+  description?: string;
+  bullets?: string[];
 }
-
 export interface OptimizedHeader {
   fullName: string;
+  headline: string;
   email: string;
   phone: string;
   location: string;
   linkedin: string;
+  portfolio: string;
 }
-
-export interface KeywordCoverage {
-  injected: string[];
-  verified: string[];
+export interface OptimizedSkills {
+  languages: string[];
+  frameworks: string[];
+  databases: string[];
+  technologiesTools: string[];
+  practices: string[];
 }
-
+export interface OptimizedProject {
+  name: string;
+  technologies: string[];
+  repoUrl?: string;
+  description?: string;
+}
+export interface OptimizedEducation {
+  degree: string;
+  institution: string;
+  graduationYear?: number;
+  details?: string;
+}
+export interface OptimizedLanguage {
+  language: string;
+  level: string;
+}
 export interface OptimizedCv {
   summary: string;
   experiences: OptimizedExperience[];
   skillsMatched: string[];
   keywordsInjected: string[];
-  // Paridad con el contrato v1 real del backend (optimize.types.ts): el
-  // optimizador informa qué keywords descartó por honestidad.
   keywordsSkipped: string[];
   header?: OptimizedHeader;
-  headline?: string;
-  education?: Array<{ degree?: string; institution?: string }>;
-  languages?: Array<{ language?: string; level?: string }>;
-  keywordCoverage?: KeywordCoverage;
+  skills?: OptimizedSkills;
+  projects?: OptimizedProject[];
+  education?: OptimizedEducation[];
+  languages?: OptimizedLanguage[];
+  coverage?: { injected: number; verified: number };
   generatedAt?: string;
   schemaVersion?: number;
 }
-
 export interface CoverLetterOutput {
   letter: string;
   emailSubject: string;
   emailBody: string;
 }
-
 export type CvPatch = Partial<OptimizedCv>;
-
 export interface OptimizerCacheEntry {
   cv?: OptimizedCv;
   letter?: CoverLetterOutput;
