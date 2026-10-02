@@ -153,9 +153,9 @@ export default function Register() {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-slate-50 font-sans">
+    <div className="flex min-h-screen w-full bg-aplika-night-950 font-sans">
       {/* 🌟 SECCIÓN IZQUIERDA: Branding, Beneficios y Confianza */}
-      <div className="hidden lg:flex lg:w-1/2 bg-slate-900 justify-between items-start flex-col p-16 text-white relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-aplika-night-950 via-slate-900 to-aplika-night-900 justify-between items-start flex-col p-16 text-white relative overflow-hidden border-r border-slate-800/60">
         {/* Luces de fondo decorativas */}
         <div className="absolute top-[-15%] left-[-15%] w-[450px] h-[450px] bg-aplika-lima-500 rounded-full mix-blend-screen filter blur-[120px] opacity-25 animate-pulse"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-aplika-night-800 rounded-full mix-blend-screen filter blur-[100px] opacity-20"></div>
@@ -252,8 +252,10 @@ export default function Register() {
       </div>
 
       {/* ⚡ SECCIÓN DERECHA: Formulario de Registro */}
-      <div className="flex w-full lg:w-1/2 justify-center items-center p-6 sm:p-10 lg:p-12 overflow-y-auto bg-slate-50">
-        <div className="w-full max-w-lg bg-aplika-night-950 rounded-3xl shadow-xl shadow-slate-900/40 p-8 sm:p-10 border border-slate-800 relative text-slate-200">
+      <div className="flex w-full lg:w-1/2 justify-center items-center p-6 sm:p-10 lg:p-12 overflow-y-auto bg-gradient-to-bl from-aplika-steel-700 via-aplika-steel-800 to-aplika-night-900 relative lg:border-l lg:border-slate-700/40">
+        {/* Resplandor lima sutil que baña la card desde arriba */}
+        <div className="absolute top-[-10%] right-[10%] w-[380px] h-[280px] bg-aplika-lima-500/10 rounded-full filter blur-[110px] pointer-events-none"></div>
+        <div className="w-full max-w-lg bg-aplika-night-950/60 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/50 p-8 sm:p-10 border border-slate-700/60 relative text-slate-200">
           {/* Botón Volver al inicio */}
           <div className="mb-6 flex items-center justify-between">
             <Link
