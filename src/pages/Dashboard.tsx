@@ -98,7 +98,7 @@ export default function Dashboard() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              Tablero de Postulaciones
+              Panel de empleo
             </h1>
             <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-aplika-lima-500/10 text-aplika-lima-400 border border-aplika-lima-500/20">
               Live

@@ -3,6 +3,7 @@ import { Outlet, Link, useLocation } from "react-router-dom";
 import {
   Sparkles,
   LayoutDashboard,
+  Search,
   Settings as SettingsIcon,
   User as UserIcon,
 } from "lucide-react";
@@ -57,7 +58,19 @@ export default function MainLayout() {
               }`}
             >
               <LayoutDashboard className="w-4 h-4" />
-              <span>Tablero Kanban</span>
+              <span>Panel de empleo</span>
+            </Link>
+
+            <Link
+              to="/search"
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                location.pathname === "/search"
+                  ? "bg-aplika-lima-500/15 text-aplika-lima-400 border border-aplika-lima-500/30"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+              }`}
+            >
+              <Search className="w-4 h-4" />
+              <span>Buscar ofertas</span>
             </Link>
 
             <Link
@@ -86,7 +99,15 @@ export default function MainLayout() {
           </nav>
 
           {/* Perfil / Acceso Rápido (Fase 5: dropdown de usuario) */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
+            <Link
+              to="/search?autostart=1"
+              title="Buscar ofertas ahora (JSearch + IA)"
+              className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-aplika-night-950 bg-aplika-lima-500 hover:bg-aplika-lima-400 shadow-lg shadow-aplika-lima-500/20 transition-all active:scale-95"
+            >
+              <Search className="w-4 h-4" />
+              <span className="hidden sm:inline">Buscar ahora</span>
+            </Link>
             <UserDropdown />
           </div>
         </div>

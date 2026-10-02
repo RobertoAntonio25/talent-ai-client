@@ -25,7 +25,7 @@ export default function OtherOptions() {
           className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors"
         >
           <LayoutDashboard className="w-4 h-4 text-aplika-lima-400" />
-          Ir al Tablero Kanban
+          Ir al Panel de empleo
         </Link>
         <Link
           to="/settings"
