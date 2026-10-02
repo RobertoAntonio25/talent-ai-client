@@ -4,6 +4,7 @@ import {
   Sparkles,
   LayoutDashboard,
   Settings as SettingsIcon,
+  User as UserIcon,
 } from "lucide-react";
 import UserDropdown from "../components/navigation/UserDropdown";
 
@@ -69,6 +70,18 @@ export default function MainLayout() {
             >
               <SettingsIcon className="w-4 h-4" />
               <span>Configuración IA</span>
+            </Link>
+
+            <Link
+              to="/profile"
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
+                location.pathname === "/profile"
+                  ? "bg-aplika-lima-500/15 text-aplika-lima-400 border border-aplika-lima-500/30"
+                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
+              }`}
+            >
+              <UserIcon className="w-4 h-4" />
+              <span>Mi perfil</span>
             </Link>
           </nav>
 

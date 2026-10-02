@@ -23,4 +23,23 @@ dist-ssr
 *.sln
 *.sw?
 
+# Env (nunca subir secrets)
 .env
+.env.*
+!.env.example
+
+# Build / local AI agent files (petición usuario: no subir a GitHub)
+# NOTA: si quieres compartir reglas con el equipo, comenta las 3 líneas siguientes
+.cursorrules
+.cursorignore
+AI_CONTEXT.md
+MEMORY.md
+.mcp.json
+.cursor/
+# opencode.json SÍ se commitea: no contiene secretos (usa {env:...}).
+# Permite compartir los MCPs con el equipo (colaborador).
+opencode.json
+API.md
+
+temp
+AGENTS.md

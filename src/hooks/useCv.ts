@@ -59,5 +59,28 @@ export function useCv() {
     localStorage.removeItem(CV_STORAGE_KEY);
   }, []);
 
-  return { cv, isUploading, uploadError, upload, clear };
+  // Fase 2c: alta/edición manual del CV base (persiste en este dispositivo;
+  // la Fase 2d del back lo llevará a la BD).
+  const saveManual = useCallback(
+    (patch: Partial<GeneratedCV> & { skillsText?: string }) => {
+      const { skillsText, ...rest } = patch;
+      const skills = skillsText?.trim()
+        ? skillsText.split(",").map((s) => s.trim()).filter(Boolean)
+        : undefined;
+      setCv((prev) => {
+        const base: GeneratedCV =
+          prev ?? { fullName: "", targetRole: "", summary: "", skills: [], experience: [] };
+        const next: GeneratedCV = {
+          ...base,
+          ...rest,
+          ...(skills ? { skills } : {}),
+        };
+        localStorage.setItem(CV_STORAGE_KEY, JSON.stringify(next));
+        return next;
+      });
+    },
+    [],
+  );
+
+  return { cv, isUploading, uploadError, upload, clear, saveManual };
 }
