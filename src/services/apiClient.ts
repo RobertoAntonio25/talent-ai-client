@@ -1,8 +1,16 @@
-// Base URL: soporta VIT_ (Vercel) y VITE_ (estándar Vite) + fallback prod
-export const API_BASE_URL =
-  import.meta.env.VIT_API_URL ||
-  import.meta.env.VITE_API_URL ||
-  "https://talent-ai-4j4j.onrender.com";
+// Base URL: SOLO desde variables de entorno (nada hardcodeado en el código).
+// Local → .env (VIT_API_URL o VITE_API_URL). Vercel → Settings → Environment Variables.
+// Sin esta variable la app no arranca: falla rápido con un mensaje claro.
+const ENV_API_URL: string | undefined =
+  import.meta.env.VIT_API_URL || import.meta.env.VITE_API_URL;
+
+if (!ENV_API_URL) {
+  throw new Error(
+    "[apiClient] Falta la URL del backend: define VIT_API_URL (o VITE_API_URL) en tu .env local o en las Environment Variables de Vercel.",
+  );
+}
+
+export const API_BASE_URL: string = ENV_API_URL;
 
 /**
  * Error tipado para no perder status/code del backend.
@@ -36,14 +44,19 @@ function combineSignals(
   // Camino moderno: AbortSignal.any (Chrome 116+, FF 120+, Safari 17.4+)
   const anyFn = (AbortSignal as unknown as Record<string, unknown>)["any"];
   if (typeof anyFn === "function") {
-    return (AbortSignal as unknown as {
-      any: (signals: AbortSignal[]) => AbortSignal;
-    }).any([customSignal, controller.signal]);
+    return (
+      AbortSignal as unknown as {
+        any: (signals: AbortSignal[]) => AbortSignal;
+      }
+    ).any([customSignal, controller.signal]);
   }
 
   // Fallback navegadores viejos: propaga el abort manual
   if (customSignal.aborted) controller.abort();
-  else customSignal.addEventListener("abort", () => controller.abort(), { once: true });
+  else
+    customSignal.addEventListener("abort", () => controller.abort(), {
+      once: true,
+    });
   return controller.signal;
 }
 
@@ -174,4 +187,3 @@ export async function apiClient<T>(
     if (timeoutId) clearTimeout(timeoutId);
   }
 }
-

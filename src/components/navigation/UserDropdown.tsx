@@ -23,7 +23,9 @@ import { ApiError } from "../../services/apiClient";
 import { getPreferences, updatePreferences } from "../../services/profileService";
 import Toggle from "../ui/Toggle";
 
-const PREFS_STORAGE_KEY = "talentPreferences";
+const PREFS_STORAGE_KEY = "aplikaPreferences";
+// Clave anterior (pre-rebrand Talent AI → Aplika): solo se lee para migrar datos existentes.
+const LEGACY_PREFS_STORAGE_KEY = "talentPreferences";
 
 interface SearchPreferences {
   targetRole: string;
@@ -35,7 +37,16 @@ interface SearchPreferences {
 function loadStoredPreferences(): SearchPreferences | null {
   try {
     const raw = localStorage.getItem(PREFS_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as SearchPreferences) : null;
+    if (raw) return JSON.parse(raw) as SearchPreferences;
+    // Migración rebrand: rescatar las preferencias guardadas con la clave antigua.
+    const legacyRaw = localStorage.getItem(LEGACY_PREFS_STORAGE_KEY);
+    if (legacyRaw) {
+      const parsed = JSON.parse(legacyRaw) as SearchPreferences;
+      localStorage.setItem(PREFS_STORAGE_KEY, legacyRaw);
+      localStorage.removeItem(LEGACY_PREFS_STORAGE_KEY);
+      return parsed;
+    }
+    return null;
   } catch {
     return null;
   }

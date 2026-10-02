@@ -107,9 +107,11 @@ export default function Login() {
             className="flex items-center space-x-3 group transition-transform hover:scale-105"
             title="Volver a la página principal"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-xl shadow-lg shadow-blue-500/30">
-              T
-            </div>
+            <img
+              src="/favicon.svg"
+              alt="Aplika"
+              className="w-10 h-10 rounded-xl shadow-lg shadow-blue-500/30"
+            />
             <span className="text-2xl font-black tracking-tight">
               Aplika
             </span>
@@ -191,9 +193,11 @@ export default function Login() {
 
             {/* Logo visible en pantallas pequeñas */}
             <Link to="/" className="lg:hidden flex items-center space-x-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-white text-xs shadow-md">
-                T
-              </div>
+              <img
+                src="/favicon.svg"
+                alt="Aplika"
+                className="w-7 h-7 rounded-lg shadow-md"
+              />
               <span className="text-sm font-black text-slate-800">
                 Aplika
               </span>

@@ -31,9 +31,11 @@ export default function MainLayout() {
               className="flex items-center space-x-3 group"
               title="Ir al inicio (Landing)"
             >
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform">
-                T
-              </div>
+              <img
+                src="/favicon.svg"
+                alt="Aplika"
+                className="w-9 h-9 rounded-xl shadow-lg group-hover:scale-105 transition-transform"
+              />
               <div className="flex flex-col">
                 <span className="text-lg font-black tracking-tight text-white flex items-center gap-1.5">
                   Aplika

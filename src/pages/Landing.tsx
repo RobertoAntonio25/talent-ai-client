@@ -27,9 +27,11 @@ export default function Landing() {
       <nav className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center space-x-3 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-white text-lg shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform">
-              T
-            </div>
+            <img
+              src="/favicon.svg"
+              alt="Aplika"
+              className="w-9 h-9 rounded-xl shadow-lg group-hover:scale-105 transition-transform"
+            />
             <span className="text-xl font-black tracking-tight text-white">
               Aplika
             </span>
@@ -371,6 +373,7 @@ export default function Landing() {
       <footer className="border-t border-slate-800/80 py-8 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
+            <img src="/favicon.svg" alt="Aplika" className="w-5 h-5 rounded-md" />
             <span className="font-bold text-slate-300">Aplika</span>
             <span>• Plataforma de Gestión de Empleo con IA</span>
           </div>
