@@ -15,8 +15,8 @@ export type ExperienceLevel =
 export type Freshness = "today" | "3days" | "week" | "month" | "all";
 export type WorkMode = "ANY" | "REMOTE" | "HYBRID" | "ONSITE";
 
-/** Umbral de lectura cuando el perfil no lo fija (PLAN §4, defecto 50). */
-export const DEFAULT_MATCH_THRESHOLD = 50;
+/** Umbral de lectura cuando el perfil no lo fija (PLAN §4, defecto 70). */
+export const DEFAULT_MATCH_THRESHOLD = 70;
 
 /** GET /api/profile/preferences — el back responde el objeto directo. */
 export interface UserPreferences {
