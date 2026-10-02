@@ -6,7 +6,6 @@ import Register from "../pages/Register";
 import AuthCallback from "../pages/AuthCallback";
 import Dashboard from "../pages/Dashboard";
 import Settings from "../pages/Settings";
-import Search from "../pages/Search";
 import Profile from "../pages/Profile";
 import { ProtectedRoute, PublicOnlyRoute } from "./RouteGuards";
 
@@ -56,14 +55,6 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <Settings />
-          </ProtectedRoute>
-        ),
-      },
-      {
-        path: "search",
-        element: (
-          <ProtectedRoute>
-            <Search />
           </ProtectedRoute>
         ),
       },

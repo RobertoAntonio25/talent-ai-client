@@ -59,8 +59,7 @@ export function useCv() {
     localStorage.removeItem(CV_STORAGE_KEY);
   }, []);
 
-  // Fase 2c: alta/edición manual del CV base (persiste en este dispositivo;
-  // la Fase 2d del back lo llevará a la BD).
+  // Alta/edición manual del CV base (persiste en este dispositivo).
   const saveManual = useCallback(
     (patch: Partial<GeneratedCV> & { skillsText?: string }) => {
       const { skillsText, ...rest } = patch;
@@ -82,5 +81,16 @@ export function useCv() {
     [],
   );
 
-  return { cv, isUploading, uploadError, upload, clear, saveManual };
+  // Actualización parcial del CV (la usa la edición manual en /profile).
+  const updateCv = useCallback((patch: Partial<GeneratedCV>) => {
+    setCv((prev) => {
+      const base: GeneratedCV =
+        prev ?? { fullName: "", targetRole: "", summary: "", skills: [], experience: [] };
+      const next: GeneratedCV = { ...base, ...patch };
+      localStorage.setItem(CV_STORAGE_KEY, JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  return { cv, isUploading, uploadError, upload, clear, saveManual, updateCv };
 }

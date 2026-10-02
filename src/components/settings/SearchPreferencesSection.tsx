@@ -15,7 +15,7 @@ import {
 import SearchPreferencesFilters from "./SearchPreferencesFilters";
 
 const inputCls =
-  "mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500";
+  "mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-aplika-lima-500/40 focus:border-aplika-lima-500";
 
 function toggleInList<T>(list: T[], item: T): T[] {
   return list.includes(item) ? list.filter((i) => i !== item) : [...list, item];
@@ -46,7 +46,7 @@ export default function SearchPreferencesSection() {
   return (
     <div className="p-6 flex flex-col gap-4">
       <div className="flex items-center gap-4">
-        <div className="p-3 bg-violet-500/10 border border-violet-500/20 text-violet-400 rounded-2xl flex-shrink-0">
+        <div className="p-3 bg-aplika-lima-500/10 border border-aplika-lima-500/20 text-aplika-lima-400 rounded-2xl flex-shrink-0">
           <SlidersHorizontal className="w-6 h-6" />
         </div>
         <div>
@@ -104,7 +104,7 @@ export default function SearchPreferencesSection() {
                 workMode: e.target.value as (typeof WORK_MODE_OPTIONS)[number]["value"],
               })
             }
-            className="mt-1 w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none cursor-pointer"
+            className="mt-1 w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 block p-2.5 outline-none cursor-pointer"
           >
             {WORK_MODE_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -124,7 +124,7 @@ export default function SearchPreferencesSection() {
                 freshness: (e.target.value || null) as typeof prefs.freshness,
               })
             }
-            className="mt-1 w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none cursor-pointer"
+            className="mt-1 w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 block p-2.5 outline-none cursor-pointer"
           >
             {FRESHNESS_OPTIONS.map((o) => (
               <option key={o.label} value={o.value}>
@@ -154,7 +154,7 @@ export default function SearchPreferencesSection() {
                 }
                 className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer ${
                   active
-                    ? "bg-blue-600/20 text-blue-300 border-blue-500/50"
+                    ? "bg-aplika-lima-500/15 text-aplika-lima-300 border-aplika-lima-500/40"
                     : "bg-slate-950 text-slate-400 border-slate-700 hover:border-slate-500"
                 }`}
               >
@@ -184,7 +184,7 @@ export default function SearchPreferencesSection() {
                 }
                 className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer ${
                   active
-                    ? "bg-blue-600/20 text-blue-300 border-blue-500/50"
+                    ? "bg-aplika-lima-500/15 text-aplika-lima-300 border-aplika-lima-500/40"
                     : "bg-slate-950 text-slate-400 border-slate-700 hover:border-slate-500"
                 }`}
               >

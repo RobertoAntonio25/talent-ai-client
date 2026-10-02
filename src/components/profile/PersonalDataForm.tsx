@@ -1,6 +1,5 @@
 // src/components/profile/PersonalDataForm.tsx
-// Fase 2c: edita datos personales (persisten en local vía AuthContext;
-// la Fase 2d los llevará al back con PATCH /api/users/me).
+// Edita datos personales (persisten en este dispositivo vía AuthContext).
 import { useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -9,6 +8,7 @@ export default function PersonalDataForm() {
   const { user, updateUser } = useAuth();
   const [firstName, setFirstName] = useState(user?.firstName ?? "");
   const [lastName, setLastName] = useState(user?.lastName ?? "");
+  const [email, setEmail] = useState(user?.email ?? "");
   const [location, setLocation] = useState(user?.location ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
   const [saved, setSaved] = useState(false);
@@ -17,6 +17,7 @@ export default function PersonalDataForm() {
     updateUser({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
+      email: email.trim(),
       location: location.trim(),
       phone: phone.trim(),
     });
@@ -31,9 +32,9 @@ export default function PersonalDataForm() {
     <section aria-label="Datos personales">
       <h2 className="font-bold text-white text-sm sm:text-base">Datos personales</h2>
       <p className="text-xs sm:text-sm text-slate-400 mt-0.5 mb-4">
-        Se guardan en este dispositivo. La Fase 2d los sincronizará con el backend.
+        Se guardan en este dispositivo.
       </p>
-      <p className="text-xs text-slate-500 mb-4">Cuenta: {user?.email ?? "—"}</p>
+      <p className="text-xs text-slate-500 mb-4">El email solo se actualiza en este dispositivo.</p>
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="block">
           <span className="text-xs text-slate-400 font-medium">Nombre</span>
@@ -42,6 +43,10 @@ export default function PersonalDataForm() {
         <label className="block">
           <span className="text-xs text-slate-400 font-medium">Apellidos</span>
           <input value={lastName} onChange={(e) => setLastName(e.target.value)} placeholder="Lovelace" className={inputCls} />
+        </label>
+        <label className="block sm:col-span-2">
+          <span className="text-xs text-slate-400 font-medium">Email</span>
+          <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="ada@mail.com" className={inputCls} />
         </label>
         <label className="block">
           <span className="text-xs text-slate-400 font-medium">Ubicación</span>

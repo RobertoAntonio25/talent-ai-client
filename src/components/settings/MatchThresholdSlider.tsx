@@ -21,10 +21,10 @@ export default function MatchThresholdSlider({
     <div>
       <div className="flex items-center justify-between gap-3">
         <span className="flex items-center gap-1.5 text-xs font-semibold text-slate-200">
-          <Gauge className="w-3.5 h-3.5 text-blue-400" />
+          <Gauge className="w-3.5 h-3.5 text-aplika-lima-400" />
           Compatibilidad mínima
         </span>
-        <span className="px-2 py-0.5 rounded-full text-xs font-black bg-blue-500/10 text-blue-300 border border-blue-500/20">
+        <span className="px-2 py-0.5 rounded-full text-xs font-black bg-aplika-lima-500/10 text-aplika-lima-300 border border-aplika-lima-500/20">
           {value}%
         </span>
       </div>
@@ -37,7 +37,7 @@ export default function MatchThresholdSlider({
         disabled={disabled}
         aria-label="Compatibilidad mínima"
         onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-2 w-full accent-blue-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+        className="mt-2 w-full accent-aplika-lima-500 cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
       />
       <div className="flex justify-between text-[10px] text-slate-500">
         <span>Más ofertas</span>

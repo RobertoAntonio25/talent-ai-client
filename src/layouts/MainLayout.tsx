@@ -62,18 +62,6 @@ export default function MainLayout() {
             </Link>
 
             <Link
-              to="/search"
-              className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
-                location.pathname === "/search"
-                  ? "bg-aplika-lima-500/15 text-aplika-lima-400 border border-aplika-lima-500/30"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/60"
-              }`}
-            >
-              <Search className="w-4 h-4" />
-              <span>Buscar ofertas</span>
-            </Link>
-
-            <Link
               to="/settings"
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all ${
                 location.pathname === "/settings"
@@ -82,7 +70,7 @@ export default function MainLayout() {
               }`}
             >
               <SettingsIcon className="w-4 h-4" />
-              <span>Configuración IA</span>
+              <span>Configuración</span>
             </Link>
 
             <Link
@@ -101,7 +89,7 @@ export default function MainLayout() {
           {/* Perfil / Acceso Rápido (Fase 5: dropdown de usuario) */}
           <div className="flex items-center gap-2">
             <Link
-              to="/search?autostart=1"
+              to="/settings?seccion=busqueda&autostart=1"
               title="Buscar ofertas ahora (JSearch + IA)"
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold text-aplika-night-950 bg-aplika-lima-500 hover:bg-aplika-lima-400 shadow-lg shadow-aplika-lima-500/20 transition-all active:scale-95"
             >

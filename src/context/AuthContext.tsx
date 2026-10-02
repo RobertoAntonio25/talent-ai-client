@@ -71,7 +71,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setAuth({ token: newToken, user: newUser });
   };
 
-  // Fase 2c: edición local del perfil (Fase 2d traerá PATCH /api/users/me).
+  // Edición local del perfil (persiste en este dispositivo).
   const updateUser = useCallback(
     (patch: Partial<User>) => {
       setAuth((prev) => {

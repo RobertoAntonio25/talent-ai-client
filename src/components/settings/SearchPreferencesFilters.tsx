@@ -21,7 +21,7 @@ interface Props {
 }
 
 const inputCls =
-  "mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500";
+  "mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-aplika-lima-500/40 focus:border-aplika-lima-500";
 
 export default function SearchPreferencesFilters({
   prefs,
@@ -62,7 +62,7 @@ export default function SearchPreferencesFilters({
               onChange={(e) =>
                 updateDraft({ radiusKm: e.target.checked ? null : 50 })
               }
-              className="accent-blue-500 w-3.5 h-3.5"
+              className="accent-aplika-lima-500 w-3.5 h-3.5"
             />
             Sin límite
           </label>
@@ -147,7 +147,7 @@ export default function SearchPreferencesFilters({
                 e.target.value === "" ? null : e.target.value === "yes",
             })
           }
-          className="mt-1 w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none cursor-pointer"
+          className="mt-1 w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 block p-2.5 outline-none cursor-pointer"
         >
           <option value="">Sin preferencia</option>
           <option value="yes">Sí, afinar con mis skills</option>
@@ -165,7 +165,7 @@ export default function SearchPreferencesFilters({
         type="button"
         onClick={onSave}
         disabled={isSaving}
-        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-500/20 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+        className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold text-aplika-night-950 bg-aplika-lima-500 hover:bg-aplika-lima-400 shadow-lg shadow-aplika-lima-500/20 transition-all active:scale-[0.98] cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
         {isSaving ? "Guardando…" : "Guardar preferencias"}

@@ -1,6 +1,6 @@
 // src/components/profile/PasswordForm.tsx
-// Fase 2c: valida en front; el cambio real espera a la Fase 2d del back
-// (POST /api/auth/change-password). No se persiste nada en local.
+// Valida en front; el cambio real aún no está disponible en el backend.
+// No se persiste nada en local.
 import { useState } from "react";
 import { AlertCircle, Info } from "lucide-react";
 import { PASSWORD_PENDING_MSG } from "../../services/userProfile.service";
@@ -36,7 +36,7 @@ export default function PasswordForm() {
     <section aria-label="Cambiar contraseña">
       <h2 className="font-bold text-white text-sm sm:text-base">Contraseña</h2>
       <p className="text-xs sm:text-sm text-slate-400 mt-0.5 mb-4">
-        Por seguridad, el cambio se activará con la Fase 2d del backend.
+        Por seguridad, el cambio se activará próximamente.
       </p>
       <div className="grid gap-3 max-w-md">
         <label className="block">

@@ -1,5 +1,5 @@
 // src/components/profile/OtherOptions.tsx
-// Fase 2c: accesos recomendados + nota de persistencia (Fase 2d).
+// Accesos recomendados + nota de persistencia.
 import { Link, useNavigate } from "react-router-dom";
 import { LayoutDashboard, LogOut, Settings as SettingsIcon } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
@@ -32,7 +32,7 @@ export default function OtherOptions() {
           className="flex items-center gap-2 px-4 py-3 rounded-xl text-sm font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors"
         >
           <SettingsIcon className="w-4 h-4 text-aplika-lima-400" />
-          Configuración del Agente IA
+          Configuración
         </Link>
         <button
           type="button"
@@ -43,11 +43,6 @@ export default function OtherOptions() {
           Cerrar sesión
         </button>
       </div>
-      <p className="mt-4 text-[11px] text-slate-500 leading-relaxed max-w-md">
-        Tus datos personales y tu CV manual se guardan en este dispositivo. Las
-        preferencias de búsqueda viven en el backend (Settings). El cambio de
-        contraseña y la sincronización total del perfil llegarán con la Fase 2d.
-      </p>
     </section>
   );
 }

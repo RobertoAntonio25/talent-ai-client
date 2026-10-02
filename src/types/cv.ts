@@ -18,6 +18,12 @@ export interface LanguageItem {
   level: string;
 }
 
+export interface CvProject {
+  name: string;
+  technologies: string[];
+  repoUrl?: string;
+}
+
 export interface SkillsCategorized {
   languages: string[];
   frameworks: string[];
@@ -42,4 +48,5 @@ export interface GeneratedCV {
   experience: JobExperience[];
   education?: EducationItem[];
   languages?: LanguageItem[];
+  projects?: CvProject[];
 }
