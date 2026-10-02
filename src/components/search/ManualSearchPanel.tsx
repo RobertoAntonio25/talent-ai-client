@@ -38,7 +38,7 @@ export default function ManualSearchPanel({
         </div>
       )}
 
-      <div className="bg-slate-900/70 border border-slate-800 rounded-3xl shadow-xl shadow-black/40 overflow-hidden backdrop-blur-sm">
+      <div className="bg-[#12283f]/70 border border-[#0a66c2]/25 rounded-3xl shadow-xl shadow-black/40 overflow-hidden backdrop-blur-sm">
         <div className="p-6 bg-slate-950/30 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs text-slate-400">
             <Sparkles className="w-4 h-4 text-aplika-lima-400" />

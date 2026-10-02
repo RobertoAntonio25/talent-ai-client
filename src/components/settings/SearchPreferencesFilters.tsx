@@ -1,6 +1,6 @@
 // src/components/settings/SearchPreferencesFilters.tsx
-// Fase 2b: filtros avanzados (radio, país, portales, salario, skills, umbral)
-// + botón de guardado. Recibe el borrador y delega el PATCH al contenedor.
+// Fila 8 (portales) + fila 9 (slider de compatibilidad) + botón de guardado.
+// Recibe el borrador y delega el PATCH al contenedor.
 import {
   AlertCircle,
   CheckCircle2,
@@ -10,6 +10,7 @@ import {
 import type { UserPreferences } from "../../services/profileService";
 import { DEFAULT_MATCH_THRESHOLD } from "../../services/profileService";
 import MatchThresholdSlider from "./MatchThresholdSlider";
+import FieldHelp from "./FieldHelp";
 
 interface Props {
   prefs: UserPreferences;
@@ -31,77 +32,13 @@ export default function SearchPreferencesFilters({
   savedMsg,
   onSave,
 }: Props) {
-  const unlimitedRadius = prefs.radiusKm === null;
-
   return (
     <div className="flex flex-col gap-4">
-      <label className="block">
-        <span className="text-[11px] text-slate-400 font-medium">
-          Distancia máxima (km)
-        </span>
-        <div className="mt-1 flex items-center gap-3">
-          <input
-            type="number"
-            min={1}
-            max={500}
-            disabled={unlimitedRadius}
-            value={prefs.radiusKm ?? ""}
-            onChange={(e) => {
-              const n = Number(e.target.value);
-              updateDraft({
-                radiusKm: e.target.value === "" ? null : Math.max(1, Math.min(500, n)),
-              });
-            }}
-            placeholder="Sin límite"
-            className={`${inputCls} disabled:opacity-50`}
-          />
-          <label className="flex items-center gap-1.5 text-[11px] text-slate-300 whitespace-nowrap cursor-pointer">
-            <input
-              type="checkbox"
-              checked={unlimitedRadius}
-              onChange={(e) =>
-                updateDraft({ radiusKm: e.target.checked ? null : 50 })
-              }
-              className="accent-aplika-lima-500 w-3.5 h-3.5"
-            />
-            Sin límite
-          </label>
-        </div>
-      </label>
-
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <label className="block">
-          <span className="text-[11px] text-slate-400 font-medium">
-            País (vacío = cualquiera)
-          </span>
-          <input
-            type="text"
-            value={prefs.country ?? ""}
-            onChange={(e) => updateDraft({ country: e.target.value || null })}
-            placeholder="España"
-            className={inputCls}
-          />
-        </label>
-        <label className="block">
-          <span className="text-[11px] text-slate-400 font-medium">
-            Salario mínimo €/año (vacío = cualquiera)
-          </span>
-          <input
-            type="number"
-            min={0}
-            value={prefs.salaryMin ?? ""}
-            onChange={(e) =>
-              updateDraft({
-                salaryMin: e.target.value === "" ? null : Math.max(0, Number(e.target.value)),
-              })
-            }
-            placeholder="30000"
-            className={inputCls}
-          />
-        </label>
-        <label className="block">
-          <span className="text-[11px] text-slate-400 font-medium">
-            Portal preferido (vacío = cualquiera)
+          <span className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
+            Portal preferido
+            <FieldHelp text="Si buscas sobre todo en un portal (p. ej. linkedin), el agente lo prioriza en la query. Vacío = cualquiera." />
           </span>
           <input
             type="text"
@@ -114,8 +51,9 @@ export default function SearchPreferencesFilters({
           />
         </label>
         <label className="block">
-          <span className="text-[11px] text-slate-400 font-medium">
-            Portales a evitar (separados por comas)
+          <span className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
+            Portales a evitar
+            <FieldHelp text="Portales que no quieres ver, separados por comas (p. ej. indeed, infojobs)." />
           </span>
           <input
             type="text"
@@ -129,37 +67,20 @@ export default function SearchPreferencesFilters({
         </label>
       </div>
 
-      <label className="block">
-        <span className="text-[11px] text-slate-400 font-medium">
-          Usar mis skills en la búsqueda
-        </span>
-        <select
-          value={
-            prefs.useSkillsInQuery === null
-              ? ""
-              : prefs.useSkillsInQuery
-                ? "yes"
-                : "no"
-          }
-          onChange={(e) =>
-            updateDraft({
-              useSkillsInQuery:
-                e.target.value === "" ? null : e.target.value === "yes",
-            })
-          }
-          className="mt-1 w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 block p-2.5 outline-none cursor-pointer"
-        >
-          <option value="">Sin preferencia</option>
-          <option value="yes">Sí, afinar con mis skills</option>
-          <option value="no">No, buscar solo por el rol</option>
-        </select>
-      </label>
-
-      <MatchThresholdSlider
-        value={prefs.matchThreshold ?? DEFAULT_MATCH_THRESHOLD}
-        onChange={(matchThreshold) => updateDraft({ matchThreshold })}
-        disabled={isSaving}
-      />
+      <div className="rounded-2xl border border-aplika-lima-500/30 bg-aplika-lima-500/5 p-4 shadow-lg shadow-aplika-lima-500/10">
+        <MatchThresholdSlider
+          value={prefs.matchThreshold ?? DEFAULT_MATCH_THRESHOLD}
+          onChange={(matchThreshold) => updateDraft({ matchThreshold })}
+          disabled={isSaving}
+        />
+        <p className="mt-3 text-[11px] leading-relaxed text-slate-300">
+          Es el filtro más importante: define la compatibilidad mínima
+          (0–100) para que una oferta cree un TODO en tu kanban. Con un
+          valor alto solo verás las mejores; al bajarlo aparecen más
+          ofertas, incluidas algunas ya evaluadas, sin crear tareas nuevas.
+          Recuerda pulsar «Guardar preferencias» para aplicarlo.
+        </p>
+      </div>
 
       <button
         type="button"

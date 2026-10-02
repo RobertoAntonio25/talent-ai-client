@@ -1,6 +1,9 @@
 // src/pages/Profile.tsx
-// Página de perfil con menú lateral (datos personales, contraseña y CV).
+// Fase 2e (issue #151): página /profile cableada al back.
+// Carga agregado GET /api/profile al montar (usuario + prefs + resumen CV).
+import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 import ProfileSidebar, {
   type ProfileSection,
 } from "../components/profile/ProfileSidebar";
@@ -8,11 +11,12 @@ import PersonalDataForm from "../components/profile/PersonalDataForm";
 import PasswordForm from "../components/profile/PasswordForm";
 import CvManager from "../components/profile/CvManager";
 import { useAuth } from "../context/AuthContext";
+import { getProfileAggregate, type ProfileAggregate } from "../services/userProfile.service";
 
 const VALID: ProfileSection[] = ["datos", "password", "cv"];
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
   const [params, setParams] = useSearchParams();
   const raw = params.get("seccion");
   const active: ProfileSection = VALID.includes(raw as ProfileSection)
@@ -21,8 +25,52 @@ export default function Profile() {
 
   const select = (s: ProfileSection) => setParams({ seccion: s });
 
+  const [aggregate, setAggregate] = useState<ProfileAggregate | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    let mounted = true;
+    void Promise.resolve().then(() => {
+      if (!mounted) return;
+      setIsLoading(true);
+      getProfileAggregate()
+        .then((data) => {
+          if (!mounted) return;
+          setAggregate(data);
+          // Sincronizar AuthContext + localStorage con datos del back
+          updateUser({
+            firstName: data.user.firstName ?? "",
+            lastName: data.user.lastName ?? "",
+            email: data.user.email ?? "",
+            location: data.user.location ?? "",
+            phone: data.user.phone ?? "",
+          });
+        })
+        .catch(() => {
+          // Si falla, mantener lo que haya en localStorage/AuthContext
+        })
+        .finally(() => {
+          if (mounted) setIsLoading(false);
+        });
+    });
+    return () => { mounted = false; };
+  }, [updateUser]);
+
   const fullName =
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Tu perfil";
+    [aggregate?.user.firstName, aggregate?.user.lastName]
+      .filter(Boolean)
+      .join(" ") || [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Tu perfil";
+
+  if (isLoading) {
+    return (
+      <div className="max-w-5xl mx-auto w-full font-sans animate-in fade-in duration-300">
+        <div className="p-6 flex items-center gap-2 text-xs text-slate-400">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Cargando tu perfil…
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-5xl mx-auto w-full font-sans animate-in fade-in duration-300">
