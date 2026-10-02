@@ -22,7 +22,7 @@ export default function Landing() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-blue-500 selection:text-white overflow-hidden">
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-aplika-lima-500 selection:text-aplika-night-950 overflow-hidden">
       {/* 🌟 NAVEGACIÓN DE LA LANDING */}
       <nav className="sticky top-0 z-50 bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -212,7 +212,12 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* ⚡ MÉTRICAS DE IMPACTO */}
+      {/* 🎨 PALETA APLIKA (sistema de color global):
+          - Fondo: slate-950/900 (oscuros neutros, se mantienen)
+          - Protagonista: aplika-lima (CTAs, titulares, cards laterales, métricas clave)
+          - Acento secundario: purple = IA (card central "CV con IA", columna
+            "Entrevista", métrica "100%") — reservado a lo "inteligente"
+          - Semánticos que NO son marca: emerald (éxito/dinero), red/amber (semáforo) */}
       <section className="py-12 border-y border-slate-800/80 bg-slate-900/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
           <div>
@@ -293,10 +298,10 @@ export default function Landing() {
           {/* Card 2: CV ATS */}
           <div
             id="ats"
-            className="bg-slate-900/70 border border-slate-800 rounded-3xl p-8 hover:border-slate-700 transition-all flex flex-col justify-between md:scale-105 md:border-aplika-lima-500/40 shadow-xl shadow-aplika-lima-500/5"
+            className="bg-slate-900/70 border border-slate-800 rounded-3xl p-8 hover:border-slate-700 transition-all flex flex-col justify-between md:scale-105 md:border-purple-500/40 shadow-xl shadow-purple-500/5"
           >
             <div>
-              <div className="w-12 h-12 rounded-2xl bg-aplika-lima-500/10 border border-aplika-lima-500/20 text-aplika-lima-400 flex items-center justify-center mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-6">
                 <FileCheck2 className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">
@@ -308,7 +313,7 @@ export default function Landing() {
                 sin marcas de agua.
               </p>
             </div>
-            <div className="mt-6 pt-6 border-t border-slate-800 flex items-center text-xs font-semibold text-aplika-lima-400">
+            <div className="mt-6 pt-6 border-t border-slate-800 flex items-center text-xs font-semibold text-purple-400">
               <span>Descarga directa en A4</span>
               <Sparkles className="w-3.5 h-3.5 ml-1.5" />
             </div>
@@ -317,7 +322,7 @@ export default function Landing() {
           {/* Card 3: Bot Automático */}
           <div className="bg-slate-900/70 border border-slate-800 rounded-3xl p-8 hover:border-slate-700 transition-all flex flex-col justify-between">
             <div>
-              <div className="w-12 h-12 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-6">
+              <div className="w-12 h-12 rounded-2xl bg-aplika-lima-500/10 border border-aplika-lima-500/20 text-aplika-lima-400 flex items-center justify-center mb-6">
                 <Bot className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">
@@ -329,7 +334,7 @@ export default function Landing() {
                 automáticamente.
               </p>
             </div>
-            <div className="mt-6 pt-6 border-t border-slate-800 flex items-center text-xs font-semibold text-purple-400">
+            <div className="mt-6 pt-6 border-t border-slate-800 flex items-center text-xs font-semibold text-aplika-lima-400">
               <span>Búsqueda en segundo plano</span>
               <ShieldCheck className="w-3.5 h-3.5 ml-1.5" />
             </div>

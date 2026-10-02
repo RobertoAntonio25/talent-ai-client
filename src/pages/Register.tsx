@@ -63,7 +63,7 @@ export default function Register() {
     "bg-gray-200",
     "bg-red-500",
     "bg-amber-500",
-    "bg-blue-500",
+    "bg-aplika-lima-500",
     "bg-emerald-500",
   ];
 
@@ -157,8 +157,8 @@ export default function Register() {
       {/* 🌟 SECCIÓN IZQUIERDA: Branding, Beneficios y Confianza */}
       <div className="hidden lg:flex lg:w-1/2 bg-slate-900 justify-between items-start flex-col p-16 text-white relative overflow-hidden">
         {/* Luces de fondo decorativas */}
-        <div className="absolute top-[-15%] left-[-15%] w-[450px] h-[450px] bg-blue-600 rounded-full mix-blend-screen filter blur-[120px] opacity-25 animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-indigo-600 rounded-full mix-blend-screen filter blur-[100px] opacity-20"></div>
+        <div className="absolute top-[-15%] left-[-15%] w-[450px] h-[450px] bg-aplika-lima-500 rounded-full mix-blend-screen filter blur-[120px] opacity-25 animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-aplika-night-800 rounded-full mix-blend-screen filter blur-[100px] opacity-20"></div>
 
         {/* Top: Logo & Badge */}
         <div className="z-10 w-full flex items-center justify-between">
@@ -174,7 +174,7 @@ export default function Register() {
             />
           </Link>
 
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 backdrop-blur-sm">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-aplika-lima-500/10 text-aplika-lima-400 border border-aplika-lima-500/20 backdrop-blur-sm">
             <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Potenciado con IA
           </span>
         </div>
@@ -183,7 +183,7 @@ export default function Register() {
         <div className="z-10 my-auto py-8">
           <h1 className="text-4xl xl:text-5xl font-extrabold mb-6 tracking-tight leading-tight">
             Impulsa tu carrera al{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-aplika-lima-300 via-aplika-lima-400 to-aplika-lima-500">
               siguiente nivel
             </span>
             .
@@ -196,8 +196,9 @@ export default function Register() {
 
           {/* Lista de Beneficios */}
           <div className="space-y-4 max-w-md">
+            {/* 🟣 Acento IA: optimización inteligente (ver paleta en Landing) */}
             <div className="flex items-start space-x-3.5">
-              <div className="p-1 rounded-lg bg-blue-500/10 text-blue-400 mt-0.5">
+              <div className="p-1 rounded-lg bg-purple-500/10 text-purple-400 mt-0.5">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
@@ -211,7 +212,7 @@ export default function Register() {
             </div>
 
             <div className="flex items-start space-x-3.5">
-              <div className="p-1 rounded-lg bg-blue-500/10 text-blue-400 mt-0.5">
+              <div className="p-1 rounded-lg bg-aplika-lima-500/10 text-aplika-lima-400 mt-0.5">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
@@ -225,7 +226,7 @@ export default function Register() {
             </div>
 
             <div className="flex items-start space-x-3.5">
-              <div className="p-1 rounded-lg bg-blue-500/10 text-blue-400 mt-0.5">
+              <div className="p-1 rounded-lg bg-aplika-lima-500/10 text-aplika-lima-400 mt-0.5">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
@@ -243,7 +244,7 @@ export default function Register() {
 
         {/* Bottom: Seguridad y confianza */}
         <div className="z-10 w-full flex items-center text-xs text-slate-400 space-x-2 border-t border-slate-800/80 pt-6">
-          <ShieldCheck className="w-4 h-4 text-blue-400" />
+          <ShieldCheck className="w-4 h-4 text-aplika-lima-400" />
           <span>
             Tus datos están protegidos con encriptación de nivel bancario.
           </span>
@@ -257,7 +258,7 @@ export default function Register() {
           <div className="mb-6 flex items-center justify-between">
             <Link
               to="/"
-              className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors group"
+              className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-aplika-lima-600 transition-colors group"
             >
               <span className="mr-1 group-hover:-translate-x-0.5 transition-transform">
                 ←
@@ -559,14 +560,14 @@ export default function Register() {
                 Acepto los{" "}
                 <a
                   href="#"
-                  className="text-blue-600 hover:underline font-medium"
+                  className="text-aplika-lima-700 hover:underline font-medium"
                 >
                   Términos de servicio
                 </a>{" "}
                 y la{" "}
                 <a
                   href="#"
-                  className="text-blue-600 hover:underline font-medium"
+                  className="text-aplika-lima-700 hover:underline font-medium"
                 >
                   Política de privacidad
                 </a>
@@ -593,7 +594,7 @@ export default function Register() {
               ¿Ya tienes una cuenta?{" "}
               <Link
                 to="/login"
-                className="text-blue-600 font-semibold hover:underline"
+                className="text-aplika-lima-700 font-semibold hover:underline"
               >
                 Inicia sesión aquí
               </Link>
