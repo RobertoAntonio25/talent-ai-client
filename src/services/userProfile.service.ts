@@ -23,7 +23,3 @@ export function persistLocalUser(patch: Partial<User>): User | null {
   localStorage.setItem(USER_STORAGE_KEY, JSON.stringify(next));
   return next;
 }
-
-/** Mensaje único para el cambio de password (aún no disponible). */
-export const PASSWORD_PENDING_MSG =
-  "El cambio de contraseña aún no está disponible. Tus datos personales sí se guardan en este dispositivo.";

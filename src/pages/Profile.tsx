@@ -1,6 +1,5 @@
 // src/pages/Profile.tsx
-// Fase 2c (issue edu84gp/Aplika-Jobs#148): página de perfil con menú lateral
-// (datos personales, contraseña, CV, otras). Protegida vía ProtectedRoute.
+// Página de perfil con menú lateral (datos personales, contraseña y CV).
 import { useSearchParams } from "react-router-dom";
 import ProfileSidebar, {
   type ProfileSection,
@@ -8,10 +7,9 @@ import ProfileSidebar, {
 import PersonalDataForm from "../components/profile/PersonalDataForm";
 import PasswordForm from "../components/profile/PasswordForm";
 import CvManager from "../components/profile/CvManager";
-import OtherOptions from "../components/profile/OtherOptions";
 import { useAuth } from "../context/AuthContext";
 
-const VALID: ProfileSection[] = ["datos", "password", "cv", "otras"];
+const VALID: ProfileSection[] = ["datos", "password", "cv"];
 
 export default function Profile() {
   const { user } = useAuth();
@@ -44,7 +42,6 @@ export default function Profile() {
           {active === "datos" && <PersonalDataForm />}
           {active === "password" && <PasswordForm />}
           {active === "cv" && <CvManager />}
-          {active === "otras" && <OtherOptions />}
         </div>
       </div>
     </div>

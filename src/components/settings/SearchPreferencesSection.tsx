@@ -96,24 +96,6 @@ export default function SearchPreferencesSection() {
           />
         </label>
         <label className="block">
-          <span className="text-[11px] text-slate-400 font-medium">Modalidad</span>
-          <select
-            value={prefs.workMode ?? "ANY"}
-            onChange={(e) =>
-              updateDraft({
-                workMode: e.target.value as (typeof WORK_MODE_OPTIONS)[number]["value"],
-              })
-            }
-            className="mt-1 w-full bg-slate-900 border border-slate-700 text-slate-200 text-xs rounded-xl focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 block p-2.5 outline-none cursor-pointer"
-          >
-            {WORK_MODE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>
-                {o.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="block">
           <span className="text-[11px] text-slate-400 font-medium">
             Antigüedad de las ofertas
           </span>
@@ -134,6 +116,34 @@ export default function SearchPreferencesSection() {
           </select>
         </label>
       </div>
+
+      <fieldset>
+        <legend className="text-[11px] text-slate-400 font-medium mb-1.5">
+          Modalidad (cualquiera = sin preferencia)
+        </legend>
+        <div className="flex flex-wrap gap-1.5">
+          {WORK_MODE_OPTIONS.map((o) => {
+            const active = (prefs.workMode ?? "ANY") === o.value;
+            return (
+              <button
+                key={o.value}
+                type="button"
+                aria-pressed={active}
+                onClick={() =>
+                  updateDraft({ workMode: active ? "ANY" : o.value })
+                }
+                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-semibold border transition-colors cursor-pointer ${
+                  active
+                    ? "bg-aplika-lima-500/15 text-aplika-lima-300 border-aplika-lima-500/40"
+                    : "bg-slate-950 text-slate-400 border-slate-700 hover:border-slate-500"
+                }`}
+              >
+                {o.label}
+              </button>
+            );
+          })}
+        </div>
+      </fieldset>
 
       <fieldset>
         <legend className="text-[11px] text-slate-400 font-medium mb-1.5">

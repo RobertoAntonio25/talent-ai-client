@@ -1,12 +1,11 @@
 // src/components/settings/SettingsSidebar.tsx
 // Menú lateral de /settings: navegación entre secciones.
-import { Bot, Search, SlidersHorizontal } from "lucide-react";
+import { Bot, Search } from "lucide-react";
 
-export type SettingsSection = "busqueda" | "preferencias" | "agente";
+export type SettingsSection = "busqueda" | "agente";
 
 const ITEMS: { id: SettingsSection; label: string; icon: typeof Search }[] = [
-  { id: "preferencias", label: "Preferencias", icon: SlidersHorizontal },
-  { id: "busqueda", label: "Buscar ofertas", icon: Search },
+  { id: "busqueda", label: "Búsqueda", icon: Search },
   { id: "agente", label: "Agente IA", icon: Bot },
 ];
 

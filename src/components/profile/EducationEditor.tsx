@@ -84,7 +84,7 @@ export default function EducationEditor({
           </div>
         </div>
       ) : (
-        <button type="button" onClick={openNew} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-colors cursor-pointer">
+        <button type="button" onClick={openNew} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[11px] font-bold text-aplika-night-950 bg-aplika-lima-500 hover:bg-aplika-lima-400 shadow-lg shadow-aplika-lima-500/20 transition-all active:scale-95 cursor-pointer">
           <Plus className="w-3.5 h-3.5" /> Añadir estudios
         </button>
       )}

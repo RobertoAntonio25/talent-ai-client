@@ -47,7 +47,7 @@ export default function ManualSearchPanel({
           <button
             onClick={() => void runSearch()}
             disabled={isSearching}
-            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-xs sm:text-sm text-aplika-night-950 shadow-lg transition-all w-full sm:w-auto active:scale-95 disabled:cursor-not-allowed bg-aplika-lima-500 hover:bg-aplika-lima-400 shadow-aplika-lima-500/25 hover:shadow-aplika-lima-500/40 disabled:opacity-60"
+            className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-xs sm:text-sm text-aplika-night-950 shadow-lg transition-all w-full sm:w-auto active:scale-95 cursor-pointer disabled:cursor-not-allowed bg-aplika-lima-500 hover:bg-aplika-lima-400 shadow-aplika-lima-500/25 hover:shadow-aplika-lima-500/40 disabled:opacity-60"
           >
             {isSearching ? (
               <>

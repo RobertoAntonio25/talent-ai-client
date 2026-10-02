@@ -48,7 +48,7 @@ export default function CvBasicsForm({
           setSaved(true);
           window.setTimeout(() => setSaved(false), 3000);
         }}
-        className="mt-3 px-5 py-2 rounded-xl text-xs font-bold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 transition-all active:scale-95 cursor-pointer"
+        className="mt-3 px-5 py-2 rounded-xl text-xs font-bold text-aplika-night-950 bg-aplika-lima-500 hover:bg-aplika-lima-400 shadow-lg shadow-aplika-lima-500/20 transition-all active:scale-95 cursor-pointer"
       >
         Guardar datos básicos
       </button>

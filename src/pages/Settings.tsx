@@ -8,7 +8,7 @@ import SearchPreferencesSection from "../components/settings/SearchPreferencesSe
 import ManualSearchPanel from "../components/search/ManualSearchPanel";
 import { useManualSearch } from "../hooks/useManualSearch";
 
-const VALID: SettingsSection[] = ["busqueda", "preferencias", "agente"];
+const VALID: SettingsSection[] = ["busqueda", "agente"];
 
 export default function Settings() {
   const search = useManualSearch();
@@ -18,7 +18,7 @@ export default function Settings() {
   const raw = params.get("seccion");
   const active: SettingsSection = VALID.includes(raw as SettingsSection)
     ? (raw as SettingsSection)
-    : "preferencias";
+    : "busqueda";
 
   const select = (s: SettingsSection) => setParams({ seccion: s });
 
@@ -47,8 +47,12 @@ export default function Settings() {
           <SettingsSidebar active={active} onSelect={select} />
         </div>
         <div className="bg-slate-900/70 border border-slate-800 rounded-3xl shadow-xl shadow-black/40 p-5 sm:p-6 backdrop-blur-sm">
-          {active === "busqueda" && <ManualSearchPanel search={search} />}
-          {active === "preferencias" && <SearchPreferencesSection />}
+          {active === "busqueda" && (
+            <div className="grid gap-6">
+              <SearchPreferencesSection />
+              <ManualSearchPanel search={search} />
+            </div>
+          )}
           {active === "agente" && <AgentConfigSection />}
         </div>
       </div>

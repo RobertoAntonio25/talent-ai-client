@@ -1,14 +1,13 @@
 // src/components/profile/ProfileSidebar.tsx
 // Menú lateral de /profile (Fase 2c): navegación entre secciones.
-import { FileText, KeyRound, LayoutGrid, User as UserIcon } from "lucide-react";
+import { FileText, KeyRound, User as UserIcon } from "lucide-react";
 
-export type ProfileSection = "datos" | "password" | "cv" | "otras";
+export type ProfileSection = "datos" | "password" | "cv";
 
 const ITEMS: { id: ProfileSection; label: string; icon: typeof UserIcon }[] = [
   { id: "datos", label: "Datos personales", icon: UserIcon },
   { id: "password", label: "Contraseña", icon: KeyRound },
   { id: "cv", label: "Mi CV", icon: FileText },
-  { id: "otras", label: "Otras opciones", icon: LayoutGrid },
 ];
 
 export default function ProfileSidebar({

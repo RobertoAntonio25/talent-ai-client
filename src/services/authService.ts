@@ -40,6 +40,14 @@ export async function registerWithEmail(payload: {
   });
 }
 
+// Cambio de contraseña (requiere el endpoint POST /api/auth/change-password).
+export async function changePassword(currentPassword: string, newPassword: string) {
+  return apiClient<{ success: boolean; message: string }>(
+    "/api/auth/change-password",
+    { method: "POST", data: { currentPassword, newPassword } },
+  );
+}
+
 // Paso 1 OAuth: redirige a Google/LinkedIn vía Supabase
 export async function loginWithOAuth(provider: OAuthProvider) {
   const { error } = await supabase.auth.signInWithOAuth({
