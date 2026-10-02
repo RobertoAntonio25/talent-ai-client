@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { useCv } from "../hooks/useCv";
 import Toggle from "../components/ui/Toggle";
+import SearchPreferencesSection from "../components/settings/SearchPreferencesSection";
 import { triggerManualSearch } from "../services/jobsService";
 import { runMatcher } from "../services/aiService";
 
@@ -253,6 +254,12 @@ export default function Settings() {
             )}
           </button>
         </div>
+      </div>
+
+      {/* SECCIÓN Preferencias de búsqueda (Fase 2b, issue #125): pack completo
+          opcional contra PATCH /api/profile/preferences. */}
+      <div className="mt-6 bg-slate-900/70 border border-slate-800 rounded-3xl shadow-xl shadow-black/40 overflow-hidden backdrop-blur-sm">
+        <SearchPreferencesSection />
       </div>
     </div>
   );
