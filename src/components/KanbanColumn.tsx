@@ -31,8 +31,9 @@ const COLUMN_CONFIG: Record<
     icon: Send,
     color: "text-blue-400",
     dotColor: "bg-blue-400",
-    badgeBg: "bg-blue-500/10 text-blue-300 border-blue-500/20",
-    borderColor: "hover:border-blue-500/30",
+    badgeBg:
+      "bg-aplika-lima-500/10 text-aplika-lima-300 border-aplika-lima-500/20",
+    borderColor: "hover:border-aplika-lima-500/30",
   },
   entrevista: {
     icon: Users,
@@ -85,7 +86,7 @@ export default function KanbanColumn({ id, title, count, children }: Props) {
         className={`flex-1 flex flex-col gap-3 p-3 rounded-2xl min-h-[540px] transition-all duration-200 border
           ${
             isOver
-              ? "bg-blue-950/40 border-blue-500/60 border-dashed ring-2 ring-blue-500/20"
+              ? "bg-aplika-lima-500/10 border-aplika-lima-500/60 border-dashed ring-2 ring-aplika-lima-500/25"
               : "bg-slate-900/40 border-slate-800/80 backdrop-blur-xs"
           }
         `}

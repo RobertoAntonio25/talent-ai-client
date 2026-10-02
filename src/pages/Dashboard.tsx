@@ -100,7 +100,7 @@ export default function Dashboard() {
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
               Tablero de Postulaciones
             </h1>
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-aplika-lima-500/10 text-aplika-lima-400 border border-aplika-lima-500/20">
               Live
             </span>
           </div>
@@ -119,7 +119,7 @@ export default function Dashboard() {
             title="Recargar ofertas y postulaciones"
           >
             <RefreshCw
-              className={`w-4 h-4 ${isLoading ? "animate-spin text-blue-400" : ""}`}
+              className={`w-4 h-4 ${isLoading ? "animate-spin text-aplika-lima-400" : ""}`}
             />
           </button>
 
@@ -128,16 +128,16 @@ export default function Dashboard() {
             className="flex items-center justify-center gap-2 px-4 py-2.5 bg-slate-900 hover:bg-slate-800 border border-slate-700/80 text-slate-200 font-semibold text-xs sm:text-sm rounded-xl transition-all shadow-sm active:scale-95 cursor-pointer"
             title="Agrega una nueva oferta manualmente"
           >
-            <Plus className="w-4 h-4 text-blue-400" />
+            <Plus className="w-4 h-4 text-aplika-lima-400" />
             <span>Agregar Oferta</span>
           </button>
 
           <button
             onClick={() => setIsCvModalOpen(true)}
-            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/25 hover:shadow-blue-500/40 transition-all duration-200 active:scale-95 group cursor-pointer"
+            className="flex items-center justify-center gap-2 px-5 py-2.5 bg-aplika-lima-500 hover:bg-aplika-lima-400 text-aplika-night-950 font-semibold text-xs sm:text-sm rounded-xl shadow-lg shadow-aplika-lima-500/25 hover:shadow-aplika-lima-500/40 transition-all duration-200 active:scale-95 group cursor-pointer"
             title="Tu CV genérico Potenciado con IA para pasar los filtros ATS"
           >
-            <Sparkles className="w-4 h-4 text-blue-200 group-hover:rotate-12 transition-transform" />
+            <Sparkles className="w-4 h-4 text-aplika-night-900 group-hover:rotate-12 transition-transform" />
             <span>Ver CV Optimizado con IA</span>
           </button>
         </div>
@@ -146,7 +146,7 @@ export default function Dashboard() {
       {/* 📊 BARRA DE MÉTRICAS RÁPIDAS DINÁMICAS */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3.5">
         <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 flex items-center gap-3.5 backdrop-blur-sm">
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-400 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-xl bg-aplika-lima-500/10 text-aplika-lima-400 flex items-center justify-center">
             <Briefcase className="w-5 h-5" />
           </div>
           <div>
@@ -211,7 +211,7 @@ export default function Dashboard() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Buscar por empresa, rol o tecnología..."
-            className="w-full pl-10 pr-4 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+            className="w-full pl-10 pr-4 py-2 bg-slate-900/90 border border-slate-800 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-aplika-lima-500 focus:ring-1 focus:ring-aplika-lima-500 transition-all"
           />
         </div>
 
@@ -240,7 +240,7 @@ export default function Dashboard() {
       <Modal
         isOpen={isCvModalOpen}
         onClose={() => setIsCvModalOpen(false)}
-        title="Currículum Optimizado por Talent-AI ✨"
+        title="Currículum Optimizado por Aplika"
         subtitle="Generado automáticamente con palabras clave y formato ATS según tu perfil profesional."
       >
         {!cv ? (

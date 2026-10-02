@@ -90,9 +90,9 @@ export default function CoverLetterViewer({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/90 border border-slate-800 p-3 rounded-2xl">
         <div className="flex items-center gap-2 text-xs text-slate-300">
-          <span className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+          <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
           <span className="font-semibold text-white flex items-center gap-1.5">
-            <Building2 className="w-3.5 h-3.5 text-blue-400" />
+            <Building2 className="w-3.5 h-3.5 text-purple-400" />
             Para {job.company}
           </span>
           <span className="text-slate-500">•</span>
@@ -113,7 +113,7 @@ export default function CoverLetterViewer({
         )}
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 shadow-md shadow-blue-500/20 cursor-pointer"
+          className="flex items-center gap-1.5 px-4 py-2 bg-aplika-lima-500 hover:bg-aplika-lima-400 text-aplika-night-950 text-xs font-semibold rounded-xl transition-all active:scale-95 shadow-md shadow-aplika-lima-500/20 cursor-pointer"
         >
           {copied ? (
             <>
@@ -122,7 +122,7 @@ export default function CoverLetterViewer({
             </>
           ) : (
             <>
-              <Copy className="w-4 h-4 text-blue-200" />
+              <Copy className="w-4 h-4 text-aplika-night-900" />
               <span>
                 {coverLetterData?.emailBody
                   ? "Copiar Asunto y Cuerpo para Email"
@@ -134,7 +134,7 @@ export default function CoverLetterViewer({
       </div>
 
       {isLoading && (
-        <p className="text-xs text-blue-400">Generando carta con IA…</p>
+        <p className="text-xs text-purple-400">Generando carta con IA…</p>
       )}
 
       <div className="bg-white text-slate-900 p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-200 font-sans text-xs sm:text-sm leading-relaxed max-w-[794px] mx-auto w-full select-text">
@@ -142,7 +142,7 @@ export default function CoverLetterViewer({
           <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
             {identityName}
           </h2>
-          <p className="text-xs font-semibold text-blue-600">
+          <p className="text-xs font-semibold text-aplika-lima-700">
             Full-Stack Developer | DevOps Engineer
           </p>
           {identityLine && (
@@ -208,7 +208,7 @@ export default function CoverLetterViewer({
             </p>
           </div>
           <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
-            <UserCheck className="w-4 h-4 text-blue-600" />
+            <UserCheck className="w-4 h-4 text-aplika-lima-700" />
           </div>
         </div>
       </div>

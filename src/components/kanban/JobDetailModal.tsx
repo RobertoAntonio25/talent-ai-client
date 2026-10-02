@@ -211,31 +211,33 @@ export default function JobDetailModal({
               onClick={() => handleSelectTab("overview")}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                 activeTab === "overview"
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/25"
+                  ? "bg-aplika-lima-500 text-aplika-night-950 shadow-md shadow-aplika-lima-500/25"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/60"
               }`}
             >
               <LayoutGrid className="w-4 h-4" />
               <span>Detalle de la Vacante</span>
             </button>
+            {/* 🟣 Acento IA: CV generado por IA (ver paleta en Landing) */}
             <button
               type="button"
               onClick={() => handleSelectTab("cv")}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                 activeTab === "cv"
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/25"
+                  ? "bg-purple-600 text-white shadow-md shadow-purple-500/25"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/60"
               }`}
             >
               <FileText className="w-4 h-4" />
               <span>Currículum Vitae ATS</span>
             </button>
+            {/* 🟣 Acento IA: carta generada por IA (ver paleta en Landing) */}
             <button
               type="button"
               onClick={() => handleSelectTab("cover_letter")}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                 activeTab === "cover_letter"
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/25"
+                  ? "bg-purple-600 text-white shadow-md shadow-purple-500/25"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/60"
               }`}
             >
@@ -403,7 +405,7 @@ export default function JobDetailModal({
                         onClick={() => onMoveStatus?.(job.id, opt.id)}
                         className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
                           job.status === opt.id
-                            ? "bg-blue-600 text-white"
+                            ? "bg-aplika-lima-500 text-aplika-night-950"
                             : "bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700"
                         }`}
                       >
@@ -415,7 +417,7 @@ export default function JobDetailModal({
                 <button
                   type="button"
                   onClick={() => handleSelectTab("cv")}
-                  className="sm:ml-auto mt-1 sm:mt-3 inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors cursor-pointer"
+                  className="sm:ml-auto mt-1 sm:mt-3 inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-aplika-lima-500 hover:bg-aplika-lima-400 text-aplika-night-950 text-xs font-bold transition-colors cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   Ver CV optimizado para esta vacante

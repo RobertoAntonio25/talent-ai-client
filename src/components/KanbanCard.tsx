@@ -22,10 +22,11 @@ interface Props {
   onDelete?: (job: JobApplication) => void;
 }
 
-// Genera un color consistente según el nombre de la empresa para el avatar
+// Genera un color consistente según el nombre de la empresa para el avatar.
+// 🎨 Incluye lima/night de marca entre los semánticos (ver paleta en Landing).
 const getCompanyBadgeColor = (name: string) => {
   const colors = [
-    "from-blue-600 to-cyan-600 text-cyan-100",
+    "from-aplika-lima-600 to-aplika-lima-500 text-aplika-night-950",
     "from-purple-600 to-indigo-600 text-indigo-100",
     "from-emerald-600 to-teal-600 text-teal-100",
     "from-amber-600 to-orange-600 text-orange-100",
@@ -102,8 +103,8 @@ export default function KanbanCard({ job, onClick, onEdit, onDelete }: Props) {
       className={`relative flex flex-col bg-slate-900/90 rounded-2xl border p-4 transition-all duration-200 group cursor-pointer active:cursor-grabbing backdrop-blur-sm select-none
         ${
           isDragging
-            ? "opacity-30 border-2 border-dashed border-blue-500 shadow-none z-0"
-            : "border-slate-800/90 shadow-md shadow-slate-950/40 hover:border-blue-500/50 hover:shadow-xl hover:shadow-slate-950/60 hover:-translate-y-0.5 z-10"
+            ? "opacity-30 border-2 border-dashed border-aplika-lima-500 shadow-none z-0"
+            : "border-slate-800/90 shadow-md shadow-slate-950/40 hover:border-aplika-lima-500/50 hover:shadow-xl hover:shadow-slate-950/60 hover:-translate-y-0.5 z-10"
         }
       `}
     >
@@ -176,7 +177,7 @@ export default function KanbanCard({ job, onClick, onEdit, onDelete }: Props) {
                         setMenuOpen(false);
                         onEdit(job);
                       }}
-                      className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-blue-400 text-left transition-colors"
+                      className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 hover:text-aplika-lima-400 text-left transition-colors"
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                       <span>Editar</span>
@@ -208,7 +209,7 @@ export default function KanbanCard({ job, onClick, onEdit, onDelete }: Props) {
       </div>
 
       {/* Position Title */}
-      <h4 className="font-bold text-slate-100 text-sm mb-2 group-hover:text-blue-400 transition-colors leading-snug">
+      <h4 className="font-bold text-slate-100 text-sm mb-2 group-hover:text-aplika-lima-400 transition-colors leading-snug">
         {job.position}
       </h4>
 

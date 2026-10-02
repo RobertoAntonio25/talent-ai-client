@@ -4,12 +4,23 @@ import { uploadCv } from "../services/aiService";
 import { mapExtractedToGeneratedCV } from "../adapters/cvAdapter";
 import { useAuth } from "../context/AuthContext";
 
-const CV_STORAGE_KEY = "talentCv";
+const CV_STORAGE_KEY = "aplikaCv";
+// Clave anterior (pre-rebrand Talent AI → Aplika): solo se lee para migrar datos existentes.
+const LEGACY_CV_STORAGE_KEY = "talentCv";
 
 function loadStoredCv(): GeneratedCV | null {
   try {
     const raw = localStorage.getItem(CV_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as GeneratedCV) : null;
+    if (raw) return JSON.parse(raw) as GeneratedCV;
+    // Migración rebrand: rescatar el CV guardado con la clave antigua.
+    const legacyRaw = localStorage.getItem(LEGACY_CV_STORAGE_KEY);
+    if (legacyRaw) {
+      const parsed = JSON.parse(legacyRaw) as GeneratedCV;
+      localStorage.setItem(CV_STORAGE_KEY, legacyRaw);
+      localStorage.removeItem(LEGACY_CV_STORAGE_KEY);
+      return parsed;
+    }
+    return null;
   } catch {
     return null;
   }

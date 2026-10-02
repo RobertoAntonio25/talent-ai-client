@@ -63,7 +63,7 @@ export default function Register() {
     "bg-gray-200",
     "bg-red-500",
     "bg-amber-500",
-    "bg-blue-500",
+    "bg-aplika-lima-500",
     "bg-emerald-500",
   ];
 
@@ -153,12 +153,12 @@ export default function Register() {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-slate-50 font-sans">
+    <div className="flex min-h-screen w-full bg-aplika-night-950 font-sans">
       {/* 🌟 SECCIÓN IZQUIERDA: Branding, Beneficios y Confianza */}
-      <div className="hidden lg:flex lg:w-1/2 bg-slate-900 justify-between items-start flex-col p-16 text-white relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-aplika-night-950 via-slate-900 to-aplika-night-900 justify-between items-start flex-col p-16 text-white relative overflow-hidden border-r border-slate-800/60">
         {/* Luces de fondo decorativas */}
-        <div className="absolute top-[-15%] left-[-15%] w-[450px] h-[450px] bg-blue-600 rounded-full mix-blend-screen filter blur-[120px] opacity-25 animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-indigo-600 rounded-full mix-blend-screen filter blur-[100px] opacity-20"></div>
+        <div className="absolute top-[-15%] left-[-15%] w-[450px] h-[450px] bg-aplika-lima-500 rounded-full mix-blend-screen filter blur-[120px] opacity-25 animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-aplika-night-800 rounded-full mix-blend-screen filter blur-[100px] opacity-20"></div>
 
         {/* Top: Logo & Badge */}
         <div className="z-10 w-full flex items-center justify-between">
@@ -167,15 +167,14 @@ export default function Register() {
             className="flex items-center space-x-3 group transition-transform hover:scale-105"
             title="Volver a la página principal"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-xl shadow-lg shadow-blue-500/30">
-              T
-            </div>
-            <span className="text-2xl font-black tracking-tight">
-              Talent-AI
-            </span>
+            <img
+              src="/logo-aplika-horizontal-blanco.svg"
+              alt="Aplika"
+              className="h-14 w-auto"
+            />
           </Link>
 
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 backdrop-blur-sm">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-aplika-lima-500/10 text-aplika-lima-400 border border-aplika-lima-500/20 backdrop-blur-sm">
             <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Potenciado con IA
           </span>
         </div>
@@ -184,7 +183,7 @@ export default function Register() {
         <div className="z-10 my-auto py-8">
           <h1 className="text-4xl xl:text-5xl font-extrabold mb-6 tracking-tight leading-tight">
             Impulsa tu carrera al{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-aplika-lima-300 via-aplika-lima-400 to-aplika-lima-500">
               siguiente nivel
             </span>
             .
@@ -197,8 +196,9 @@ export default function Register() {
 
           {/* Lista de Beneficios */}
           <div className="space-y-4 max-w-md">
+            {/* 🟣 Acento IA: optimización inteligente (ver paleta en Landing) */}
             <div className="flex items-start space-x-3.5">
-              <div className="p-1 rounded-lg bg-blue-500/10 text-blue-400 mt-0.5">
+              <div className="p-1 rounded-lg bg-purple-500/10 text-purple-400 mt-0.5">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
@@ -212,7 +212,7 @@ export default function Register() {
             </div>
 
             <div className="flex items-start space-x-3.5">
-              <div className="p-1 rounded-lg bg-blue-500/10 text-blue-400 mt-0.5">
+              <div className="p-1 rounded-lg bg-aplika-lima-500/10 text-aplika-lima-400 mt-0.5">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
@@ -226,7 +226,7 @@ export default function Register() {
             </div>
 
             <div className="flex items-start space-x-3.5">
-              <div className="p-1 rounded-lg bg-blue-500/10 text-blue-400 mt-0.5">
+              <div className="p-1 rounded-lg bg-aplika-lima-500/10 text-aplika-lima-400 mt-0.5">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
@@ -244,7 +244,7 @@ export default function Register() {
 
         {/* Bottom: Seguridad y confianza */}
         <div className="z-10 w-full flex items-center text-xs text-slate-400 space-x-2 border-t border-slate-800/80 pt-6">
-          <ShieldCheck className="w-4 h-4 text-blue-400" />
+          <ShieldCheck className="w-4 h-4 text-aplika-lima-400" />
           <span>
             Tus datos están protegidos con encriptación de nivel bancario.
           </span>
@@ -252,13 +252,15 @@ export default function Register() {
       </div>
 
       {/* ⚡ SECCIÓN DERECHA: Formulario de Registro */}
-      <div className="flex w-full lg:w-1/2 justify-center items-center p-6 sm:p-10 lg:p-12 overflow-y-auto">
-        <div className="w-full max-w-lg bg-white rounded-3xl shadow-xl shadow-slate-200/60 p-8 sm:p-10 border border-slate-100 relative">
+      <div className="flex w-full lg:w-1/2 justify-center items-center p-6 sm:p-10 lg:p-12 overflow-y-auto bg-gradient-to-bl from-aplika-steel-700 via-aplika-steel-800 to-aplika-night-900 relative lg:border-l lg:border-slate-700/40">
+        {/* Resplandor lima sutil que baña la card desde arriba */}
+        <div className="absolute top-[-10%] right-[10%] w-[380px] h-[280px] bg-aplika-lima-500/10 rounded-full filter blur-[110px] pointer-events-none"></div>
+        <div className="w-full max-w-lg bg-aplika-night-950/60 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/50 p-8 sm:p-10 border border-slate-700/60 relative text-slate-200">
           {/* Botón Volver al inicio */}
           <div className="mb-6 flex items-center justify-between">
             <Link
               to="/"
-              className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors group"
+              className="inline-flex items-center text-xs font-semibold text-slate-400 hover:text-aplika-lima-400 transition-colors group"
             >
               <span className="mr-1 group-hover:-translate-x-0.5 transition-transform">
                 ←
@@ -268,36 +270,35 @@ export default function Register() {
 
             {/* Logo visible en pantallas pequeñas */}
             <Link to="/" className="lg:hidden flex items-center space-x-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-white text-xs shadow-md">
-                T
-              </div>
-              <span className="text-sm font-black text-slate-800">
-                Talent-AI
-              </span>
+              <img
+                src="/logo-aplika-horizontal-blanco.svg"
+                alt="Aplika"
+                className="h-8 w-auto"
+              />
             </Link>
           </div>
 
           <div className="text-center mb-6">
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">
+            <h2 className="text-3xl font-extrabold text-white tracking-tight mb-2">
               Crea tu cuenta
             </h2>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-400">
               Únete gratis y comienza a transformar tu búsqueda de empleo
             </p>
           </div>
 
           {/* Banner de Error */}
           {errorMessage && (
-            <div className="mb-5 p-3.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex items-center space-x-2 animate-shake">
-              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500" />
+            <div className="mb-5 p-3.5 bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-xl flex items-center space-x-2 animate-shake">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-400" />
               <span>{errorMessage}</span>
             </div>
           )}
 
           {/* Banner de Éxito */}
           {successMessage && (
-            <div className="mb-5 p-3.5 bg-emerald-50 border border-emerald-200 text-emerald-700 text-sm rounded-xl flex items-center space-x-2">
-              <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-600" />
+            <div className="mb-5 p-3.5 bg-aplika-lima-500/10 border border-aplika-lima-500/30 text-aplika-lima-300 text-sm rounded-xl flex items-center space-x-2">
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-aplika-lima-400" />
               <span>{successMessage}</span>
             </div>
           )}
@@ -309,10 +310,10 @@ export default function Register() {
               onClick={() => handleOAuthRegister("google")}
               disabled={isLoading !== null}
               type="button"
-              className="flex items-center justify-center px-4 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-medium text-xs sm:text-sm text-slate-700 shadow-sm"
+              className="flex items-center justify-center px-4 py-3 bg-slate-800/80 border border-slate-700 rounded-xl hover:bg-slate-800 hover:border-slate-600 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-medium text-xs sm:text-sm text-slate-200 shadow-sm"
             >
               {isLoading === "google" ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2 text-slate-600" />
+                <Loader2 className="w-4 h-4 animate-spin mr-2 text-aplika-lima-400" />
               ) : (
                 <svg className="w-4 h-4 mr-2 flex-shrink-0" viewBox="0 0 24 24">
                   <path
@@ -360,10 +361,10 @@ export default function Register() {
           {/* Divisor */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
+              <div className="w-full border-t border-slate-700"></div>
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-white text-slate-400 font-medium uppercase tracking-wider">
+              <span className="px-2 text-slate-400 font-medium uppercase tracking-wider">
                 O completa tus datos
               </span>
             </div>
@@ -374,17 +375,17 @@ export default function Register() {
             {/* Nombre y Apellido */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Nombre
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                  <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
                   <input
                     type="text"
                     required
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all placeholder:text-slate-400"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500"
                     placeholder="Juan"
                     disabled={isLoading !== null}
                   />
@@ -392,17 +393,17 @@ export default function Register() {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-300 mb-1">
                   Apellido
                 </label>
                 <div className="relative">
-                  <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                  <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
                   <input
                     type="text"
                     required
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
-                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all placeholder:text-slate-400"
+                    className="w-full pl-10 pr-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500"
                     placeholder="Pérez"
                     disabled={isLoading !== null}
                   />
@@ -412,17 +413,17 @@ export default function Register() {
 
             {/* Correo Electrónico */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Correo electrónico profesional
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all placeholder:text-slate-400"
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500"
                   placeholder="juan.perez@empresa.com"
                   disabled={isLoading !== null}
                 />
@@ -432,18 +433,18 @@ export default function Register() {
             {/* Ubicación (Opcional pero valorada para la BD) */}
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="block text-xs font-semibold text-slate-700">
+                <label className="block text-xs font-semibold text-slate-300">
                   Ubicación / Ciudad
                 </label>
-                <span className="text-[11px] text-slate-400">Opcional</span>
+                <span className="text-[11px] text-slate-500">Opcional</span>
               </div>
               <div className="relative">
-                <MapPin className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <MapPin className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
                 <input
                   type="text"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all placeholder:text-slate-400"
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500"
                   placeholder="Madrid, España / Remoto"
                   disabled={isLoading !== null}
                 />
@@ -452,25 +453,25 @@ export default function Register() {
 
             {/* Contraseña */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Contraseña
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
                 <input
                   type={showPassword ? "text" : "password"}
                   required
                   minLength={6}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all placeholder:text-slate-400"
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500"
                   placeholder="Mínimo 6 caracteres"
                   disabled={isLoading !== null}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 focus:outline-none"
+                  className="absolute right-3 top-3 text-slate-500 hover:text-aplika-lima-400 focus:outline-none"
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -490,14 +491,14 @@ export default function Register() {
                         className={`h-full rounded-full transition-all duration-300 ${
                           passwordStrength >= level
                             ? strengthColors[passwordStrength]
-                            : "bg-slate-200"
+                            : "bg-slate-700"
                         }`}
                       />
                     ))}
                   </div>
                   <p className="text-[11px] text-slate-500 mt-1 flex justify-between">
                     <span>Seguridad:</span>
-                    <span className="font-semibold text-slate-700">
+                    <span className="font-semibold text-slate-300">
                       {strengthLabels[passwordStrength]}
                     </span>
                   </p>
@@ -507,21 +508,21 @@ export default function Register() {
 
             {/* Confirmar Contraseña */}
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Confirmar contraseña
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
                 <input
                   type={showConfirmPassword ? "text" : "password"}
                   required
                   minLength={6}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={`w-full pl-10 pr-10 py-2.5 bg-slate-50 border rounded-xl text-sm text-slate-900 focus:bg-white focus:ring-2 focus:border-slate-900 outline-none transition-all placeholder:text-slate-400 ${
+                  className={`w-full pl-10 pr-10 py-2.5 bg-slate-900 border rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500 ${
                     confirmPassword && confirmPassword !== password
                       ? "border-red-400 focus:ring-red-400"
-                      : "border-slate-200 focus:ring-slate-900"
+                      : "border-slate-700 focus:ring-aplika-lima-500"
                   }`}
                   placeholder="Repite tu contraseña"
                   disabled={isLoading !== null}
@@ -529,7 +530,7 @@ export default function Register() {
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 focus:outline-none"
+                  className="absolute right-3 top-3 text-slate-500 hover:text-aplika-lima-400 focus:outline-none"
                 >
                   {showConfirmPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -539,7 +540,7 @@ export default function Register() {
                 </button>
               </div>
               {confirmPassword && confirmPassword !== password && (
-                <p className="text-[11px] text-red-500 mt-1">
+                <p className="text-[11px] text-red-400 mt-1">
                   Las contraseñas no coinciden.
                 </p>
               )}
@@ -552,23 +553,23 @@ export default function Register() {
                 type="checkbox"
                 checked={acceptTerms}
                 onChange={(e) => setAcceptTerms(e.target.checked)}
-                className="mt-1 w-4 h-4 rounded border-slate-300 text-slate-900 focus:ring-slate-900"
+                className="mt-1 w-4 h-4 rounded border-slate-600 bg-slate-900 text-aplika-lima-500 focus:ring-aplika-lima-500"
               />
               <label
                 htmlFor="terms"
-                className="text-xs text-slate-500 leading-tight"
+                className="text-xs text-slate-400 leading-tight"
               >
                 Acepto los{" "}
                 <a
                   href="#"
-                  className="text-blue-600 hover:underline font-medium"
+                  className="text-aplika-lima-400 hover:underline font-medium"
                 >
                   Términos de servicio
                 </a>{" "}
                 y la{" "}
                 <a
                   href="#"
-                  className="text-blue-600 hover:underline font-medium"
+                  className="text-aplika-lima-400 hover:underline font-medium"
                 >
                   Política de privacidad
                 </a>
@@ -580,22 +581,22 @@ export default function Register() {
             <button
               type="submit"
               disabled={isLoading !== null}
-              className="flex items-center justify-center w-full px-4 py-3.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-semibold text-sm shadow-md shadow-slate-900/10 hover:shadow-lg hover:shadow-slate-900/20 active:scale-[0.99] mt-2"
+              className="flex items-center justify-center w-full px-4 py-3.5 bg-aplika-lima-500 text-aplika-night-950 rounded-xl hover:bg-aplika-lima-400 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-semibold text-sm shadow-md shadow-aplika-lima-500/20 hover:shadow-lg hover:shadow-aplika-lima-500/30 active:scale-[0.99] mt-2"
             >
               {isLoading === "email" ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2 text-white" />
+                <Loader2 className="w-4 h-4 animate-spin mr-2 text-aplika-night-900" />
               ) : null}
               Crear cuenta gratis
             </button>
           </form>
 
           {/* Footer */}
-          <div className="mt-6 pt-5 border-t border-slate-100 flex items-center justify-center">
-            <span className="text-xs text-slate-500">
+          <div className="mt-6 pt-5 border-t border-slate-800 flex items-center justify-center">
+            <span className="text-xs text-slate-400">
               ¿Ya tienes una cuenta?{" "}
               <Link
                 to="/login"
-                className="text-blue-600 font-semibold hover:underline"
+                className="text-aplika-lima-400 font-semibold hover:underline"
               >
                 Inicia sesión aquí
               </Link>

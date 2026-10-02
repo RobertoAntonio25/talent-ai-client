@@ -228,7 +228,7 @@ export default function CvViewer({
             Formato ATS Compatible
           </span>
           <span className="text-slate-500">•</span>
-          <span className="text-blue-400 flex items-center gap-1 font-medium">
+          <span className="text-purple-400 flex items-center gap-1 font-medium">
             <Sparkles className="w-3 h-3" />{" "}
             {optimizedData ? "CV optimizado" : "98% Match IA"}
           </span>
@@ -255,7 +255,7 @@ export default function CvViewer({
           <button
             onClick={handleDownloadPDF}
             disabled={isGeneratingPdf}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold rounded-xl transition-all shadow-md shadow-blue-500/25 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+            className="flex items-center gap-2 px-4 py-2 bg-aplika-lima-500 hover:bg-aplika-lima-400 text-aplika-night-950 text-xs font-semibold rounded-xl transition-all shadow-md shadow-aplika-lima-500/25 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {isGeneratingPdf ? (
               <>
@@ -274,7 +274,7 @@ export default function CvViewer({
 
       {/* 📄 EL DOCUMENTO CV ESTILO TECH */}
       {isLoadingOptimized ? (
-        <p className="text-xs text-blue-400">
+        <p className="text-xs text-purple-400">
           Generando CV optimizado con IA…
         </p>
       ) : (
