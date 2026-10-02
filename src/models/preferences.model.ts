@@ -86,5 +86,6 @@ export function buildPreferencesPatch(
     salaryMin: draft.salaryMin,
     useSkillsInQuery: draft.useSkillsInQuery,
     matchThreshold: draft.matchThreshold ?? DEFAULT_MATCH_THRESHOLD,
+    careerTransition: draft.careerTransition,
   };
 }

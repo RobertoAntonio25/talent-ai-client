@@ -33,6 +33,9 @@ export interface UserPreferences {
   salaryMin: number | null;
   useSkillsInQuery: boolean | null;
   matchThreshold: number | null;
+  // Fase 2e: transición profesional (booleano no-nullable en el back,
+  // `false` por defecto; presente en el PATCH → se fija).
+  careerTransition: boolean;
   hasProfile: boolean;
 }
 
@@ -51,6 +54,7 @@ export interface PreferencesPatch {
   salaryMin?: number | null;
   useSkillsInQuery?: boolean | null;
   matchThreshold?: number | null;
+  careerTransition?: boolean;
 }
 
 const EMPTY_PREFS: UserPreferences = {
@@ -67,6 +71,7 @@ const EMPTY_PREFS: UserPreferences = {
   salaryMin: null,
   useSkillsInQuery: null,
   matchThreshold: null,
+  careerTransition: false,
   hasProfile: false,
 };
 
@@ -90,6 +95,7 @@ function normalizePreferences(raw: Partial<UserPreferences>): UserPreferences {
     salaryMin: raw.salaryMin ?? null,
     useSkillsInQuery: raw.useSkillsInQuery ?? null,
     matchThreshold: raw.matchThreshold ?? null,
+    careerTransition: raw.careerTransition ?? false,
     hasProfile: raw.hasProfile ?? false,
   };
 }
