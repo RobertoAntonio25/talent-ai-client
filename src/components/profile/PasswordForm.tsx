@@ -1,8 +1,10 @@
 // src/components/profile/PasswordForm.tsx
-// Cambia la contraseña vía POST /api/auth/change-password.
+// Fase 2e (issue #151): cambio de contraseña vía POST /api/auth/change-password
+// con manejo específico de errores: 401 (actual incorrecta) y 429 (rate limit).
 import { useState } from "react";
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { changePassword } from "../../services/authService";
+import { ApiError } from "../../services/apiClient";
 
 const inputCls =
   "mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-aplika-lima-500/40 focus:border-aplika-lima-500";
@@ -38,7 +40,21 @@ export default function PasswordForm() {
       setConfirm("");
       setSaved(true);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "No se pudo cambiar la contraseña.");
+      if (e instanceof ApiError) {
+        if (e.status === 401 && e.code === "INVALID_CREDENTIALS") {
+          setError("La contraseña actual es incorrecta.");
+        } else if (e.status === 401 && e.code === "OAUTH_ONLY_ACCOUNT") {
+          setError("Esta cuenta usa OAuth (Google/LinkedIn) y no tiene contraseña.");
+        } else if (e.status === 400 && e.code === "PASSWORD_REUSE") {
+          setError("La nueva contraseña no puede ser igual a la actual.");
+        } else if (e.status === 429) {
+          setError("Demasiadas peticiones. Inténtalo de nuevo en 15 minutos.");
+        } else {
+          setError(e.message);
+        }
+      } else {
+        setError(e instanceof Error ? e.message : "No se pudo cambiar la contraseña.");
+      }
     } finally {
       setIsSaving(false);
     }

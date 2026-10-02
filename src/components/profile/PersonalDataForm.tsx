@@ -1,8 +1,10 @@
 // src/components/profile/PersonalDataForm.tsx
-// Edita datos personales (persisten en este dispositivo vía AuthContext).
-import { useState } from "react";
-import { CheckCircle2 } from "lucide-react";
+// Fase 2e (issue #151): edita datos personales contra el back
+// (GET /api/users/me al montar, PATCH /api/users/me al guardar).
+import { useEffect, useState } from "react";
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import { getMe, updateMe } from "../../services/userProfile.service";
 
 export default function PersonalDataForm() {
   const { user, updateUser } = useAuth();
@@ -11,30 +13,90 @@ export default function PersonalDataForm() {
   const [email, setEmail] = useState(user?.email ?? "");
   const [location, setLocation] = useState(user?.location ?? "");
   const [phone, setPhone] = useState(user?.phone ?? "");
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSave = () => {
-    updateUser({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      email: email.trim(),
-      location: location.trim(),
-      phone: phone.trim(),
+  // Cargar datos del back al montar (carga diferida para evitar setState síncrono en efecto)
+  useEffect(() => {
+    let mounted = true;
+    void Promise.resolve().then(() => {
+      if (!mounted) return;
+      setIsLoading(true);
+      getMe()
+        .then((data) => {
+          if (!mounted) return;
+          setFirstName(data.firstName ?? "");
+          setLastName(data.lastName ?? "");
+          setEmail(data.email ?? "");
+          setLocation(data.location ?? "");
+          setPhone(data.phone ?? "");
+          // Sincronizar AuthContext + localStorage con datos del back
+          updateUser({
+            firstName: data.firstName ?? "",
+            lastName: data.lastName ?? "",
+            email: data.email ?? "",
+            location: data.location ?? "",
+            phone: data.phone ?? "",
+          });
+        })
+        .catch(() => {
+          if (!mounted) return;
+          // Si falla, mantener lo que haya en localStorage/AuthContext
+        })
+        .finally(() => {
+          if (mounted) setIsLoading(false);
+        });
     });
-    setSaved(true);
-    window.setTimeout(() => setSaved(false), 3000);
+    return () => { mounted = false; };
+  }, [updateUser]);
+
+  const handleSave = async () => {
+    setError(null);
+    setSaved(false);
+    setIsSaving(true);
+    try {
+      const patch = {
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        email: email.trim(),
+        location: location.trim(),
+        phone: phone.trim() || null,
+      };
+      const savedUser = await updateMe(patch);
+      // Sincronizar AuthContext + localStorage con la respuesta del back
+      updateUser({
+        firstName: savedUser.firstName,
+        lastName: savedUser.lastName,
+        email: savedUser.email,
+        location: savedUser.location,
+        phone: savedUser.phone ?? "",
+      });
+      setSaved(true);
+      window.setTimeout(() => setSaved(false), 3000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudieron guardar los datos.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const inputCls =
     "mt-1 w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-aplika-lima-500/40 focus:border-aplika-lima-500";
 
+  if (isLoading) {
+    return (
+      <section aria-label="Datos personales" className="p-6 flex items-center gap-2 text-xs text-slate-400">
+        <Loader2 className="w-4 h-4 animate-spin" />
+        Cargando tus datos…
+      </section>
+    );
+  }
+
   return (
     <section aria-label="Datos personales">
       <h2 className="font-bold text-white text-sm sm:text-base">Datos personales</h2>
-      <p className="text-xs sm:text-sm text-slate-400 mt-0.5 mb-4">
-        Se guardan en este dispositivo.
-      </p>
-      <p className="text-xs text-slate-500 mb-4">El email solo se actualiza en este dispositivo.</p>
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="block">
           <span className="text-xs text-slate-400 font-medium">Nombre</span>
@@ -60,13 +122,20 @@ export default function PersonalDataForm() {
       <button
         type="button"
         onClick={handleSave}
-        className="mt-4 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-aplika-night-950 bg-aplika-lima-500 hover:bg-aplika-lima-400 shadow-lg shadow-aplika-lima-500/20 transition-all active:scale-95 cursor-pointer"
+        disabled={isSaving}
+        className="mt-4 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-aplika-night-950 bg-aplika-lima-500 hover:bg-aplika-lima-400 shadow-lg shadow-aplika-lima-500/20 transition-all active:scale-95 disabled:opacity-60 cursor-pointer"
       >
-        Guardar datos
+        {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+        {isSaving ? "Guardando…" : "Guardar datos"}
       </button>
-      {saved && (
+      {error && (
+        <p className="mt-2 text-xs text-red-400 flex items-center gap-1">
+          <AlertCircle className="w-3.5 h-3.5" /> {error}
+        </p>
+      )}
+      {saved && !error && (
         <p className="mt-2 text-xs text-emerald-400 flex items-center gap-1">
-          <CheckCircle2 className="w-3.5 h-3.5" /> Datos guardados en este dispositivo.
+          <CheckCircle2 className="w-3.5 h-3.5" /> Datos guardados correctamente.
         </p>
       )}
     </section>
