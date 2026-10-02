@@ -57,11 +57,11 @@ export default function EmptyCvState({
       onDrop={handleDrop}
       className={`flex flex-col items-center gap-4 rounded-2xl border border-dashed p-6 sm:p-8 text-center transition-colors ${
         isDragging
-          ? "border-blue-400 bg-blue-500/15"
-          : "border-blue-500/40 bg-slate-900/60"
+          ? "border-aplika-lima-400 bg-aplika-lima-500/15"
+          : "border-aplika-lima-500/40 bg-slate-900/60"
       } ${isUploading ? "opacity-90" : ""}`}
     >
-      <div className="w-12 h-12 rounded-2xl bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center">
+      <div className="w-12 h-12 rounded-2xl bg-aplika-lima-500/10 border border-aplika-lima-500/20 text-aplika-lima-400 flex items-center justify-center">
         {isUploading ? (
           <Loader2 className="w-6 h-6 animate-spin" />
         ) : (
@@ -81,9 +81,9 @@ export default function EmptyCvState({
       {isUploading ? (
         <div className="w-full max-w-sm flex flex-col gap-2">
           <div className="h-1.5 rounded-full bg-slate-800 overflow-hidden">
-            <div className="h-full w-1/2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 animate-pulse" />
+            <div className="h-full w-1/2 rounded-full bg-gradient-to-r from-aplika-lima-500 to-aplika-lima-400 animate-pulse" />
           </div>
-          <p className="text-xs text-blue-300 flex items-center justify-center gap-1.5">
+          <p className="text-xs text-aplika-lima-300 flex items-center justify-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5" />
             Analizando tu perfil profesional con nuestra IA...
           </p>
@@ -92,7 +92,7 @@ export default function EmptyCvState({
         <button
           type="button"
           onClick={() => inputRef.current?.click()}
-          className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-95"
+          className="px-5 py-2.5 bg-aplika-lima-500 hover:bg-aplika-lima-400 text-aplika-night-950 font-semibold text-xs sm:text-sm rounded-xl shadow-lg shadow-aplika-lima-500/25 transition-all active:scale-95"
         >
           Seleccionar CV en PDF (Máx. 10MB)
         </button>

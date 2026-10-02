@@ -11,7 +11,7 @@ export default function Toggle({ enabled, onChange }: ToggleProps) {
       aria-checked={enabled}
       onClick={() => onChange(!enabled)}
       className={`
-        relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2 ${enabled ? "bg-emerald-500" : "bg-slate-300"}`}
+        relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-aplika-lima-500 focus:ring-offset-2 ${enabled ? "bg-aplika-lima-500" : "bg-slate-600"}`}
     >
       {/* El círculo blanco que se mueve de izquierda a derecha */}
       <span

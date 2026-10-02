@@ -89,7 +89,8 @@ export default function Settings() {
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Configuración del Agente IA
           </h1>
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20">
+          {/* 🟣 Acento IA: agente inteligente (ver paleta en Landing) */}
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-purple-500/10 text-purple-400 border border-purple-500/20">
             Automático
           </span>
         </div>
@@ -160,7 +161,7 @@ export default function Settings() {
             )}
           </div>
           {isUploading && (
-            <p className="text-xs text-blue-400">
+            <p className="text-xs text-purple-400">
               Analizando PDF con IA… puede tardar 1-2 min la primera vez.
             </p>
           )}
@@ -170,7 +171,7 @@ export default function Settings() {
         {/* SECCIÓN 1: Búsqueda Automática (El Toggle) */}
         <div className="p-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            <div className="p-3 bg-blue-500/10 border border-blue-500/20 text-blue-400 rounded-2xl flex-shrink-0">
+            <div className="p-3 bg-aplika-lima-500/10 border border-aplika-lima-500/20 text-aplika-lima-400 rounded-2xl flex-shrink-0">
               <Bot className="w-6 h-6" />
             </div>
             <div>
@@ -178,7 +179,7 @@ export default function Settings() {
                 <h3 className="font-bold text-white text-sm sm:text-base">
                   Búsqueda Automática
                 </h3>
-                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-aplika-lima-500/10 text-aplika-lima-400 border border-aplika-lima-500/20">
                   Recomendado
                 </span>
               </div>
@@ -195,7 +196,7 @@ export default function Settings() {
         {autoSearch && (
           <div className="p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-950/40 animate-in fade-in slide-in-from-top-4 duration-300">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 rounded-2xl flex-shrink-0">
+              <div className="p-3 bg-aplika-lima-500/10 border border-aplika-lima-500/20 text-aplika-lima-400 rounded-2xl flex-shrink-0">
                 <CalendarClock className="w-6 h-6" />
               </div>
               <div>
@@ -210,7 +211,7 @@ export default function Settings() {
             <select
               value={frequency}
               onChange={(e) => setFrequency(e.target.value)}
-              className="bg-slate-900 border border-slate-700 text-slate-200 text-xs sm:text-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none cursor-pointer"
+              className="bg-slate-900 border border-slate-700 text-slate-200 text-xs sm:text-sm rounded-xl focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 block p-2.5 outline-none cursor-pointer"
             >
               <option value="diario">Todos los días (Recomendado)</option>
               <option value="semanal">Una vez a la semana</option>
@@ -222,7 +223,7 @@ export default function Settings() {
         {/* SECCIÓN 3: El Botón de Showtime */}
         <div className="p-6 bg-slate-950/30 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-xs text-slate-400">
-            <Sparkles className="w-4 h-4 text-blue-400" />
+            <Sparkles className="w-4 h-4 text-aplika-lima-400" />
             <span>
               Último rastreo realizado: {formatLastSearch(lastSearchAt)}
             </span>
@@ -232,11 +233,11 @@ export default function Settings() {
             onClick={handleSearchNow}
             disabled={isSearching}
             className={`
-              flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-xs sm:text-sm text-white shadow-lg transition-all w-full sm:w-auto active:scale-95
+              flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-xs sm:text-sm text-aplika-night-950 shadow-lg transition-all w-full sm:w-auto active:scale-95
               ${
                 isSearching
-                  ? "bg-blue-600/50 cursor-not-allowed"
-                  : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-blue-500/25 hover:shadow-blue-500/40"
+                  ? "bg-aplika-lima-500/50 cursor-not-allowed"
+                  : "bg-aplika-lima-500 hover:bg-aplika-lima-400 shadow-aplika-lima-500/25 hover:shadow-aplika-lima-500/40"
               }
             `}
           >

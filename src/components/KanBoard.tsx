@@ -181,7 +181,7 @@ export default function KanbanBoard({
         }}
       >
         {activeJob ? (
-          <div className="rotate-2 scale-105 shadow-2xl shadow-blue-500/20 ring-2 ring-blue-500/60 rounded-2xl">
+          <div className="rotate-2 scale-105 shadow-2xl shadow-aplika-lima-500/25 ring-2 ring-aplika-lima-500/60 rounded-2xl">
             <KanbanCard job={activeJob} />
           </div>
         ) : null}

@@ -42,15 +42,15 @@ export default function AuthCallback() {
 
   if (error) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-slate-50 p-6 text-center">
+      <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-aplika-night-950 p-6 text-center">
         <AlertCircle className="w-10 h-10 text-red-500" />
-        <h1 className="text-lg font-bold text-slate-900">
+        <h1 className="text-lg font-bold text-white">
           Error al iniciar sesión
         </h1>
-        <p className="text-sm text-slate-600 max-w-sm">{error}</p>
+        <p className="text-sm text-slate-400 max-w-sm">{error}</p>
         <Link
           to="/login"
-          className="text-sm font-semibold text-blue-600 hover:underline"
+          className="text-sm font-semibold text-aplika-lima-400 hover:underline"
         >
           Volver al login
         </Link>
@@ -59,8 +59,8 @@ export default function AuthCallback() {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-slate-50 text-slate-600">
-      <Loader2 className="w-8 h-8 animate-spin text-slate-900" />
+    <div className="min-h-screen flex flex-col items-center justify-center gap-3 bg-aplika-night-950 text-slate-400">
+      <Loader2 className="w-8 h-8 animate-spin text-aplika-lima-400" />
       <p className="text-sm font-medium">Completando inicio de sesión...</p>
     </div>
   );

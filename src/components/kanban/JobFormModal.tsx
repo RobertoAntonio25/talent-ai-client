@@ -79,9 +79,9 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
     <form onSubmit={handleSubmit} className="space-y-4 pt-1">
       {/* Oferta del motor: contenido de solo lectura (compartida). */}
       {contentLocked && (
-        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-blue-500/10 border border-blue-500/20">
-          <Info className="w-4 h-4 text-blue-300 flex-shrink-0 mt-0.5" />
-          <p className="text-[11px] text-blue-200 leading-relaxed">
+        <div className="flex items-start gap-2.5 p-3 rounded-xl bg-aplika-lima-500/10 border border-aplika-lima-500/20">
+          <Info className="w-4 h-4 text-aplika-lima-300 flex-shrink-0 mt-0.5" />
+          <p className="text-[11px] text-aplika-lima-300/90 leading-relaxed">
             Esta oferta viene del motor de búsqueda y es compartida entre
             usuarios: aquí solo puedes cambiar su <strong>estado</strong>. Las
             tarjetas creadas a mano sí admiten edición completa.
@@ -105,7 +105,7 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
               disabled={contentLocked}
               maxLength={120}
               placeholder="Ej. Spotify, Stripe, Google"
-              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-aplika-lima-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -125,7 +125,7 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
               disabled={contentLocked}
               maxLength={120}
               placeholder="Ej. Senior Frontend Developer"
-              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-aplika-lima-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -140,7 +140,7 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
           <select
             value={status}
             onChange={(e) => setStatus(e.target.value as ColumnStatus)}
-            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 focus:outline-none focus:ring-2 focus:ring-aplika-lima-500 cursor-pointer"
           >
             <option value="por_revisar">Por Revisar</option>
             <option value="aplicado">Aplicado</option>
@@ -163,7 +163,7 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
               disabled={contentLocked}
               maxLength={120}
               placeholder="Ej. Remoto, Madrid"
-              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-aplika-lima-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -182,7 +182,7 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
               disabled={contentLocked}
               maxLength={60}
               placeholder="Ej. €50k - €60k"
-              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-aplika-lima-500 disabled:opacity-50 disabled:cursor-not-allowed"
             />
           </div>
         </div>
@@ -202,7 +202,7 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
             disabled={contentLocked}
             maxLength={500}
             placeholder="https://empresa.com/empleo/123"
-            className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-aplika-lima-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
       </div>
@@ -220,7 +220,7 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
             onChange={(e) => setTagsInput(e.target.value)}
             disabled={contentLocked}
             placeholder="React, TypeScript, Tailwind, Node.js"
-            className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-aplika-lima-500 disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
       </div>
@@ -239,7 +239,7 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
             disabled={contentLocked}
             maxLength={500}
             placeholder="Detalles sobre el proceso, contacto de reclutador o requisitos clave..."
-            className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full pl-9 pr-3.5 py-2 bg-slate-900 border border-slate-700 rounded-xl text-xs sm:text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-aplika-lima-500 resize-none disabled:opacity-50 disabled:cursor-not-allowed"
           />
         </div>
       </div>
@@ -255,7 +255,7 @@ function JobFormContent({ onClose, onSubmit, initialJob }: FormContentProps) {
         </button>
         <button
           type="submit"
-          className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-500/25 transition-all active:scale-95"
+          className="flex items-center gap-2 px-5 py-2.5 bg-aplika-lima-500 hover:bg-aplika-lima-400 text-aplika-night-950 text-xs font-bold rounded-xl shadow-lg shadow-aplika-lima-500/25 transition-all active:scale-95"
         >
           {isEditing ? (
             <Save className="w-3.5 h-3.5" />

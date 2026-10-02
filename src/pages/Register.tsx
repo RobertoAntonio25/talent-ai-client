@@ -364,7 +364,7 @@ export default function Register() {
               <div className="w-full border-t border-slate-700"></div>
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-aplika-night-950 text-slate-500 font-medium uppercase tracking-wider">
+              <span className="px-2 text-slate-400 font-medium uppercase tracking-wider">
                 O completa tus datos
               </span>
             </div>
