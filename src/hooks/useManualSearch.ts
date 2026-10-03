@@ -1,13 +1,21 @@
 // src/hooks/useManualSearch.ts
 // Búsqueda manual JSearch + matcher IA (extraído de Settings).
 // Se usa en /buscar y en el botón rápido del header (vía autostart).
-// Tarda 1-3 min: botón deshabilitado, timeout largo en el service, sin
-// reintentos en paralelo.
-import { useCallback, useState } from "react";
-import { triggerManualSearch } from "../services/jobsService";
-import { runMatcher } from "../services/aiService";
+// Fase 3a (issue #128, BREAKING): el back responde 202 con runId al instante
+// y el ciclo sigue en segundo plano. Aquí se sondea GET /runs/:runId cada
+// 5 s hasta DONE/ERROR y luego se leen los resultados. La IA ya evaluó
+// dentro del ciclo: no hay segunda llamada al matcher. Si el cliente aborta,
+// el ciclo sigue y el runId recupera el resultado.
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  getSearchCycleRun,
+  getUserResults,
+  triggerManualSearch,
+} from "../services/jobsService";
 
 const LAST_SEARCH_KEY = "lastManualSearchAt";
+const POLL_INTERVAL_MS = 5000;
+const POLL_MAX_ATTEMPTS = 60; // 5 min: el ciclo tarda 1-3 min la 1ª vez
 
 function formatLastSearch(iso: string | null): string {
   if (!iso) return "Sin rastreos aún";
@@ -21,6 +29,10 @@ function formatLastSearch(iso: string | null): string {
   });
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export function useManualSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchSuccess, setSearchSuccess] = useState<string | null>(null);
@@ -28,40 +40,76 @@ export function useManualSearch() {
   const [lastSearchAt, setLastSearchAt] = useState<string | null>(() =>
     localStorage.getItem(LAST_SEARCH_KEY),
   );
+  const busyRef = useRef(false);
+  const cancelledRef = useRef(false);
+
+  useEffect(() => {
+    cancelledRef.current = false;
+    return () => {
+      cancelledRef.current = true;
+    };
+  }, []);
 
   const runSearch = useCallback(async () => {
+    if (busyRef.current) return;
+    busyRef.current = true;
     setIsSearching(true);
     setSearchSuccess(null);
     setSearchError(null);
     try {
-      const res = await triggerManualSearch();
-      const total = res.data.meta.total;
+      const trigger = await triggerManualSearch();
+      const runId = trigger.data.runId;
+
+      let attempts = 0;
+      let status: string = "RUNNING";
+      let offersNew = 0;
+      let aiEvaluated = 0;
+      let aiMatches = 0;
+      while (status === "RUNNING") {
+        attempts += 1;
+        if (attempts > POLL_MAX_ATTEMPTS) {
+          throw new Error(
+            "La búsqueda sigue en curso. Revisa el Panel de empleo en unos minutos.",
+          );
+        }
+        await sleep(POLL_INTERVAL_MS);
+        if (cancelledRef.current) return;
+        const run = await getSearchCycleRun(runId);
+        status = run.data.status;
+        offersNew = run.data.offersNew;
+        aiEvaluated = run.data.aiEvaluated;
+        aiMatches = run.data.aiMatches;
+        if (status === "ERROR") {
+          throw new Error(
+            run.data.error ||
+              "La búsqueda falló en el servidor. Inténtalo de nuevo.",
+          );
+        }
+      }
+
+      const res = await getUserResults(1, 20);
+      if (cancelledRef.current) return;
+      const total = res.meta.total;
       const nowIso = new Date().toISOString();
       localStorage.setItem(LAST_SEARCH_KEY, nowIso);
       setLastSearchAt(nowIso);
       const baseMsg =
         total === 0
           ? "Búsqueda completada, pero no se encontraron ofertas con tu perfil actual. Prueba a actualizar tu CV."
-          : `¡Búsqueda completada! Se sincronizaron ${total} ofertas relevantes en el Panel de empleo.`;
-      // Las ofertas nuevas entran como PENDING; el matcher las puntúa con IA.
-      try {
-        const matcher = await runMatcher();
-        setSearchSuccess(
-          matcher.processed === 0
-            ? `${baseMsg} La IA no encontró ofertas pendientes por evaluar.`
-            : `${baseMsg} La IA evaluó ${matcher.processed} de ellas: ${matcher.matches} compatibles.`,
-        );
-      } catch {
-        setSearchSuccess(
-          `${baseMsg} El análisis de compatibilidad con IA no se pudo completar; vuelve a intentarlo en unos minutos.`,
-        );
-      }
+          : `¡Búsqueda completada! Se sincronizaron ${total} ofertas relevantes en el Panel de empleo (${offersNew} nuevas).`;
+      setSearchSuccess(
+        aiEvaluated === 0
+          ? `${baseMsg} La IA no encontró ofertas pendientes por evaluar.`
+          : `${baseMsg} La IA evaluó ${aiEvaluated} de ellas: ${aiMatches} compatibles.`,
+      );
     } catch (e) {
+      if (cancelledRef.current) return;
       setSearchError(
         e instanceof Error ? e.message : "Error al lanzar la búsqueda.",
       );
     } finally {
-      setIsSearching(false);
+      busyRef.current = false;
+      if (!cancelledRef.current) setIsSearching(false);
     }
   }, []);
 
