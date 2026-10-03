@@ -37,8 +37,14 @@ export default function CoverLetterViewer({
   const subject =
     coverLetterData?.emailSubject ??
     `Candidatura para la vacante de ${job.position}`;
-  const bodyParagraphs = coverLetterData
-    ? coverLetterData.letter
+  // Defensa en profundidad: las cartas guardadas antes del fix del parser
+  // traen "\n" literales. Se normalizan al renderizar (las nuevas ya llegan
+  // limpias del back) y pre-wrap conserva los saltos simples dentro del párrafo.
+  const rawLetter = coverLetterData
+    ? coverLetterData.letter.replace(/\\n/g, "\n")
+    : null;
+  const bodyParagraphs = rawLetter
+    ? rawLetter
         .split(/\n{2,}/)
         .map((p) => p.trim())
         .filter(Boolean)
@@ -162,7 +168,7 @@ export default function CoverLetterViewer({
           </p>
         </div>
 
-        <div className="space-y-3 text-justify text-slate-700 leading-relaxed font-normal">
+        <div className="space-y-3 text-justify text-slate-700 leading-relaxed font-normal whitespace-pre-wrap">
           {bodyParagraphs ? (
             bodyParagraphs.map((paragraph, index) => (
               <p key={index}>{paragraph}</p>
