@@ -40,9 +40,13 @@ export interface OptimizerPort {
   isLoadingLetter: boolean;
   cvError: string | null;
   letterError: string | null;
-  fetchOrGenerateCv: (jobOfferId: string) => Promise<OptimizedCv | null>;
+  fetchOrGenerateCv: (
+    jobOfferId: string,
+    opts?: { force?: boolean },
+  ) => Promise<OptimizedCv | null>;
   fetchOrGenerateLetter: (
     jobOfferId: string,
+    opts?: { force?: boolean },
   ) => Promise<CoverLetterOutput | null>;
 }
 
@@ -204,11 +208,19 @@ export default function JobDetailModal({
     }
   };
 
+  const handleRegenerateCv = () => {
+    const jobOfferId = job?.jobOfferId;
+    if (optimizer && jobOfferId) {
+      setCvRequestedFor(jobOfferId);
+      void optimizer.fetchOrGenerateCv(jobOfferId, { force: true });
+    }
+  };
+
   const handleRegenerateLetter = () => {
     const jobOfferId = job?.jobOfferId;
     if (optimizer && jobOfferId) {
       setLetterRequestedFor(jobOfferId);
-      void optimizer.fetchOrGenerateLetter(jobOfferId);
+      void optimizer.fetchOrGenerateLetter(jobOfferId, { force: true });
     }
   };
 
@@ -521,6 +533,7 @@ export default function JobDetailModal({
                   cvRequestMatches && optimizer?.isLoadingCv,
                 )}
                 optimizedError={cvErrorForThisJob}
+                onRegenerate={canOptimize ? handleRegenerateCv : undefined}
               />
             </div>
           )}
@@ -544,6 +557,7 @@ export default function JobDetailModal({
                   letterRequestMatches && optimizer?.isLoadingLetter,
                 )}
                 onRegenerate={canOptimize ? handleRegenerateLetter : undefined}
+                targetRole={cv?.targetRole}
               />
             </div>
           )}

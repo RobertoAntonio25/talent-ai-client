@@ -11,6 +11,7 @@ interface CvViewerProps {
   optimizedData?: OptimizedCv | null;
   isLoadingOptimized?: boolean;
   optimizedError?: string | null;
+  onRegenerate?: () => void;
 }
 
 interface SkillsShown {
@@ -60,6 +61,7 @@ export default function CvViewer({
   optimizedData,
   isLoadingOptimized = false,
   optimizedError = null,
+  onRegenerate,
 }: CvViewerProps) {
   const [isCopied, setIsCopied] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
@@ -296,6 +298,16 @@ export default function CvViewer({
           </span>
         </div>
         <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+          {onRegenerate && (
+            <button
+              type="button"
+              onClick={onRegenerate}
+              disabled={isLoadingOptimized}
+              className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-semibold rounded-xl transition-all active:scale-95 border border-slate-700/80"
+            >
+              <span>{isLoadingOptimized ? "Generando…" : "↻ Regenerar con IA"}</span>
+            </button>
+          )}
           <button
             onClick={handleCopy}
             className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-xl transition-all active:scale-95 border border-slate-700/80"

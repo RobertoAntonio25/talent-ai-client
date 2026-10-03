@@ -1,5 +1,15 @@
-import { useState } from "react";
-import { Copy, CheckCheck, Sparkles, Building2, UserCheck } from "lucide-react";
+import { useRef, useState } from "react";
+import {
+  Copy,
+  CheckCheck,
+  Sparkles,
+  Building2,
+  UserCheck,
+  Download,
+  Loader2,
+} from "lucide-react";
+import { toPng } from "html-to-image";
+import { jsPDF } from "jspdf";
 import type { JobApplication } from "../../types/kanban";
 import type { CoverLetterOutput } from "../../services/aiService";
 import { useAuth } from "../../context/AuthContext";
@@ -9,6 +19,9 @@ interface CoverLetterViewerProps {
   coverLetterData?: CoverLetterOutput | null;
   isLoading?: boolean;
   onRegenerate?: () => void;
+  // Rol actual del usuario (reactivo: viene del CV y cambia al editarlo).
+  // Sustituye al antiguo hardcode "Full-Stack Developer | DevOps Engineer".
+  targetRole?: string | null;
 }
 
 export default function CoverLetterViewer({
@@ -16,13 +29,23 @@ export default function CoverLetterViewer({
   coverLetterData = null,
   isLoading = false,
   onRegenerate,
+  targetRole = null,
 }: CoverLetterViewerProps) {
   const [copied, setCopied] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const docRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
 
   const identityName =
     [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
     "Tu nombre";
+  // Rol reactivo: el del CV actual (cambia al editarlo). Se sanean los
+  // placeholders del estado vacío para no pintarlos en el documento.
+  const rawRole = (targetRole ?? "").trim();
+  const roleLine =
+    rawRole && !rawRole.startsWith("[") && rawRole !== "Sin CV cargado"
+      ? rawRole
+      : "Candidato";
   const identityLine = [user?.location, user?.email]
     .map((value) => value?.trim() ?? "")
     .filter((value) => value.length > 0)
@@ -37,8 +60,14 @@ export default function CoverLetterViewer({
   const subject =
     coverLetterData?.emailSubject ??
     `Candidatura para la vacante de ${job.position}`;
-  const bodyParagraphs = coverLetterData
-    ? coverLetterData.letter
+  // Defensa en profundidad: las cartas guardadas antes del fix del parser
+  // traen "\n" literales. Se normalizan al renderizar (las nuevas ya llegan
+  // limpias del back) y pre-wrap conserva los saltos simples dentro del párrafo.
+  const rawLetter = coverLetterData
+    ? coverLetterData.letter.replace(/\\n/g, "\n")
+    : null;
+  const bodyParagraphs = rawLetter
+    ? rawLetter
         .split(/\n{2,}/)
         .map((p) => p.trim())
         .filter(Boolean)
@@ -64,7 +93,7 @@ export default function CoverLetterViewer({
         "",
         `Les escribo para presentar mi candidatura a la posición de ${job.position}. Mi experiencia en desarrollo de software moderno y metodologías ágiles se alinea con los requerimientos técnicos del equipo.`,
         "",
-        `Como Desarrollador Full-Stack e Ingeniero de Software, he implementado soluciones SaaS escalables y pipelines de CI/CD. Cuento con dominio en ${skillsList}, diseño de arquitecturas eficientes y pruebas automatizadas.`,
+        `Como ${roleLine}, he implementado soluciones SaaS escalables y pipelines de CI/CD. Cuento con dominio en ${skillsList}, diseño de arquitecturas eficientes y pruebas automatizadas.`,
         "",
         `En mis proyectos recientes lideré plataformas SaaS con persistencia en PostgreSQL y Supabase, logrando optimizaciones en tiempos de respuesta y adopción. Mi experiencia con Scrum y Kanban me permite aportar valor inmediato.`,
         "",
@@ -83,6 +112,37 @@ export default function CoverLetterViewer({
       setTimeout(() => setCopied(false), 2500);
     } catch (err) {
       console.error("Error al copiar la carta:", err);
+    }
+  };
+
+  // Descarga PDF con la misma técnica que CvViewer (html-to-image + jsPDF A4).
+  const handleDownloadPDF = async () => {
+    const element = docRef.current;
+    if (!element) return;
+    setIsGeneratingPdf(true);
+    try {
+      const dataUrl = await toPng(element, {
+        pixelRatio: 2.5,
+        backgroundColor: "#ffffff",
+        cacheBust: true,
+      });
+      const pdf = new jsPDF({
+        orientation: "portrait",
+        unit: "mm",
+        format: "a4",
+      });
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
+      pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
+      const cleanName = identityName
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, "_");
+      pdf.save(`${cleanName}_Carta_Presentacion.pdf`);
+    } catch (error) {
+      console.error("Error generando el PDF de la carta:", error);
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -131,19 +191,40 @@ export default function CoverLetterViewer({
             </>
           )}
         </button>
+        <button
+          type="button"
+          onClick={() => void handleDownloadPDF()}
+          disabled={isGeneratingPdf}
+          className="flex items-center gap-1.5 px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 cursor-pointer"
+        >
+          {isGeneratingPdf ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Generando PDF…</span>
+            </>
+          ) : (
+            <>
+              <Download className="w-4 h-4" />
+              <span>Descargar PDF (A4)</span>
+            </>
+          )}
+        </button>
       </div>
 
       {isLoading && (
         <p className="text-xs text-purple-400">Generando carta con IA…</p>
       )}
 
-      <div className="bg-white text-slate-900 p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-200 font-sans text-xs sm:text-sm leading-relaxed max-w-[794px] mx-auto w-full select-text">
+      <div
+        ref={docRef}
+        className="bg-white text-slate-900 p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-200 font-sans text-xs sm:text-sm leading-relaxed max-w-[794px] mx-auto w-full select-text"
+      >
         <div className="border-b border-slate-200 pb-3 mb-4">
           <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
             {identityName}
           </h2>
           <p className="text-xs font-semibold text-aplika-lima-700">
-            Full-Stack Developer | DevOps Engineer
+            {roleLine}
           </p>
           {identityLine && (
             <p className="text-xs text-slate-500 mt-1 font-mono">
@@ -162,7 +243,7 @@ export default function CoverLetterViewer({
           </p>
         </div>
 
-        <div className="space-y-3 text-justify text-slate-700 leading-relaxed font-normal">
+        <div className="space-y-3 text-justify text-slate-700 leading-relaxed font-normal whitespace-pre-wrap">
           {bodyParagraphs ? (
             bodyParagraphs.map((paragraph, index) => (
               <p key={index}>{paragraph}</p>
@@ -178,8 +259,8 @@ export default function CoverLetterViewer({
             <strong className="text-slate-900">{job.position}</strong>.
           </p>
           <p>
-            Como Ingeniero de Software y Desarrollador Full-Stack, he
-            implementado plataformas SaaS escalables con dominio en{" "}
+            Como <span className="font-semibold text-slate-900">{roleLine}</span>,
+            he implementado plataformas SaaS escalables con dominio en{" "}
             <span className="font-semibold text-slate-900">{skillsList}</span>,
             integrando diseño de arquitecturas eficientes, tests automatizados y
             despliegues CI/CD.
@@ -204,7 +285,7 @@ export default function CoverLetterViewer({
               {identityName}
             </p>
             <p className="text-xs text-slate-500">
-              Full-Stack Developer | DevOps Engineer
+              {roleLine}
             </p>
           </div>
           <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
