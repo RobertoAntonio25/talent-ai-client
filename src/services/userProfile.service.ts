@@ -72,3 +72,91 @@ export async function getProfileAggregate(): Promise<ProfileAggregate> {
   const res = await apiClient<AggregateEnvelope>("/api/profile");
   return res.data;
 }
+
+/** CV base completo del back (`GET /api/profile/cv`, issue #107).
+ * Espejo del shape del extractor, sin flags de preferencias. */
+export interface ProfileCvExperience {
+  role: string;
+  company: string;
+  startDate: string;
+  endDate: string | null;
+  description: string;
+}
+
+export interface ProfileCvEducation {
+  degree: string;
+  institution: string;
+  graduationYear: number;
+}
+
+export interface ProfileCvProject {
+  name: string;
+  technologies: string[];
+  repoUrl: string;
+}
+
+export interface ProfileCvLanguage {
+  language: string;
+  level: string;
+}
+
+export interface ProfileCvData {
+  summary: string;
+  skills: string[];
+  targetRole: string;
+  targetCity: string;
+  experiences: ProfileCvExperience[];
+  education: ProfileCvEducation[];
+  projects: ProfileCvProject[];
+  languages: ProfileCvLanguage[];
+}
+
+/** PATCH parcial: al menos 1 clave; los arrays se reemplazan enteros. */
+export interface ProfileCvPatch {
+  summary?: string;
+  skills?: string[];
+  targetRole?: string;
+  targetCity?: string;
+  experiences?: Array<{
+    role?: string | null;
+    company?: string | null;
+    startDate?: string | null;
+    endDate?: string | null;
+    description?: string | null;
+  }>;
+  education?: Array<{
+    degree?: string | null;
+    institution?: string | null;
+    graduationYear?: number | null;
+  }>;
+  projects?: Array<{
+    name?: string | null;
+    technologies?: string[];
+    repoUrl?: string | null;
+  }>;
+  languages?: Array<{ language: string; level?: string | null }>;
+}
+
+interface ProfileCvEnvelope {
+  success: boolean;
+  data: ProfileCvData;
+}
+
+/** GET /api/profile/cv — CV completo para hidratar (404 sin perfil). */
+export async function getProfileCv(): Promise<ProfileCvData> {
+  const res = await apiClient<ProfileCvEnvelope>("/api/profile/cv", {
+    timeoutMs: 15000,
+  });
+  return res.data;
+}
+
+/** PATCH /api/profile/cv — edición manual con persistencia real.
+ * El back responde el objeto directo (sin envelope, como `/preferences`). */
+export async function updateProfileCv(
+  patch: ProfileCvPatch,
+): Promise<ProfileCvData> {
+  return apiClient<ProfileCvData>("/api/profile/cv", {
+    method: "PATCH",
+    data: patch,
+  });
+}

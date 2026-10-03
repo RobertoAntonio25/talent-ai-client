@@ -4,6 +4,10 @@ export interface JobExperience {
   company: string;
   period: string;
   achievements: string[];
+  // Issue #107: fechas ISO de ida y vuelta con el back (el `period` es
+  // solo texto de muestra). Opcionales para no romper el CV manual local.
+  startDate?: string | null;
+  endDate?: string | null;
 }
 
 export interface EducationItem {
@@ -11,6 +15,9 @@ export interface EducationItem {
   degree: string;
   period: string;
   details?: string;
+  // Issue #107: año de ida y vuelta con el back (`graduationYear`
+  // requerido allí). Opcional para no romper el CV manual local.
+  graduationYear?: number | null;
 }
 
 export interface LanguageItem {
