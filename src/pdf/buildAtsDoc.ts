@@ -1,7 +1,11 @@
 import type { OptimizedCv } from "../models/optimizer.model";
 import type { GeneratedCV } from "../types/cv";
 import type { CoverLetterOutput } from "../services/aiService";
-import type { AtsCvDoc, AtsSkillGroup } from "./atsDoc";
+import type { AtsCvDoc, AtsSkillGroup, DocLang } from "./atsDoc";
+import { DOC_TITLES } from "./atsDoc";
+
+export type { DocLang };
+export { DOC_TITLES };
 
 export interface AtsContact {
   displayName: string;
@@ -9,35 +13,45 @@ export interface AtsContact {
   contactLine: string;
 }
 
-const SKILL_LABELS: Array<
-  [
-    key:
-      | "languages"
-      | "frameworks"
-      | "databases"
-      | "technologiesTools"
-      | "practices",
-    label: string,
-  ]
-> = [
-  ["languages", "Lenguajes"],
-  ["frameworks", "Frameworks"],
-  ["databases", "Bases de datos"],
-  ["technologiesTools", "Tecnologías / Herramientas"],
-  ["practices", "Prácticas"],
-];
+// Detección determinista del idioma de la oferta por stopwords. Sin llamada
+// a IA: los títulos del documento siguen al idioma detectado (nada de mezcla).
+export function detectOfferLanguage(text: string): DocLang {
+  const folded = text
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/[^a-z\s]/g, " ");
+  const words = new Set(folded.split(/\s+/).filter(Boolean));
+  const es = ["el", "la", "los", "las", "de", "del", "una", "para", "con", "buscamos", "oferta", "experiencia", "puesto", "empresa", "jornada", "salario", "requisitos"].filter((w) =>
+    words.has(w),
+  ).length;
+  const en = ["the", "and", "for", "with", "you", "will", "our", "role", "skills", "experience", "requirements", "benefits", "about", "join"].filter((w) =>
+    words.has(w),
+  ).length;
+  return en > es ? "en" : "es";
+}
 
-export function groupsFromSkills(skills: {
-  languages: string[];
-  frameworks: string[];
-  databases: string[];
-  technologiesTools: string[];
-  practices: string[];
-}): AtsSkillGroup[] {
-  return SKILL_LABELS.map(([key, label]) => ({
-    label,
-    items: skills[key] ?? [],
-  })).filter((g) => g.items.length > 0);
+export function groupsFromSkills(
+  skills: {
+    languages: string[];
+    frameworks: string[];
+    databases: string[];
+    technologiesTools: string[];
+    practices: string[];
+  },
+  lang: DocLang = "es",
+): AtsSkillGroup[] {
+  const labels = DOC_TITLES[lang].skillGroups;
+  const pairs: Array<[keyof typeof skills, string]> = [
+    ["languages", labels.languages],
+    ["frameworks", labels.frameworks],
+    ["databases", labels.databases],
+    ["technologiesTools", labels.technologiesTools],
+    ["practices", labels.practices],
+  ];
+  return pairs
+    .map(([key, label]) => ({ label, items: skills[key] ?? [] }))
+    .filter((g) => g.items.length > 0);
 }
 
 function splitBullets(exp: {
@@ -76,6 +90,7 @@ export function buildOptimizedAtsDoc(
   optimized: OptimizedCv,
   contact: AtsContact,
   fallbackSkills: { label: string; items: string[] }[],
+  lang: DocLang = "es",
 ): AtsCvDoc {
   const fromIa = groupsFromSkills(
     optimized.skills ?? {
@@ -85,8 +100,10 @@ export function buildOptimizedAtsDoc(
       technologiesTools: [],
       practices: [],
     },
+    lang,
   );
   return {
+    lang,
     displayName: contact.displayName,
     headline: contact.headline,
     contactLine: contact.contactLine,
@@ -126,15 +143,17 @@ export function buildOptimizedAtsDoc(
 export function buildClassicAtsDoc(
   cv: GeneratedCV,
   contact: AtsContact,
+  lang: DocLang = "es",
 ): AtsCvDoc {
   const cat = cv.skillsCategorized;
   return {
+    lang,
     displayName: contact.displayName,
     headline: contact.headline,
     contactLine: contact.contactLine,
     summary: cv.summary ?? "",
     skills: cat
-      ? groupsFromSkills({ ...cat, technologiesTools: cat.tools })
+      ? groupsFromSkills({ ...cat, technologiesTools: cat.tools }, lang)
       : (cv.skills ?? []).length > 0
         ? [{ label: "Habilidades", items: cv.skills }]
         : [],
@@ -165,6 +184,7 @@ export function buildClassicAtsDoc(
 }
 
 export interface AtsLetterDoc {
+  lang: DocLang;
   identityName: string;
   roleLine: string;
   identityLine: string;
@@ -174,7 +194,7 @@ export interface AtsLetterDoc {
   paragraphs: string[];
 }
 
-// Carta (IA o plantilla) → documento.
+// Carta (solo IA: sin carta no hay documento) → documento.
 export function buildLetterAtsDoc(args: {
   identityName: string;
   roleLine: string;
@@ -183,9 +203,16 @@ export function buildLetterAtsDoc(args: {
   company: string;
   subject: string;
   letter: string;
+  lang?: DocLang;
 }): AtsLetterDoc {
   return {
-    ...args,
+    lang: args.lang ?? "es",
+    identityName: args.identityName,
+    roleLine: args.roleLine,
+    identityLine: args.identityLine,
+    date: args.date,
+    company: args.company,
+    subject: args.subject,
     paragraphs: args.letter
       .replace(/\\n/g, "\n")
       .split(/\n{2,}/)

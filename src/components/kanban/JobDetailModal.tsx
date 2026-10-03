@@ -20,6 +20,7 @@ import {
 import Modal from "../ui/Modal";
 import CvViewer from "../ui/CvViewer";
 import CoverLetterViewer from "../ui/CoverLetterViewer";
+import { detectOfferLanguage } from "../../pdf/buildAtsDoc";
 import { useCv } from "../../hooks/useCv";
 import { evaluateMatch } from "../../services/aiService";
 import { getOfferDetail } from "../../services/jobsService";
@@ -234,6 +235,8 @@ export default function JobDetailModal({
   const legacyCv: GeneratedCV = cv ?? EMPTY_CV;
   const jobOfferId = job?.jobOfferId ?? null;
   const canOptimize = Boolean(jobOfferId && optimizer);
+  // Idioma de la oferta: todos los títulos de CV y carta lo siguen (nada de mezcla).
+  const offerLanguage = detectOfferLanguage(job?.description ?? "");
 
   // Datos IA solo si pertenecen a la oferta abierta y no hay carga/error en
   // curso: el hook guarda el último documento cargado, sea de la oferta que sea.
@@ -534,6 +537,7 @@ export default function JobDetailModal({
                 )}
                 optimizedError={cvErrorForThisJob}
                 onRegenerate={canOptimize ? handleRegenerateCv : undefined}
+                language={offerLanguage}
               />
             </div>
           )}
@@ -558,6 +562,7 @@ export default function JobDetailModal({
                 )}
                 onRegenerate={canOptimize ? handleRegenerateLetter : undefined}
                 targetRole={cv?.targetRole}
+                language={offerLanguage}
               />
             </div>
           )}

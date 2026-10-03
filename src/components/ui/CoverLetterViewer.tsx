@@ -8,7 +8,7 @@ import {
 } from "lucide-react";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import CoverLetterPdfDocument from "../../pdf/CoverLetterPdfDocument";
-import { buildLetterAtsDoc } from "../../pdf/buildAtsDoc";
+import { buildLetterAtsDoc, DOC_TITLES, type DocLang } from "../../pdf/buildAtsDoc";
 import type { JobApplication } from "../../types/kanban";
 import type { CoverLetterOutput } from "../../services/aiService";
 import { useAuth } from "../../context/AuthContext";
@@ -21,6 +21,8 @@ interface CoverLetterViewerProps {
   // Rol actual del usuario (reactivo: viene del CV y cambia al editarlo).
   // Sustituye al antiguo hardcode "Full-Stack Developer | DevOps Engineer".
   targetRole?: string | null;
+  // Idioma del documento (detectado de la oferta): todas las etiquetas lo siguen.
+  language?: DocLang;
 }
 
 export default function CoverLetterViewer({
@@ -29,9 +31,11 @@ export default function CoverLetterViewer({
   isLoading = false,
   onRegenerate,
   targetRole = null,
+  language = "es",
 }: CoverLetterViewerProps) {
   const [copied, setCopied] = useState(false);
   const { user } = useAuth();
+  const t = DOC_TITLES[language];
 
   const identityName =
     [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Tu nombre";
@@ -124,14 +128,15 @@ export default function CoverLetterViewer({
         company: job.company,
         subject,
         letter: letterBodyText,
+        lang: language,
       }),
-    [identityName, roleLine, identityLine, currentDate, job.company, subject, letterBodyText],
+    [identityName, roleLine, identityLine, currentDate, job.company, subject, letterBodyText, language],
   );
 
   const cleanLetterName = identityName
     .normalize("NFD")
-        .replace(/\p{Diacritic}/gu, "")
-        .replace(/\s+/g, "_");
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\s+/g, "_");
 
   return (
     <div className="flex flex-col gap-4">
@@ -213,10 +218,10 @@ export default function CoverLetterViewer({
         <div className="space-y-1 mb-4 text-xs text-slate-600">
           <p className="font-medium text-slate-500">{currentDate}</p>
           <p className="font-bold text-slate-800">
-            Equipo de Selección • {job.company}
+            {t.team} • {job.company}
           </p>
           <p className="text-slate-500">
-            Asunto: <strong className="text-slate-800">{subject}</strong>
+            {t.subject}: <strong className="text-slate-800">{subject}</strong>
           </p>
         </div>
 
@@ -261,7 +266,7 @@ export default function CoverLetterViewer({
 
         <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-500">Atentamente,</p>
+            <p className="text-xs text-slate-500">{t.closing}</p>
             <p className="font-bold text-slate-900 text-sm mt-0.5">
               {identityName}
             </p>

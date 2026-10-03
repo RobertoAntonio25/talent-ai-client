@@ -1,9 +1,11 @@
 import { Document, Page, Text, View } from "@react-pdf/renderer";
 import { atsStyles as s } from "./atsTheme";
 import type { AtsCvDoc } from "./atsDoc";
+import { DOC_TITLES } from "./buildAtsDoc";
 
 // El contenido fluye solo entre páginas (wrap nativo): nada se corta.
 export default function CvPdfDocument({ doc }: { doc: AtsCvDoc }) {
+  const t = DOC_TITLES[doc.lang];
   return (
     <Document title={`CV ATS - ${doc.displayName}`} author={doc.displayName}>
       <Page size="A4" style={s.page}>
@@ -17,14 +19,14 @@ export default function CvPdfDocument({ doc }: { doc: AtsCvDoc }) {
 
         {doc.summary ? (
           <View style={s.section}>
-            <Text style={s.h2}>Resumen profesional</Text>
+            <Text style={s.h2}>{t.summary}</Text>
             <Text style={s.summary}>{doc.summary}</Text>
           </View>
         ) : null}
 
         {doc.skills.length > 0 ? (
           <View style={s.section}>
-            <Text style={s.h2}>Habilidades</Text>
+            <Text style={s.h2}>{t.skills}</Text>
             {doc.skills.map((g) => (
               <Text key={g.label} style={s.skillLine}>
                 <Text style={{ fontFamily: "Helvetica-Bold" }}>
@@ -38,7 +40,7 @@ export default function CvPdfDocument({ doc }: { doc: AtsCvDoc }) {
 
         {doc.experience.length > 0 ? (
           <View style={s.section}>
-            <Text style={s.h2}>Experiencia</Text>
+            <Text style={s.h2}>{t.experience}</Text>
             {doc.experience.map((exp, i) => (
               <View key={`${exp.company}-${i}`} style={{ marginBottom: 6 }}>
                 <View style={s.expHead}>
@@ -61,7 +63,7 @@ export default function CvPdfDocument({ doc }: { doc: AtsCvDoc }) {
 
         {doc.projects.length > 0 ? (
           <View style={s.section}>
-            <Text style={s.h2}>Proyectos</Text>
+            <Text style={s.h2}>{t.projects}</Text>
             {doc.projects.map((p, i) => (
               <View key={i} style={{ marginBottom: 4 }}>
                 <View style={s.itemHead}>
@@ -78,7 +80,7 @@ export default function CvPdfDocument({ doc }: { doc: AtsCvDoc }) {
 
         {doc.education.length > 0 ? (
           <View style={s.section}>
-            <Text style={s.h2}>Educación</Text>
+            <Text style={s.h2}>{t.education}</Text>
             {doc.education.map((e, i) => (
               <View key={i} style={{ marginBottom: 3 }}>
                 <View style={s.itemHead}>
@@ -96,7 +98,7 @@ export default function CvPdfDocument({ doc }: { doc: AtsCvDoc }) {
 
         {doc.languagesLine ? (
           <View style={s.section}>
-            <Text style={s.h2}>Idiomas</Text>
+            <Text style={s.h2}>{t.languages}</Text>
             <Text style={s.skillLine}>{doc.languagesLine}</Text>
           </View>
         ) : null}
