@@ -5,7 +5,7 @@
 //   3. Carta de presentación generada por IA, lista para copiar al email.
 // c3 conecta los viewers (CvViewer / CoverLetterViewer) con los datos reales
 // del hook useOptimizer (Fase 2) a través del puerto OptimizerPort.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -22,6 +22,7 @@ import CvViewer from "../ui/CvViewer";
 import CoverLetterViewer from "../ui/CoverLetterViewer";
 import { useCv } from "../../hooks/useCv";
 import { evaluateMatch } from "../../services/aiService";
+import { getOfferDetail } from "../../services/jobsService";
 import type {
   CoverLetterOutput,
   OptimizedCv,
@@ -108,6 +109,19 @@ export default function JobDetailModal({
   const [letterRequestedFor, setLetterRequestedFor] = useState<string | null>(
     null,
   );
+  // Fase 3b (issue #129, kanban ligero): el listado ya no trae `description`
+  // en las ofertas del motor; se pide aquí bajo demanda al abrir el modal.
+  // Las manuales la traen en el listado (notas cortas) y no gastan llamada.
+  // `detailFor` recuerda para qué oferta vale el detalle cargado (o en
+  // curso): el arranque del fetch se hace ajustando estado durante el render
+  // (patrón oficial, como el bloque lastJobId de arriba), el efecto solo
+  // ejecuta la llamada y sus callbacks.
+  const [detailFor, setDetailFor] = useState<string | null>(null);
+  const [detailDescription, setDetailDescription] = useState<string | null>(
+    null,
+  );
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
   const currentJobId = job?.id ?? null;
   if (currentJobId !== lastJobId) {
     setLastJobId(currentJobId);
@@ -115,7 +129,42 @@ export default function JobDetailModal({
     setEvalMsg(null);
     setCvRequestedFor(null);
     setLetterRequestedFor(null);
+    setDetailFor(null);
+    setDetailDescription(null);
+    setDetailError(null);
+    setIsLoadingDetail(false);
   }
+
+  const detailJobOfferId = job?.jobOfferId ?? null;
+  const needsDetailFetch =
+    isOpen && Boolean(detailJobOfferId) && !job?.description;
+  if (needsDetailFetch && detailFor !== detailJobOfferId && detailJobOfferId) {
+    setDetailFor(detailJobOfferId);
+    setDetailDescription(null);
+    setDetailError(null);
+    setIsLoadingDetail(true);
+  }
+  useEffect(() => {
+    if (!needsDetailFetch || !detailJobOfferId) return;
+    if (detailFor !== detailJobOfferId || !isLoadingDetail) return;
+    let cancelled = false;
+    void getOfferDetail(detailJobOfferId)
+      .then((res) => {
+        if (cancelled) return;
+        setDetailDescription(res.data.jobOffer.description ?? null);
+        setIsLoadingDetail(false);
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        setDetailError(
+          e instanceof Error ? e.message : "No se pudo cargar el detalle.",
+        );
+        setIsLoadingDetail(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [needsDetailFetch, detailJobOfferId, detailFor, isLoadingDetail]);
 
   // Fase 3 (c3): al entrar a la pestaña se pide a la IA el documento de esta
   // oferta. El hook deduplica peticiones en vuelo y cachea por jobOfferId, así
@@ -363,21 +412,50 @@ export default function JobDetailModal({
                 </div>
               )}
 
-              {/* Descripción */}
+              {/* Descripción (Fase 3b: bajo demanda, el listado no la trae) */}
               <div className="flex flex-col gap-2">
                 <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
                   Descripción del puesto
                 </h4>
-                {job.description ? (
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line max-h-56 overflow-y-auto pr-1 custom-scrollbar">
-                    {job.description}
-                  </p>
-                ) : (
-                  <p className="text-xs text-slate-500 italic">
-                    La oferta no trae descripción. Ábrela en su web original
-                    para ver el detalle completo.
-                  </p>
-                )}
+                {(() => {
+                  const fullDescription = detailDescription ?? job.description;
+                  if (isLoadingDetail && !fullDescription) {
+                    return (
+                      <p className="text-xs text-slate-500 italic">
+                        Cargando descripción completa…
+                      </p>
+                    );
+                  }
+                  if (fullDescription) {
+                    return (
+                      <>
+                        {detailError && (
+                          <p className="text-xs text-amber-400">
+                            No se pudo refrescar el detalle ({detailError});
+                            se muestra la copia del listado.
+                          </p>
+                        )}
+                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line max-h-56 overflow-y-auto pr-1 custom-scrollbar">
+                          {fullDescription}
+                        </p>
+                      </>
+                    );
+                  }
+                  if (detailError) {
+                    return (
+                      <p className="text-xs text-red-400">
+                        {detailError} Ábrela en su web original para ver el
+                        detalle completo.
+                      </p>
+                    );
+                  }
+                  return (
+                    <p className="text-xs text-slate-500 italic">
+                      La oferta no trae descripción. Ábrela en su web original
+                      para ver el detalle completo.
+                    </p>
+                  );
+                })()}
                 {job.originalUrl && (
                   <a
                     href={job.originalUrl}

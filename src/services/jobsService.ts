@@ -11,6 +11,10 @@ export interface BackendJobOffer {
   id: string; // ¡OJO! string de JSearch, NO uuid
   title: string;
   company: string;
+  // Fase 3b (issue #129, kanban ligero): el listado (`GET /results`) ya NO
+  // trae `description` en las ofertas del motor (HTML pesado). Las manuales
+  // sí la traen (notas cortas del usuario) y el detalle completo se pide a
+  // `GET /offers/:jobOfferId` al abrir la tarjeta.
   description?: string | null;
   city?: string | null;
   country?: string | null;
@@ -120,6 +124,37 @@ export function triggerManualSearch() {
 export function getSearchCycleRun(runId: string) {
   return apiClient<{ success: boolean; data: SearchCycleRun }>(
     `/api/jobs/runs/${encodeURIComponent(runId)}`,
+  );
+}
+
+// Fase 3b (issue #129): última sincronización real desde SearchCycleRun.
+// Sustituye a `localStorage lastManualSearchAt`. 404 = aún no hay ciclos.
+export function getLatestSearchCycleRun() {
+  return apiClient<{ success: boolean; data: SearchCycleRun }>(
+    `/api/jobs/runs/latest`,
+  );
+}
+
+// Fase 3b (issue #129): detalle por oferta con `description` completa.
+// El kanban ligero no la trae en el listado; el modal la pide al abrir.
+export interface OfferDetailData {
+  jobOffer: BackendJobOffer;
+  result: {
+    id: string;
+    status: BackendResultStatus;
+    matchScore: number | null;
+    matchReason: string | null;
+    missingSkills: string[];
+    evaluatedAt: string | null;
+    dismissed: boolean;
+    createdAt: string;
+  } | null;
+  application: Pick<BackendApplication, "id" | "status"> | null;
+}
+
+export function getOfferDetail(jobOfferId: string) {
+  return apiClient<{ success: boolean; data: OfferDetailData }>(
+    `/api/jobs/offers/${encodeURIComponent(jobOfferId)}`,
   );
 }
 
