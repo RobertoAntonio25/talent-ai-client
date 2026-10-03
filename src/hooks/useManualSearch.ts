@@ -6,14 +6,18 @@
 // 5 s hasta DONE/ERROR y luego se leen los resultados. La IA ya evaluó
 // dentro del ciclo: no hay segunda llamada al matcher. Si el cliente aborta,
 // el ciclo sigue y el runId recupera el resultado.
+// Fase 3b (issue #129): la "última sincronización" es real (GET
+// /runs/latest → finishedAt ?? startedAt del último SearchCycleRun) y ya no
+// vive en localStorage. La clave vieja solo se limpia por higiene.
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
+  getLatestSearchCycleRun,
   getSearchCycleRun,
   getUserResults,
   triggerManualSearch,
 } from "../services/jobsService";
 
-const LAST_SEARCH_KEY = "lastManualSearchAt";
+const LEGACY_LAST_SEARCH_KEY = "lastManualSearchAt";
 const POLL_INTERVAL_MS = 5000;
 const POLL_MAX_ATTEMPTS = 60; // 5 min: el ciclo tarda 1-3 min la 1ª vez
 
@@ -37,14 +41,28 @@ export function useManualSearch() {
   const [isSearching, setIsSearching] = useState(false);
   const [searchSuccess, setSearchSuccess] = useState<string | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
-  const [lastSearchAt, setLastSearchAt] = useState<string | null>(() =>
-    localStorage.getItem(LAST_SEARCH_KEY),
-  );
+  // Fase 3b: sincronización real desde SearchCycleRun (sin localStorage).
+  const [lastSearchAt, setLastSearchAt] = useState<string | null>(null);
   const busyRef = useRef(false);
   const cancelledRef = useRef(false);
 
   useEffect(() => {
     cancelledRef.current = false;
+    // Higiene: la Fase 3b jubiló esta clave; si queda un valor viejo, fuera.
+    try {
+      localStorage.removeItem(LEGACY_LAST_SEARCH_KEY);
+    } catch {
+      // localStorage no disponible (SSR/tests): no es fatal.
+    }
+    // Última sincronización real al montar (404 = aún no hay ciclos).
+    void getLatestSearchCycleRun()
+      .then((res) => {
+        if (cancelledRef.current) return;
+        setLastSearchAt(res.data.finishedAt ?? res.data.startedAt);
+      })
+      .catch(() => {
+        if (!cancelledRef.current) setLastSearchAt(null);
+      });
     return () => {
       cancelledRef.current = true;
     };
@@ -90,9 +108,17 @@ export function useManualSearch() {
       const res = await getUserResults(1, 20);
       if (cancelledRef.current) return;
       const total = res.meta.total;
-      const nowIso = new Date().toISOString();
-      localStorage.setItem(LAST_SEARCH_KEY, nowIso);
-      setLastSearchAt(nowIso);
+      // Fase 3b: fecha real del ciclo recién cerrado (sin localStorage).
+      try {
+        const latest = await getLatestSearchCycleRun();
+        if (!cancelledRef.current) {
+          setLastSearchAt(
+            latest.data.finishedAt ?? latest.data.startedAt ?? null,
+          );
+        }
+      } catch {
+        if (!cancelledRef.current) setLastSearchAt(new Date().toISOString());
+      }
       const baseMsg =
         total === 0
           ? "Búsqueda completada, pero no se encontraron ofertas con tu perfil actual. Prueba a actualizar tu CV."
