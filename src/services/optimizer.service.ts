@@ -53,17 +53,22 @@ export function fetchOptimizedDocumentsByJobOffer(jobOfferId: string) {
 
 export async function fetchOrGenerateOptimizedCvByJobOffer(
   jobOfferId: string,
+  opts?: { force?: boolean },
 ): Promise<OptimizedCv> {
   assertJobOfferId(jobOfferId);
-  try {
-    const cached = await fetchOptimizedDocumentsByJobOffer(jobOfferId);
-    if (cached.optimizedCv) return cached.optimizedCv;
-  } catch (e) {
-    if (!(e instanceof ApiError) || e.status !== 404) throw e;
+  // force:true salta el GET y va directo al POST (el back regenera con
+  // forceRegenerate desde FASE D; antes de eso el campo se ignora).
+  if (!opts?.force) {
+    try {
+      const cached = await fetchOptimizedDocumentsByJobOffer(jobOfferId);
+      if (cached.optimizedCv) return cached.optimizedCv;
+    } catch (e) {
+      if (!(e instanceof ApiError) || e.status !== 404) throw e;
+    }
   }
   const generated = await apiClient<OptimizePostResponse>("/api/ai/optimize", {
     method: "POST",
-    data: { jobOfferId },
+    data: { jobOfferId, ...(opts?.force ? { forceRegenerate: true } : {}) },
     timeoutMs: OPTIMIZE_TIMEOUT_MS,
   });
   return generated.optimizedCv;
@@ -71,20 +76,23 @@ export async function fetchOrGenerateOptimizedCvByJobOffer(
 
 export async function fetchOrGenerateCoverLetterByJobOffer(
   jobOfferId: string,
+  opts?: { force?: boolean },
 ): Promise<CoverLetterOutput> {
   assertJobOfferId(jobOfferId);
-  try {
-    const cached = await fetchOptimizedDocumentsByJobOffer(jobOfferId);
-    const parsed = parseCoverLetterRaw(cached.coverLetter);
-    if (parsed) return parsed;
-  } catch (e) {
-    if (!(e instanceof ApiError) || e.status !== 404) throw e;
+  if (!opts?.force) {
+    try {
+      const cached = await fetchOptimizedDocumentsByJobOffer(jobOfferId);
+      const parsed = parseCoverLetterRaw(cached.coverLetter);
+      if (parsed) return parsed;
+    } catch (e) {
+      if (!(e instanceof ApiError) || e.status !== 404) throw e;
+    }
   }
   const generated = await apiClient<CoverLetterPostResponse>(
     "/api/ai/cover-letter",
     {
       method: "POST",
-      data: { jobOfferId },
+      data: { jobOfferId, ...(opts?.force ? { forceRegenerate: true } : {}) },
       timeoutMs: OPTIMIZE_TIMEOUT_MS,
     },
   );

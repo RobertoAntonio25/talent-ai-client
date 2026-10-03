@@ -50,24 +50,26 @@ export function useOptimizer() {
     }
   }, [uid]);
 
-  const fetchOrGenerateCv = useCallback(async (jobOfferId: string) => {
+  const fetchOrGenerateCv = useCallback(async (jobOfferId: string, opts?: { force?: boolean }) => {
     if (!jobOfferId) {
       setCvError("jobOfferId es requerido.");
       return null;
     }
     const key = cacheKey(jobOfferId);
-    const cached = cacheRef.current.get(key)?.cv;
-    if (cached) {
-      setOptimizedCv(cached);
-      setCvError(null);
-      return cached;
+    if (!opts?.force) {
+      const cached = cacheRef.current.get(key)?.cv;
+      if (cached) {
+        setOptimizedCv(cached);
+        setCvError(null);
+        return cached;
+      }
+      const inflight = inflightCvRef.current.get(key);
+      if (inflight) return inflight;
     }
-    const inflight = inflightCvRef.current.get(key);
-    if (inflight) return inflight;
 
     setIsLoadingCv(true);
     setCvError(null);
-    const request = fetchOrGenerateOptimizedCvByJobOffer(jobOfferId);
+    const request = fetchOrGenerateOptimizedCvByJobOffer(jobOfferId, opts);
     inflightCvRef.current.set(key, request);
     try {
       const cv = await request;
@@ -84,24 +86,26 @@ export function useOptimizer() {
     }
   }, [cacheKey]);
 
-  const fetchOrGenerateLetter = useCallback(async (jobOfferId: string) => {
+  const fetchOrGenerateLetter = useCallback(async (jobOfferId: string, opts?: { force?: boolean }) => {
     if (!jobOfferId) {
       setLetterError("jobOfferId es requerido.");
       return null;
     }
     const key = cacheKey(jobOfferId);
-    const cached = cacheRef.current.get(key)?.letter;
-    if (cached) {
-      setCoverLetter(cached);
-      setLetterError(null);
-      return cached;
+    if (!opts?.force) {
+      const cached = cacheRef.current.get(key)?.letter;
+      if (cached) {
+        setCoverLetter(cached);
+        setLetterError(null);
+        return cached;
+      }
+      const inflight = inflightLetterRef.current.get(key);
+      if (inflight) return inflight;
     }
-    const inflight = inflightLetterRef.current.get(key);
-    if (inflight) return inflight;
 
     setIsLoadingLetter(true);
     setLetterError(null);
-    const request = fetchOrGenerateCoverLetterByJobOffer(jobOfferId);
+    const request = fetchOrGenerateCoverLetterByJobOffer(jobOfferId, opts);
     inflightLetterRef.current.set(key, request);
     try {
       const letter = await request;
