@@ -18,11 +18,26 @@ export default function PersonalDataForm() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Cargar datos del back al montar (carga diferida para evitar setState síncrono en efecto)
+  // Cargar datos del back al montar y al cambiar de cuenta (carga diferida
+  // para evitar setState síncrono en efecto). Sin esto se ven los datos del
+  // usuario anterior.
+  const userId = user?.id ?? null;
+  const uFirstName = user?.firstName ?? "";
+  const uLastName = user?.lastName ?? "";
+  const uEmail = user?.email ?? "";
+  const uLocation = user?.location ?? "";
+  const uPhone = user?.phone ?? "";
   useEffect(() => {
     let mounted = true;
     void Promise.resolve().then(() => {
       if (!mounted) return;
+      setFirstName(uFirstName);
+      setLastName(uLastName);
+      setEmail(uEmail);
+      setLocation(uLocation);
+      setPhone(uPhone);
+      setError(null);
+      setSaved(false);
       setIsLoading(true);
       getMe()
         .then((data) => {
@@ -50,7 +65,7 @@ export default function PersonalDataForm() {
         });
     });
     return () => { mounted = false; };
-  }, [updateUser]);
+  }, [userId, uFirstName, uLastName, uEmail, uLocation, uPhone, updateUser]);
 
   const handleSave = async () => {
     setError(null);

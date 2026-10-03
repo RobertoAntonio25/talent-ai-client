@@ -28,10 +28,14 @@ export default function Profile() {
   const [aggregate, setAggregate] = useState<ProfileAggregate | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Recarga por cuenta: al cambiar de usuario se descarta el agregado anterior
+  // para no mostrar datos de la sesión previa.
+  const userId = user?.id ?? null;
   useEffect(() => {
     let mounted = true;
     void Promise.resolve().then(() => {
       if (!mounted) return;
+      setAggregate(null);
       setIsLoading(true);
       getProfileAggregate()
         .then((data) => {
@@ -54,7 +58,7 @@ export default function Profile() {
         });
     });
     return () => { mounted = false; };
-  }, [updateUser]);
+  }, [userId, updateUser]);
 
   const fullName =
     [aggregate?.user.firstName, aggregate?.user.lastName]
