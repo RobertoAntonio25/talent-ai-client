@@ -1,7 +1,11 @@
-import { useState, useRef } from "react";
-import { Copy, CheckCheck, Download, Loader2, Sparkles } from "lucide-react";
-import { toPng } from "html-to-image";
-import { jsPDF } from "jspdf";
+import { useState, useRef, useMemo } from "react";
+import { Copy, CheckCheck, Download, Sparkles } from "lucide-react";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import CvPdfDocument from "../../pdf/CvPdfDocument";
+import {
+  buildClassicAtsDoc,
+  buildOptimizedAtsDoc,
+} from "../../pdf/buildAtsDoc";
 import type { GeneratedCV } from "../../types/cv";
 import { useAuth } from "../../context/AuthContext";
 import type { OptimizedCv } from "../../services/aiService";
@@ -26,22 +30,54 @@ interface SkillsShown {
 // las que ya existen). Se usa cuando la IA devolvió categorías vacías o el
 // CV clásico solo trae lista plana.
 function categorizeSkillsFallback(skills: string[]): SkillsShown {
-  const out: SkillsShown = { languages: [], frameworks: [], databases: [], technologiesTools: [], practices: [] };
+  const out: SkillsShown = {
+    languages: [],
+    frameworks: [],
+    databases: [],
+    technologiesTools: [],
+    practices: [],
+  };
   for (const raw of skills) {
     const t = raw.trim();
     if (!t) continue;
     const low = t.toLowerCase();
-    if (/^(java|javascript|typescript|python|sql|html|css|php|c\+\+|c#|go|rust|kotlin|swift|ruby|scala|r)$/.test(low)) out.languages.push(t);
-    else if (/(react|angular|vue|svelte|spring|django|flask|express|nest|next\.?js|nuxt|flutter|\.net)/.test(low)) out.frameworks.push(t);
-    else if (/(mysql|postgres|mongo|sqlite|oracle|redis|neo4j|maria|supabase|firebase|dynamo|cassandra|elastic)/.test(low)) out.databases.push(t);
-    else if (/(agile|scrum|kanban|solid|tdd|bdd|clean code|code review|pair programming)/.test(low)) out.practices.push(t);
+    if (
+      /^(java|javascript|typescript|python|sql|html|css|php|c\+\+|c#|go|rust|kotlin|swift|ruby|scala|r)$/.test(
+        low,
+      )
+    )
+      out.languages.push(t);
+    else if (
+      /(react|angular|vue|svelte|spring|django|flask|express|nest|next\.?js|nuxt|flutter|\.net)/.test(
+        low,
+      )
+    )
+      out.frameworks.push(t);
+    else if (
+      /(mysql|postgres|mongo|sqlite|oracle|redis|neo4j|maria|supabase|firebase|dynamo|cassandra|elastic)/.test(
+        low,
+      )
+    )
+      out.databases.push(t);
+    else if (
+      /(agile|scrum|kanban|solid|tdd|bdd|clean code|code review|pair programming)/.test(
+        low,
+      )
+    )
+      out.practices.push(t);
     else out.technologiesTools.push(t);
   }
   return out;
 }
 
 function skillsTotal(s: SkillsShown): number {
-  return s.languages.length + s.frameworks.length + s.databases.length + s.technologiesTools.length + s.practices.length;
+  return (
+    s.languages.length +
+    s.frameworks.length +
+    s.databases.length +
+    s.technologiesTools.length +
+    s.practices.length
+  );
 }
 
 // Niveles del enum (BASIC…NATIVE) en español para el documento.
@@ -64,10 +100,8 @@ export default function CvViewer({
   onRegenerate,
 }: CvViewerProps) {
   const [isCopied, setIsCopied] = useState(false);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const cvRef = useRef<HTMLDivElement>(null);
   const optimizedRef = useRef<HTMLDivElement>(null);
-  const activeExportRef = optimizedData ? optimizedRef : cvRef;
   const { user } = useAuth();
 
   const contact = cv.contact ?? {
@@ -108,13 +142,16 @@ export default function CvViewer({
   const cleanContact = (v: string | undefined) => {
     const t = (v || "").trim();
     return t && !isPlaceholder(t) ? t : "";
-  };  const optContactLine = [
+  };
+  const optContactLine = [
     cleanContact(optHeader?.email) || cleanContact(contact.email),
     cleanContact(optHeader?.phone) || cleanContact(contact.phone),
     cleanContact(optHeader?.location) || cleanContact(contact.location),
     cleanContact(optHeader?.linkedin) || cleanContact(contact.linkedin),
     cleanContact(optHeader?.portfolio) || cleanContact(contact.portfolio),
-  ].filter(Boolean).join(" | ");
+  ]
+    .filter(Boolean)
+    .join(" | ");
   const optSkills = optimizedData?.skills;
   const optSkillsShown: SkillsShown =
     optSkills && skillsTotal(optSkills) > 0
@@ -126,18 +163,33 @@ export default function CvViewer({
       ? { ...skillsCat, technologiesTools: skillsCat.tools }
       : categorizeSkillsFallback(cv.skills ?? []);
   const hasClassicSkillsShown = skillsTotal(classicSkillsShown) > 0;
-  const splitBullets = (exp: { bullets?: string[]; description?: string }): string[] => {
-    const raw = exp.bullets && exp.bullets.length ? exp.bullets : exp.description ? [exp.description] : [];
+  const splitBullets = (exp: {
+    bullets?: string[];
+    description?: string;
+  }): string[] => {
+    const raw =
+      exp.bullets && exp.bullets.length
+        ? exp.bullets
+        : exp.description
+          ? [exp.description]
+          : [];
     let out: string[] = [];
     for (const item of raw) {
       for (const part of String(item).split("•")) {
-        const c = part.trim().replace(/^[-*\d]+[.)\s]+/, "").trim();
+        const c = part
+          .trim()
+          .replace(/^[-*\d]+[.)\s]+/, "")
+          .trim();
         if (c) out.push(c);
       }
     }
     // Cachés viejas con 1 bullet párrafo: se parten en frases para el visor.
     if (out.length <= 1 && out[0] && out[0].length > 300) {
-      const parts = out[0].split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean).slice(0, 4);
+      const parts = out[0]
+        .split(/(?<=[.!?])\s+/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 4);
       if (parts.length >= 2) out = parts;
     }
     return out.slice(0, 4);
@@ -165,11 +217,16 @@ export default function CvViewer({
       text += `\nRESUMEN PROFESIONAL\n${optimizedData.summary}\n\n`;
       if (hasOptSkills) {
         text += `HABILIDADES\n`;
-        if (optSkillsShown.languages.length) text += `Lenguajes: ${optSkillsShown.languages.join(", ")}\n`;
-        if (optSkillsShown.frameworks.length) text += `Frameworks: ${optSkillsShown.frameworks.join(", ")}\n`;
-        if (optSkillsShown.databases.length) text += `Bases de datos: ${optSkillsShown.databases.join(", ")}\n`;
-        if (optSkillsShown.technologiesTools.length) text += `Tecnologías / Herramientas: ${optSkillsShown.technologiesTools.join(", ")}\n`;
-        if (optSkillsShown.practices.length) text += `Prácticas: ${optSkillsShown.practices.join(", ")}\n`;
+        if (optSkillsShown.languages.length)
+          text += `Lenguajes: ${optSkillsShown.languages.join(", ")}\n`;
+        if (optSkillsShown.frameworks.length)
+          text += `Frameworks: ${optSkillsShown.frameworks.join(", ")}\n`;
+        if (optSkillsShown.databases.length)
+          text += `Bases de datos: ${optSkillsShown.databases.join(", ")}\n`;
+        if (optSkillsShown.technologiesTools.length)
+          text += `Tecnologías / Herramientas: ${optSkillsShown.technologiesTools.join(", ")}\n`;
+        if (optSkillsShown.practices.length)
+          text += `Prácticas: ${optSkillsShown.practices.join(", ")}\n`;
         text += `\n`;
       }
       text += `EXPERIENCIA\n`;
@@ -195,7 +252,8 @@ export default function CvViewer({
     let text = `${displayName.toUpperCase()}\n${cv.targetRole}\n`;
     if (contactLine) text += `${contactLine}\n`;
     text += `\n`;
-    if (cv.summary?.trim()) text += `RESUMEN PROFESIONAL\n${cv.summary.trim()}\n\n`;
+    if (cv.summary?.trim())
+      text += `RESUMEN PROFESIONAL\n${cv.summary.trim()}\n\n`;
     if (hasClassicSkillsShown) {
       text += `HABILIDADES\n`;
       if (classicSkillsShown.languages.length)
@@ -244,44 +302,81 @@ export default function CvViewer({
     }
   };
 
-  const handleDownloadPDF = async () => {
-    const element = activeExportRef.current;
-    if (!element) return;
-    setIsGeneratingPdf(true);
-    try {
-      const dataUrl = await toPng(element, {
-        pixelRatio: 2.5,
-        backgroundColor: "#ffffff",
-        cacheBust: true,
-      });
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
-      pdf.addImage(
-        dataUrl,
-        "PNG",
-        0,
-        0,
-        pdfWidth,
-        pdfHeight,
-        undefined,
-        "FAST",
+  const fallbackSkillGroups = useMemo(
+    () =>
+      (
+        [
+          ["languages", "Lenguajes"],
+          ["frameworks", "Frameworks"],
+          ["databases", "Bases de datos"],
+          ["technologiesTools", "Tecnologías / Herramientas"],
+          ["practices", "Prácticas"],
+        ] as const
+      )
+        .map(([key, label]) => ({ label, items: optSkillsShown[key] }))
+        .filter((g) => g.items.length > 0),
+    [optSkillsShown],
+  );
+
+  // Niveles ya localizados para el PDF (el builder une tal cual).
+  const optimizedForDoc = useMemo(
+    () =>
+      optimizedData
+        ? {
+            ...optimizedData,
+            languages: (optimizedData.languages ?? []).map((l) => ({
+              ...l,
+              level: formatLevel(l.level),
+            })),
+          }
+        : null,
+    [optimizedData],
+  );
+
+  const classicForDoc = useMemo(
+    () => ({
+      ...cv,
+      languages: (cv.languages ?? []).map((l) => ({
+        ...l,
+        level: formatLevel(l.level),
+      })),
+    }),
+    [cv],
+  );
+
+  const atsDoc = useMemo(() => {
+    if (optimizedForDoc) {
+      return buildOptimizedAtsDoc(
+        optimizedForDoc,
+        {
+          displayName: optDisplayName,
+          headline: optHeadline,
+          contactLine: optContactLine,
+        },
+        fallbackSkillGroups,
       );
-      const cleanFileName = optDisplayName
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, "_");
-      pdf.save(`${cleanFileName}_CV_ATS.pdf`);
-    } catch (error) {
-      console.error("Error generando el PDF:", error);
-    } finally {
-      setIsGeneratingPdf(false);
     }
-  };
+    return buildClassicAtsDoc(classicForDoc, {
+      displayName,
+      headline: cv.targetRole,
+      contactLine,
+    });
+  }, [
+    optimizedForDoc,
+    classicForDoc,
+    optDisplayName,
+    optHeadline,
+    optContactLine,
+    displayName,
+    contactLine,
+    fallbackSkillGroups,
+    cv.targetRole,
+  ]);
+
+  const cleanFileName = (optimizedData ? optDisplayName : displayName)
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\s+/g, "_");
 
   return (
     <div className="flex flex-col gap-5">
@@ -305,7 +400,9 @@ export default function CvViewer({
               disabled={isLoadingOptimized}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-semibold rounded-xl transition-all active:scale-95 border border-slate-700/80"
             >
-              <span>{isLoadingOptimized ? "Generando…" : "↻ Regenerar con IA"}</span>
+              <span>
+                {isLoadingOptimized ? "Generando…" : "↻ Regenerar con IA"}
+              </span>
             </button>
           )}
           <button
@@ -324,23 +421,20 @@ export default function CvViewer({
               </>
             )}
           </button>
-          <button
-            onClick={handleDownloadPDF}
-            disabled={isGeneratingPdf}
-            className="flex items-center gap-2 px-4 py-2 bg-aplika-lima-500 hover:bg-aplika-lima-400 text-aplika-night-950 text-xs font-semibold rounded-xl transition-all shadow-md shadow-aplika-lima-500/25 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+          <PDFDownloadLink
+            document={<CvPdfDocument doc={atsDoc} />}
+            fileName={`${cleanFileName}_CV_ATS.pdf`}
+            className="flex items-center gap-2 px-4 py-2 bg-aplika-lima-500 hover:bg-aplika-lima-400 text-aplika-night-950 text-xs font-semibold rounded-xl transition-all shadow-md shadow-aplika-lima-500/25 active:scale-95"
           >
-            {isGeneratingPdf ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Generando PDF...</span>
-              </>
-            ) : (
+            {({ loading }) => (
               <>
                 <Download className="w-3.5 h-3.5" />
-                <span>Descargar PDF (A4)</span>
+                <span>
+                  {loading ? "Generando PDF..." : "Descargar PDF (A4)"}
+                </span>
               </>
             )}
-          </button>
+          </PDFDownloadLink>
         </div>
       </div>
 
