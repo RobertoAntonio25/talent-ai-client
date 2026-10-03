@@ -144,17 +144,19 @@ interface ProfileCvEnvelope {
 
 /** GET /api/profile/cv — CV completo para hidratar (404 sin perfil). */
 export async function getProfileCv(): Promise<ProfileCvData> {
-  const res = await apiClient<ProfileCvEnvelope>("/api/profile/cv");
+  const res = await apiClient<ProfileCvEnvelope>("/api/profile/cv", {
+    timeoutMs: 15000,
+  });
   return res.data;
 }
 
-/** PATCH /api/profile/cv — edición manual con persistencia real. */
+/** PATCH /api/profile/cv — edición manual con persistencia real.
+ * El back responde el objeto directo (sin envelope, como `/preferences`). */
 export async function updateProfileCv(
   patch: ProfileCvPatch,
 ): Promise<ProfileCvData> {
-  const res = await apiClient<ProfileCvEnvelope>("/api/profile/cv", {
+  return apiClient<ProfileCvData>("/api/profile/cv", {
     method: "PATCH",
     data: patch,
   });
-  return res.data;
 }
