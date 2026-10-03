@@ -479,6 +479,7 @@ export default function JobDetailModal({
                   letterRequestMatches && optimizer?.isLoadingLetter,
                 )}
                 onRegenerate={canOptimize ? handleRegenerateLetter : undefined}
+                targetRole={cv?.targetRole}
               />
             </div>
           )}
