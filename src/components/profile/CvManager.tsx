@@ -13,7 +13,16 @@ import ProjectsEditor from "./ProjectsEditor";
 import LanguagesEditor from "./LanguagesEditor";
 
 export default function CvManager() {
-  const { cv, isUploading, uploadError, upload, clear, updateCv } = useCv();
+  const {
+    cv,
+    isUploading,
+    uploadError,
+    upload,
+    clear,
+    updateCv,
+    isHydrating,
+    syncError,
+  } = useCv();
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -52,7 +61,11 @@ export default function CvManager() {
 
       <div>
         <p className={`text-xs mb-3 ${cv ? "text-emerald-400" : "text-slate-500"}`}>
-          {cv ? `✓ ${cv.fullName || "CV"} — ${cv.skills.length} skills` : "Sin CV cargado"}
+          {isHydrating && !cv
+            ? "Recuperando tu CV guardado…"
+            : cv
+              ? `✓ ${cv.fullName || "CV"} — ${cv.skills.length} skills`
+              : "Sin CV cargado"}
         </p>
         <div className="flex flex-wrap gap-2">
           <button
@@ -77,6 +90,9 @@ export default function CvManager() {
         <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => void handleFile(e)} />
         {uploadError && (
           <p className="mt-2 text-xs text-red-400 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{uploadError}</p>
+        )}
+        {syncError && (
+          <p className="mt-2 text-xs text-amber-400 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{syncError}</p>
         )}
         {msg && !uploadError && (
           <p className="mt-2 text-xs text-emerald-400 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" />{msg}</p>

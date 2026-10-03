@@ -54,7 +54,7 @@ export default function CvBasicsForm({
       </button>
       {saved && (
         <p className="mt-2 text-xs text-emerald-400 flex items-center gap-1">
-          <CheckCircle2 className="w-3.5 h-3.5" /> Guardado en este dispositivo.
+          <CheckCircle2 className="w-3.5 h-3.5" /> Guardado (se sincroniza con tu cuenta).
         </p>
       )}
     </div>
