@@ -1,7 +1,13 @@
-import { useState, useRef } from "react";
-import { Copy, CheckCheck, Download, Loader2, Sparkles } from "lucide-react";
-import { toPng } from "html-to-image";
-import { jsPDF } from "jspdf";
+import { useState, useRef, useMemo } from "react";
+import { Copy, CheckCheck, Download, Sparkles } from "lucide-react";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import CvPdfDocument from "../../pdf/CvPdfDocument";
+import {
+  buildClassicAtsDoc,
+  buildOptimizedAtsDoc,
+  DOC_TITLES,
+  type DocLang,
+} from "../../pdf/buildAtsDoc";
 import type { GeneratedCV } from "../../types/cv";
 import { useAuth } from "../../context/AuthContext";
 import type { OptimizedCv } from "../../services/aiService";
@@ -12,6 +18,8 @@ interface CvViewerProps {
   isLoadingOptimized?: boolean;
   optimizedError?: string | null;
   onRegenerate?: () => void;
+  // Idioma del documento (detectado de la oferta): todos los títulos lo siguen.
+  language?: DocLang;
 }
 
 interface SkillsShown {
@@ -26,34 +34,76 @@ interface SkillsShown {
 // las que ya existen). Se usa cuando la IA devolvió categorías vacías o el
 // CV clásico solo trae lista plana.
 function categorizeSkillsFallback(skills: string[]): SkillsShown {
-  const out: SkillsShown = { languages: [], frameworks: [], databases: [], technologiesTools: [], practices: [] };
+  const out: SkillsShown = {
+    languages: [],
+    frameworks: [],
+    databases: [],
+    technologiesTools: [],
+    practices: [],
+  };
   for (const raw of skills) {
     const t = raw.trim();
     if (!t) continue;
     const low = t.toLowerCase();
-    if (/^(java|javascript|typescript|python|sql|html|css|php|c\+\+|c#|go|rust|kotlin|swift|ruby|scala|r)$/.test(low)) out.languages.push(t);
-    else if (/(react|angular|vue|svelte|spring|django|flask|express|nest|next\.?js|nuxt|flutter|\.net)/.test(low)) out.frameworks.push(t);
-    else if (/(mysql|postgres|mongo|sqlite|oracle|redis|neo4j|maria|supabase|firebase|dynamo|cassandra|elastic)/.test(low)) out.databases.push(t);
-    else if (/(agile|scrum|kanban|solid|tdd|bdd|clean code|code review|pair programming)/.test(low)) out.practices.push(t);
+    if (
+      /^(java|javascript|typescript|python|sql|html|css|php|c\+\+|c#|go|rust|kotlin|swift|ruby|scala|r)$/.test(
+        low,
+      )
+    )
+      out.languages.push(t);
+    else if (
+      /(react|angular|vue|svelte|spring|django|flask|express|nest|next\.?js|nuxt|flutter|\.net)/.test(
+        low,
+      )
+    )
+      out.frameworks.push(t);
+    else if (
+      /(mysql|postgres|mongo|sqlite|oracle|redis|neo4j|maria|supabase|firebase|dynamo|cassandra|elastic)/.test(
+        low,
+      )
+    )
+      out.databases.push(t);
+    else if (
+      /(agile|scrum|kanban|solid|tdd|bdd|clean code|code review|pair programming)/.test(
+        low,
+      )
+    )
+      out.practices.push(t);
     else out.technologiesTools.push(t);
   }
   return out;
 }
 
 function skillsTotal(s: SkillsShown): number {
-  return s.languages.length + s.frameworks.length + s.databases.length + s.technologiesTools.length + s.practices.length;
+  return (
+    s.languages.length +
+    s.frameworks.length +
+    s.databases.length +
+    s.technologiesTools.length +
+    s.practices.length
+  );
 }
 
-// Niveles del enum (BASIC…NATIVE) en español para el documento.
-// Si llega un nivel libre (ej. "C1 Advanced"), se deja tal cual.
-function formatLevel(level: string): string {
+// Niveles en el idioma del documento. Si llega un nivel libre
+// (ej. "C1 Advanced"), se deja tal cual.
+function formatLevel(level: string, lang: DocLang = "es"): string {
+  const key = level.trim().toUpperCase();
+  if (lang === "en") {
+    const map: Record<string, string> = {
+      NATIVE: "Native",
+      ADVANCED: "Advanced",
+      INTERMEDIATE: "Intermediate",
+      BASIC: "Basic",
+    };
+    return map[key] ?? level;
+  }
   const map: Record<string, string> = {
     NATIVE: "Nativo",
     ADVANCED: "Avanzado",
     INTERMEDIATE: "Intermedio",
     BASIC: "Básico",
   };
-  return map[level.trim().toUpperCase()] ?? level;
+  return map[key] ?? level;
 }
 
 export default function CvViewer({
@@ -62,12 +112,11 @@ export default function CvViewer({
   isLoadingOptimized = false,
   optimizedError = null,
   onRegenerate,
+  language = "es",
 }: CvViewerProps) {
   const [isCopied, setIsCopied] = useState(false);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const cvRef = useRef<HTMLDivElement>(null);
   const optimizedRef = useRef<HTMLDivElement>(null);
-  const activeExportRef = optimizedData ? optimizedRef : cvRef;
   const { user } = useAuth();
 
   const contact = cv.contact ?? {
@@ -108,13 +157,16 @@ export default function CvViewer({
   const cleanContact = (v: string | undefined) => {
     const t = (v || "").trim();
     return t && !isPlaceholder(t) ? t : "";
-  };  const optContactLine = [
+  };
+  const optContactLine = [
     cleanContact(optHeader?.email) || cleanContact(contact.email),
     cleanContact(optHeader?.phone) || cleanContact(contact.phone),
     cleanContact(optHeader?.location) || cleanContact(contact.location),
     cleanContact(optHeader?.linkedin) || cleanContact(contact.linkedin),
     cleanContact(optHeader?.portfolio) || cleanContact(contact.portfolio),
-  ].filter(Boolean).join(" | ");
+  ]
+    .filter(Boolean)
+    .join(" | ");
   const optSkills = optimizedData?.skills;
   const optSkillsShown: SkillsShown =
     optSkills && skillsTotal(optSkills) > 0
@@ -126,18 +178,33 @@ export default function CvViewer({
       ? { ...skillsCat, technologiesTools: skillsCat.tools }
       : categorizeSkillsFallback(cv.skills ?? []);
   const hasClassicSkillsShown = skillsTotal(classicSkillsShown) > 0;
-  const splitBullets = (exp: { bullets?: string[]; description?: string }): string[] => {
-    const raw = exp.bullets && exp.bullets.length ? exp.bullets : exp.description ? [exp.description] : [];
+  const splitBullets = (exp: {
+    bullets?: string[];
+    description?: string;
+  }): string[] => {
+    const raw =
+      exp.bullets && exp.bullets.length
+        ? exp.bullets
+        : exp.description
+          ? [exp.description]
+          : [];
     let out: string[] = [];
     for (const item of raw) {
       for (const part of String(item).split("•")) {
-        const c = part.trim().replace(/^[-*\d]+[.)\s]+/, "").trim();
+        const c = part
+          .trim()
+          .replace(/^[-*\d]+[.)\s]+/, "")
+          .trim();
         if (c) out.push(c);
       }
     }
     // Cachés viejas con 1 bullet párrafo: se parten en frases para el visor.
     if (out.length <= 1 && out[0] && out[0].length > 300) {
-      const parts = out[0].split(/(?<=[.!?])\s+/).map((s) => s.trim()).filter(Boolean).slice(0, 4);
+      const parts = out[0]
+        .split(/(?<=[.!?])\s+/)
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 4);
       if (parts.length >= 2) out = parts;
     }
     return out.slice(0, 4);
@@ -158,21 +225,30 @@ export default function CvViewer({
       : [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
         "Mi CV optimizado";
 
+  // Todos los títulos del documento siguen este idioma (nada de mezcla).
+  const t = DOC_TITLES[language];
+
   const generateCleanAtsText = () => {
+    const upper = (s: string) => s.toUpperCase();
     if (optimizedData) {
       let text = `${optDisplayName.toUpperCase()}\n${optHeadline}\n`;
       if (optContactLine) text += `${optContactLine}\n`;
-      text += `\nRESUMEN PROFESIONAL\n${optimizedData.summary}\n\n`;
+      text += `\n${upper(t.summary)}\n${optimizedData.summary}\n\n`;
       if (hasOptSkills) {
-        text += `HABILIDADES\n`;
-        if (optSkillsShown.languages.length) text += `Lenguajes: ${optSkillsShown.languages.join(", ")}\n`;
-        if (optSkillsShown.frameworks.length) text += `Frameworks: ${optSkillsShown.frameworks.join(", ")}\n`;
-        if (optSkillsShown.databases.length) text += `Bases de datos: ${optSkillsShown.databases.join(", ")}\n`;
-        if (optSkillsShown.technologiesTools.length) text += `Tecnologías / Herramientas: ${optSkillsShown.technologiesTools.join(", ")}\n`;
-        if (optSkillsShown.practices.length) text += `Prácticas: ${optSkillsShown.practices.join(", ")}\n`;
+        text += `${upper(t.skills)}\n`;
+        if (optSkillsShown.languages.length)
+          text += `${t.skillGroups.languages}: ${optSkillsShown.languages.join(", ")}\n`;
+        if (optSkillsShown.frameworks.length)
+          text += `${t.skillGroups.frameworks}: ${optSkillsShown.frameworks.join(", ")}\n`;
+        if (optSkillsShown.databases.length)
+          text += `${t.skillGroups.databases}: ${optSkillsShown.databases.join(", ")}\n`;
+        if (optSkillsShown.technologiesTools.length)
+          text += `${t.skillGroups.technologiesTools}: ${optSkillsShown.technologiesTools.join(", ")}\n`;
+        if (optSkillsShown.practices.length)
+          text += `${t.skillGroups.practices}: ${optSkillsShown.practices.join(", ")}\n`;
         text += `\n`;
       }
-      text += `EXPERIENCIA\n`;
+      text += `${upper(t.experience)}\n`;
       optimizedData.experiences.forEach((exp) => {
         const dates = [exp.startDate, exp.endDate].filter(Boolean).join(" – ");
         text += `${exp.company}${dates ? ` ${dates}` : ""}\n${exp.role}${exp.location ? ` ${exp.location}` : ""}\n`;
@@ -182,36 +258,37 @@ export default function CvViewer({
         text += `\n`;
       });
       (optimizedData.projects ?? []).forEach((p) => {
-        text += `PROYECTOS\n${p.name}${p.repoUrl ? ` ${p.repoUrl}` : ""}\n${p.description ?? ""}\n\n`;
+        text += `${upper(t.projects)}\n${p.name}${p.repoUrl ? ` ${p.repoUrl}` : ""}\n${p.description ?? ""}\n\n`;
       });
       (optimizedData.education ?? []).forEach((e) => {
-        text += `EDUCACIÓN\n${e.institution}${e.graduationYear ? ` ${e.graduationYear}` : ""}\n${e.degree}\n\n`;
+        text += `${upper(t.education)}\n${e.institution}${e.graduationYear ? ` ${e.graduationYear}` : ""}\n${e.degree}\n\n`;
       });
       if ((optimizedData.languages ?? []).length) {
-        text += `IDIOMAS\n${(optimizedData.languages ?? []).map((l) => `${l.language}: ${formatLevel(l.level)}`).join(" · ")}\n`;
+        text += `${upper(t.languages)}\n${(optimizedData.languages ?? []).map((l) => `${l.language}: ${formatLevel(l.level, language)}`).join(" · ")}\n`;
       }
       return text.trim();
     }
     let text = `${displayName.toUpperCase()}\n${cv.targetRole}\n`;
     if (contactLine) text += `${contactLine}\n`;
     text += `\n`;
-    if (cv.summary?.trim()) text += `RESUMEN PROFESIONAL\n${cv.summary.trim()}\n\n`;
+    if (cv.summary?.trim())
+      text += `${upper(t.summary)}\n${cv.summary.trim()}\n\n`;
     if (hasClassicSkillsShown) {
-      text += `HABILIDADES\n`;
+      text += `${upper(t.skills)}\n`;
       if (classicSkillsShown.languages.length)
-        text += `Lenguajes: ${classicSkillsShown.languages.join(", ")}\n`;
+        text += `${t.skillGroups.languages}: ${classicSkillsShown.languages.join(", ")}\n`;
       if (classicSkillsShown.frameworks.length)
-        text += `Frameworks: ${classicSkillsShown.frameworks.join(", ")}\n`;
+        text += `${t.skillGroups.frameworks}: ${classicSkillsShown.frameworks.join(", ")}\n`;
       if (classicSkillsShown.databases.length)
-        text += `Bases de datos: ${classicSkillsShown.databases.join(", ")}\n`;
+        text += `${t.skillGroups.databases}: ${classicSkillsShown.databases.join(", ")}\n`;
       if (classicSkillsShown.technologiesTools.length)
-        text += `Tecnologías / Herramientas: ${classicSkillsShown.technologiesTools.join(", ")}\n`;
+        text += `${t.skillGroups.technologiesTools}: ${classicSkillsShown.technologiesTools.join(", ")}\n`;
       if (classicSkillsShown.practices.length)
-        text += `Prácticas: ${classicSkillsShown.practices.join(", ")}\n`;
+        text += `${t.skillGroups.practices}: ${classicSkillsShown.practices.join(", ")}\n`;
       text += `\n`;
     }
     if (classicExperience.length) {
-      text += `EXPERIENCIA\n`;
+      text += `${upper(t.experience)}\n`;
       classicExperience.forEach((exp) => {
         text += `${exp.company} | ${exp.period}\n${exp.role}\n`;
         exp.achievements.forEach((a) => {
@@ -221,7 +298,7 @@ export default function CvViewer({
       });
     }
     if (classicEducation.length) {
-      text += `EDUCACIÓN\n`;
+      text += `${upper(t.education)}\n`;
       classicEducation.forEach((edu) => {
         text += `${edu.institution} | ${edu.period}\n${edu.degree}\n`;
         if (edu.details) text += `${edu.details}\n`;
@@ -229,7 +306,7 @@ export default function CvViewer({
       });
     }
     if (classicLanguages.length) {
-      text += `IDIOMAS\n${classicLanguages.map((l) => `${l.language}: ${formatLevel(l.level)}`).join(" · ")}\n`;
+      text += `${upper(t.languages)}\n${classicLanguages.map((l) => `${l.language}: ${formatLevel(l.level, language)}`).join(" · ")}\n`;
     }
     return text.trim();
   };
@@ -244,44 +321,87 @@ export default function CvViewer({
     }
   };
 
-  const handleDownloadPDF = async () => {
-    const element = activeExportRef.current;
-    if (!element) return;
-    setIsGeneratingPdf(true);
-    try {
-      const dataUrl = await toPng(element, {
-        pixelRatio: 2.5,
-        backgroundColor: "#ffffff",
-        cacheBust: true,
-      });
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
-      pdf.addImage(
-        dataUrl,
-        "PNG",
-        0,
-        0,
-        pdfWidth,
-        pdfHeight,
-        undefined,
-        "FAST",
+  const fallbackSkillGroups = useMemo(
+    () =>
+      (
+        [
+          ["languages", t.skillGroups.languages],
+          ["frameworks", t.skillGroups.frameworks],
+          ["databases", t.skillGroups.databases],
+          ["technologiesTools", t.skillGroups.technologiesTools],
+          ["practices", t.skillGroups.practices],
+        ] as const
+      )
+        .map(([key, label]) => ({ label, items: optSkillsShown[key] }))
+        .filter((g) => g.items.length > 0),
+    [optSkillsShown, t],
+  );
+
+  // Niveles ya localizados para el PDF (el builder une tal cual).
+  const optimizedForDoc = useMemo(
+    () =>
+      optimizedData
+        ? {
+            ...optimizedData,
+            languages: (optimizedData.languages ?? []).map((l) => ({
+              ...l,
+              level: formatLevel(l.level, language),
+            })),
+          }
+        : null,
+    [optimizedData, language],
+  );
+
+  const classicForDoc = useMemo(
+    () => ({
+      ...cv,
+      languages: (cv.languages ?? []).map((l) => ({
+        ...l,
+        level: formatLevel(l.level, language),
+      })),
+    }),
+    [cv, language],
+  );
+
+  const atsDoc = useMemo(() => {
+    if (optimizedForDoc) {
+      return buildOptimizedAtsDoc(
+        optimizedForDoc,
+        {
+          displayName: optDisplayName,
+          headline: optHeadline,
+          contactLine: optContactLine,
+        },
+        fallbackSkillGroups,
+        language,
       );
-      const cleanFileName = optDisplayName
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, "_");
-      pdf.save(`${cleanFileName}_CV_ATS.pdf`);
-    } catch (error) {
-      console.error("Error generando el PDF:", error);
-    } finally {
-      setIsGeneratingPdf(false);
     }
-  };
+    return buildClassicAtsDoc(
+      classicForDoc,
+      {
+        displayName,
+        headline: cv.targetRole,
+        contactLine,
+      },
+      language,
+    );
+  }, [
+    optimizedForDoc,
+    classicForDoc,
+    optDisplayName,
+    optHeadline,
+    optContactLine,
+    displayName,
+    contactLine,
+    fallbackSkillGroups,
+    cv.targetRole,
+    language,
+  ]);
+
+  const cleanFileName = (optimizedData ? optDisplayName : displayName)
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\s+/g, "_");
 
   return (
     <div className="flex flex-col gap-5">
@@ -305,7 +425,9 @@ export default function CvViewer({
               disabled={isLoadingOptimized}
               className="flex items-center gap-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 text-xs font-semibold rounded-xl transition-all active:scale-95 border border-slate-700/80"
             >
-              <span>{isLoadingOptimized ? "Generando…" : "↻ Regenerar con IA"}</span>
+              <span>
+                {isLoadingOptimized ? "Generando…" : "↻ Regenerar con IA"}
+              </span>
             </button>
           )}
           <button
@@ -324,23 +446,20 @@ export default function CvViewer({
               </>
             )}
           </button>
-          <button
-            onClick={handleDownloadPDF}
-            disabled={isGeneratingPdf}
-            className="flex items-center gap-2 px-4 py-2 bg-aplika-lima-500 hover:bg-aplika-lima-400 text-aplika-night-950 text-xs font-semibold rounded-xl transition-all shadow-md shadow-aplika-lima-500/25 active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+          <PDFDownloadLink
+            document={<CvPdfDocument doc={atsDoc} />}
+            fileName={`${cleanFileName}_CV_ATS.pdf`}
+            className="flex items-center gap-2 px-4 py-2 bg-aplika-lima-500 hover:bg-aplika-lima-400 text-aplika-night-950 text-xs font-semibold rounded-xl transition-all shadow-md shadow-aplika-lima-500/25 active:scale-95"
           >
-            {isGeneratingPdf ? (
-              <>
-                <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                <span>Generando PDF...</span>
-              </>
-            ) : (
+            {({ loading }) => (
               <>
                 <Download className="w-3.5 h-3.5" />
-                <span>Descargar PDF (A4)</span>
+                <span>
+                  {loading ? "Generando PDF..." : "Descargar PDF (A4)"}
+                </span>
               </>
             )}
-          </button>
+          </PDFDownloadLink>
         </div>
       </div>
 
@@ -376,7 +495,7 @@ export default function CvViewer({
             </header>
             <section className="mb-3.5">
               <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                Resumen profesional
+                {t.summary}
               </h2>
               <p className="text-[11px] text-black leading-relaxed whitespace-pre-line">
                 {optimizedData.summary}
@@ -385,38 +504,38 @@ export default function CvViewer({
             {hasOptSkills && (
               <section className="mb-3.5">
                 <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                  Habilidades
+                  {t.skills}
                 </h2>
                 <div className="text-[11px] text-black space-y-0.5">
                   {optSkillsShown.languages.length > 0 && (
                     <p>
-                      <strong className="font-bold">Lenguajes:</strong>{" "}
+                      <strong className="font-bold">{t.skillGroups.languages}:</strong>{" "}
                       {optSkillsShown.languages.join(", ")}
                     </p>
                   )}
                   {optSkillsShown.frameworks.length > 0 && (
                     <p>
-                      <strong className="font-bold">Frameworks:</strong>{" "}
+                      <strong className="font-bold">{t.skillGroups.frameworks}:</strong>{" "}
                       {optSkillsShown.frameworks.join(", ")}
                     </p>
                   )}
                   {optSkillsShown.databases.length > 0 && (
                     <p>
-                      <strong className="font-bold">Bases de datos:</strong>{" "}
+                      <strong className="font-bold">{t.skillGroups.databases}:</strong>{" "}
                       {optSkillsShown.databases.join(", ")}
                     </p>
                   )}
                   {optSkillsShown.technologiesTools.length > 0 && (
                     <p>
                       <strong className="font-bold">
-                        Tecnologías / Herramientas:
+                        {t.skillGroups.technologiesTools}:
                       </strong>{" "}
                       {optSkillsShown.technologiesTools.join(", ")}
                     </p>
                   )}
                   {optSkillsShown.practices.length > 0 && (
                     <p>
-                      <strong className="font-bold">Prácticas:</strong>{" "}
+                      <strong className="font-bold">{t.skillGroups.practices}:</strong>{" "}
                       {optSkillsShown.practices.join(", ")}
                     </p>
                   )}
@@ -425,7 +544,7 @@ export default function CvViewer({
             )}
             <section className="mb-3.5">
               <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                Experiencia
+                {t.experience}
               </h2>
               <div className="space-y-3">
                 {optimizedData.experiences.map((exp, index) => (
@@ -458,7 +577,7 @@ export default function CvViewer({
             {(optimizedData.projects ?? []).length > 0 && (
               <section className="mb-3.5">
                 <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                  Proyectos
+                  {t.projects}
                 </h2>
                 <div className="space-y-2 text-[11px] text-black">
                   {(optimizedData.projects ?? []).map((p, i) => (
@@ -490,7 +609,7 @@ export default function CvViewer({
             {(optimizedData.education ?? []).length > 0 && (
               <section className="mb-3.5">
                 <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                  Educación
+                  {t.education}
                 </h2>
                 <div className="space-y-2 text-[11px] text-black">
                   {(optimizedData.education ?? []).map((edu, idx) => (
@@ -515,12 +634,12 @@ export default function CvViewer({
             {(optimizedData.languages ?? []).length > 0 && (
               <section>
                 <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                  Idiomas
+                  {t.languages}
                 </h2>
                 <div className="text-[11px] text-black">
                   <p>
                     {(optimizedData.languages ?? [])
-                      .map((l) => `${l.language}: ${formatLevel(l.level)}`)
+                      .map((l) => `${l.language}: ${formatLevel(l.level, language)}`)
                       .join(" · ")}
                   </p>
                 </div>
@@ -553,7 +672,7 @@ export default function CvViewer({
             {cv.summary?.trim() && (
               <section className="mb-3.5">
                 <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                  Resumen profesional
+                  {t.summary}
                 </h2>
                 <p className="text-[11px] text-black leading-relaxed whitespace-pre-line">
                   {cv.summary}
@@ -563,38 +682,38 @@ export default function CvViewer({
             {hasClassicSkillsShown && (
               <section className="mb-3.5">
                 <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                  Habilidades
+                  {t.skills}
                 </h2>
                 <div className="text-[11px] text-black space-y-0.5">
                   {classicSkillsShown.languages.length > 0 && (
                     <p>
-                      <strong className="font-bold">Lenguajes:</strong>{" "}
+                      <strong className="font-bold">{t.skillGroups.languages}:</strong>{" "}
                       {classicSkillsShown.languages.join(", ")}
                     </p>
                   )}
                   {classicSkillsShown.frameworks.length > 0 && (
                     <p>
-                      <strong className="font-bold">Frameworks:</strong>{" "}
+                      <strong className="font-bold">{t.skillGroups.frameworks}:</strong>{" "}
                       {classicSkillsShown.frameworks.join(", ")}
                     </p>
                   )}
                   {classicSkillsShown.databases.length > 0 && (
                     <p>
-                      <strong className="font-bold">Bases de datos:</strong>{" "}
+                      <strong className="font-bold">{t.skillGroups.databases}:</strong>{" "}
                       {classicSkillsShown.databases.join(", ")}
                     </p>
                   )}
                   {classicSkillsShown.technologiesTools.length > 0 && (
                     <p>
                       <strong className="font-bold">
-                        Tecnologías / Herramientas:
+                        {t.skillGroups.technologiesTools}:
                       </strong>{" "}
                       {classicSkillsShown.technologiesTools.join(", ")}
                     </p>
                   )}
                   {classicSkillsShown.practices.length > 0 && (
                     <p>
-                      <strong className="font-bold">Prácticas:</strong>{" "}
+                      <strong className="font-bold">{t.skillGroups.practices}:</strong>{" "}
                       {classicSkillsShown.practices.join(", ")}
                     </p>
                   )}
@@ -604,7 +723,7 @@ export default function CvViewer({
             {classicExperience.length > 0 && (
               <section className="mb-3.5">
                 <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                  Experiencia
+                  {t.experience}
                 </h2>
                 <div className="space-y-3">
                   {classicExperience.map((exp) => (
@@ -635,7 +754,7 @@ export default function CvViewer({
             {classicEducation.length > 0 && (
               <section className="mb-3.5">
                 <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                  Educación
+                  {t.education}
                 </h2>
                 <div className="space-y-2 text-[11px] text-black">
                   {classicEducation.map((edu, idx) => (
@@ -658,13 +777,13 @@ export default function CvViewer({
             {classicLanguages.length > 0 && (
               <section>
                 <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
-                  Idiomas
+                  {t.languages}
                 </h2>
                 <div className="text-[11px] text-black">
                   {classicLanguages.map((lang, idx) => (
                     <p key={idx}>
                       <strong className="font-bold">{lang.language}:</strong>{" "}
-                      {formatLevel(lang.level)}
+                      {formatLevel(lang.level, language)}
                     </p>
                   ))}
                 </div>

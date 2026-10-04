@@ -1,15 +1,14 @@
-import { useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   Copy,
   CheckCheck,
   Sparkles,
   Building2,
   UserCheck,
-  Download,
-  Loader2,
 } from "lucide-react";
-import { toPng } from "html-to-image";
-import { jsPDF } from "jspdf";
+import { PDFDownloadLink } from "@react-pdf/renderer";
+import CoverLetterPdfDocument from "../../pdf/CoverLetterPdfDocument";
+import { buildLetterAtsDoc, DOC_TITLES, type DocLang } from "../../pdf/buildAtsDoc";
 import type { JobApplication } from "../../types/kanban";
 import type { CoverLetterOutput } from "../../services/aiService";
 import { useAuth } from "../../context/AuthContext";
@@ -22,6 +21,8 @@ interface CoverLetterViewerProps {
   // Rol actual del usuario (reactivo: viene del CV y cambia al editarlo).
   // Sustituye al antiguo hardcode "Full-Stack Developer | DevOps Engineer".
   targetRole?: string | null;
+  // Idioma del documento (detectado de la oferta): todas las etiquetas lo siguen.
+  language?: DocLang;
 }
 
 export default function CoverLetterViewer({
@@ -30,15 +31,14 @@ export default function CoverLetterViewer({
   isLoading = false,
   onRegenerate,
   targetRole = null,
+  language = "es",
 }: CoverLetterViewerProps) {
   const [copied, setCopied] = useState(false);
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const docRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
+  const t = DOC_TITLES[language];
 
   const identityName =
-    [user?.firstName, user?.lastName].filter(Boolean).join(" ") ||
-    "Tu nombre";
+    [user?.firstName, user?.lastName].filter(Boolean).join(" ") || "Tu nombre";
   // Rol reactivo: el del CV actual (cambia al editarlo). Se sanean los
   // placeholders del estado vacío para no pintarlos en el documento.
   const rawRole = (targetRole ?? "").trim();
@@ -115,36 +115,28 @@ export default function CoverLetterViewer({
     }
   };
 
-  // Descarga PDF con la misma técnica que CvViewer (html-to-image + jsPDF A4).
-  const handleDownloadPDF = async () => {
-    const element = docRef.current;
-    if (!element) return;
-    setIsGeneratingPdf(true);
-    try {
-      const dataUrl = await toPng(element, {
-        pixelRatio: 2.5,
-        backgroundColor: "#ffffff",
-        cacheBust: true,
-      });
-      const pdf = new jsPDF({
-        orientation: "portrait",
-        unit: "mm",
-        format: "a4",
-      });
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (element.offsetHeight * pdfWidth) / element.offsetWidth;
-      pdf.addImage(dataUrl, "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
-      const cleanName = identityName
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/\s+/g, "_");
-      pdf.save(`${cleanName}_Carta_Presentacion.pdf`);
-    } catch (error) {
-      console.error("Error generando el PDF de la carta:", error);
-    } finally {
-      setIsGeneratingPdf(false);
-    }
-  };
+  // Sin carta de la IA no hay documento: el botón ni se renderiza.
+  const letterBodyText = coverLetterData?.letter ?? "";
+
+  const letterDoc = useMemo(
+    () =>
+      buildLetterAtsDoc({
+        identityName,
+        roleLine,
+        identityLine,
+        date: currentDate,
+        company: job.company,
+        subject,
+        letter: letterBodyText,
+        lang: language,
+      }),
+    [identityName, roleLine, identityLine, currentDate, job.company, subject, letterBodyText, language],
+  );
+
+  const cleanLetterName = identityName
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\s+/g, "_");
 
   return (
     <div className="flex flex-col gap-4">
@@ -191,24 +183,15 @@ export default function CoverLetterViewer({
             </>
           )}
         </button>
-        <button
-          type="button"
-          onClick={() => void handleDownloadPDF()}
-          disabled={isGeneratingPdf}
-          className="flex items-center gap-1.5 px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 cursor-pointer"
-        >
-          {isGeneratingPdf ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Generando PDF…</span>
-            </>
-          ) : (
-            <>
-              <Download className="w-4 h-4" />
-              <span>Descargar PDF (A4)</span>
-            </>
-          )}
-        </button>
+        {coverLetterData && (
+          <PDFDownloadLink
+            document={<CoverLetterPdfDocument doc={letterDoc} />}
+            fileName={`${cleanLetterName}_Carta_Presentacion.pdf`}
+            className="flex items-center gap-1.5 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 cursor-pointer"
+          >
+            {({ loading }) => <span>{loading ? "Generando PDF…" : "Descargar PDF (A4)"}</span>}
+          </PDFDownloadLink>
+        )}
       </div>
 
       {isLoading && (
@@ -216,7 +199,6 @@ export default function CoverLetterViewer({
       )}
 
       <div
-        ref={docRef}
         className="bg-white text-slate-900 p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-200 font-sans text-xs sm:text-sm leading-relaxed max-w-[794px] mx-auto w-full select-text"
       >
         <div className="border-b border-slate-200 pb-3 mb-4">
@@ -236,10 +218,10 @@ export default function CoverLetterViewer({
         <div className="space-y-1 mb-4 text-xs text-slate-600">
           <p className="font-medium text-slate-500">{currentDate}</p>
           <p className="font-bold text-slate-800">
-            Equipo de Selección • {job.company}
+            {t.team} • {job.company}
           </p>
           <p className="text-slate-500">
-            Asunto: <strong className="text-slate-800">{subject}</strong>
+            {t.subject}: <strong className="text-slate-800">{subject}</strong>
           </p>
         </div>
 
@@ -250,43 +232,45 @@ export default function CoverLetterViewer({
             ))
           ) : (
             <>
-          <p>
-            Estimado equipo de selección de{" "}
-            <strong className="text-slate-900">{job.company}</strong>,
-          </p>
-          <p>
-            Les escribo para presentar mi candidatura al puesto de{" "}
-            <strong className="text-slate-900">{job.position}</strong>.
-          </p>
-          <p>
-            Como <span className="font-semibold text-slate-900">{roleLine}</span>,
-            he implementado plataformas SaaS escalables con dominio en{" "}
-            <span className="font-semibold text-slate-900">{skillsList}</span>,
-            integrando diseño de arquitecturas eficientes, tests automatizados y
-            despliegues CI/CD.
-          </p>
-          <p>
-            En proyectos recientes lideré plataformas interactivas con
-            PostgreSQL y Supabase con notables optimizaciones. Mi experiencia
-            con metodologías ágiles garantiza una integración inmediata.
-          </p>
-          <p>
-            Agradezco su consideración y quedo a su disposición para profundizar
-            en una entrevista.
-          </p>
+              <p>
+                Estimado equipo de selección de{" "}
+                <strong className="text-slate-900">{job.company}</strong>,
+              </p>
+              <p>
+                Les escribo para presentar mi candidatura al puesto de{" "}
+                <strong className="text-slate-900">{job.position}</strong>.
+              </p>
+              <p>
+                Como{" "}
+                <span className="font-semibold text-slate-900">{roleLine}</span>
+                , he implementado plataformas SaaS escalables con dominio en{" "}
+                <span className="font-semibold text-slate-900">
+                  {skillsList}
+                </span>
+                , integrando diseño de arquitecturas eficientes, tests
+                automatizados y despliegues CI/CD.
+              </p>
+              <p>
+                En proyectos recientes lideré plataformas interactivas con
+                PostgreSQL y Supabase con notables optimizaciones. Mi
+                experiencia con metodologías ágiles garantiza una integración
+                inmediata.
+              </p>
+              <p>
+                Agradezco su consideración y quedo a su disposición para
+                profundizar en una entrevista.
+              </p>
             </>
           )}
         </div>
 
         <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
           <div>
-            <p className="text-xs text-slate-500">Atentamente,</p>
+            <p className="text-xs text-slate-500">{t.closing}</p>
             <p className="font-bold text-slate-900 text-sm mt-0.5">
               {identityName}
             </p>
-            <p className="text-xs text-slate-500">
-              {roleLine}
-            </p>
+            <p className="text-xs text-slate-500">{roleLine}</p>
           </div>
           <div className="w-8 h-8 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-400">
             <UserCheck className="w-4 h-4 text-aplika-lima-700" />
