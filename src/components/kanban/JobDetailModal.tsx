@@ -236,7 +236,12 @@ export default function JobDetailModal({
   const jobOfferId = job?.jobOfferId ?? null;
   const canOptimize = Boolean(jobOfferId && optimizer);
   // Idioma de la oferta: todos los títulos de CV y carta lo siguen (nada de mezcla).
-  const offerLanguage = detectOfferLanguage(job?.description ?? "");
+  // Idioma de la oferta: se detecta del detalle cargado bajo demanda
+  // (con Kanban ligero job.description viene vacío) y lo siguen todos los
+  // títulos de CV y carta. Sin descripción aún → 'es' hasta que cargue.
+  const offerLanguage = detectOfferLanguage(
+    detailDescription ?? job?.description ?? "",
+  );
 
   // Datos IA solo si pertenecen a la oferta abierta y no hay carga/error en
   // curso: el hook guarda el último documento cargado, sea de la oferta que sea.
