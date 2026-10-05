@@ -497,7 +497,7 @@ export default function CvViewer({
               <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
                 {t.summary}
               </h2>
-              <p className="text-[11px] text-black leading-relaxed whitespace-pre-line">
+              <p className="text-[12px] text-black leading-relaxed whitespace-pre-line">
                 {optimizedData.summary}
               </p>
             </section>
@@ -611,22 +611,14 @@ export default function CvViewer({
                 <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
                   {t.education}
                 </h2>
-                <div className="space-y-2 text-[11px] text-black">
+                <div className="text-[11px] text-black space-y-1">
                   {(optimizedData.education ?? []).map((edu, idx) => (
-                    <div key={idx}>
-                      <div className="flex justify-between items-baseline">
-                        <span className="font-bold">{edu.institution}</span>
-                        <span className="font-medium">
-                          {edu.graduationYear ?? ""}
-                        </span>
-                      </div>
-                      <p className="leading-snug">{edu.degree}</p>
-                      {edu.details && (
-                        <p className="text-[10px] text-black leading-snug mt-0.5">
-                          {edu.details}
-                        </p>
-                      )}
-                    </div>
+                    <p key={idx} className="leading-snug">
+                      <span className="font-bold">{edu.degree}</span>
+                      {edu.institution ? ` — ${edu.institution}` : ""}
+                      {edu.graduationYear ? ` · ${edu.graduationYear}` : ""}
+                      {edu.details ? ` (${edu.details})` : ""}
+                    </p>
                   ))}
                 </div>
               </section>
@@ -674,7 +666,7 @@ export default function CvViewer({
                 <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
                   {t.summary}
                 </h2>
-                <p className="text-[11px] text-black leading-relaxed whitespace-pre-line">
+                <p className="text-[12px] text-black leading-relaxed whitespace-pre-line">
                   {cv.summary}
                 </p>
               </section>
@@ -756,20 +748,14 @@ export default function CvViewer({
                 <h2 className="text-xs font-bold text-black uppercase tracking-wider border-b border-black pb-0.5 mb-1.5">
                   {t.education}
                 </h2>
-                <div className="space-y-2 text-[11px] text-black">
+                <div className="text-[11px] text-black space-y-1">
                   {classicEducation.map((edu, idx) => (
-                    <div key={idx}>
-                      <div className="flex justify-between items-baseline">
-                        <span className="font-bold">{edu.institution}</span>
-                        <span className="font-medium">{edu.period}</span>
-                      </div>
-                      <p className="leading-snug">{edu.degree}</p>
-                      {edu.details && (
-                        <p className="text-[10px] text-black leading-snug mt-0.5">
-                          {edu.details}
-                        </p>
-                      )}
-                    </div>
+                    <p key={idx} className="leading-snug">
+                      <span className="font-bold">{edu.degree}</span>
+                      {edu.institution ? ` — ${edu.institution}` : ""}
+                      {edu.period ? ` · ${edu.period}` : ""}
+                      {edu.details ? ` (${edu.details})` : ""}
+                    </p>
                   ))}
                 </div>
               </section>

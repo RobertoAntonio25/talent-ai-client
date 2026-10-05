@@ -25,7 +25,7 @@ export const atsStyles = StyleSheet.create({
   },
   headline: { fontFamily: "Helvetica-Bold", fontSize: 9, marginTop: 0 },
   contact: { fontSize: 8, color: "#4b5563", marginTop: 4 },
-  summary: { fontSize: 9, lineHeight: 1.5 },
+  summary: { fontSize: 9.5, lineHeight: 1.6 },
   section: { marginTop: 10 },
   h2: {
     fontFamily: "Helvetica-Bold",
@@ -55,4 +55,6 @@ export const atsStyles = StyleSheet.create({
   itemTitle: { fontFamily: "Helvetica-Bold" },
   itemSub: { fontSize: 9, marginTop: 1 },
   itemDetail: { fontSize: 8, color: "#000000", marginTop: 1 },
+  // Educación compacta: 1 línea por título (grado — institución · año).
+  eduLine: { fontSize: 9, marginBottom: 2 },
 });
