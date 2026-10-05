@@ -9,6 +9,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useManualSearch } from "../../hooks/useManualSearch";
+import { useCv } from "../../hooks/useCv";
+import { assessCvCompleteness } from "../../adapters/cvAdapter";
 
 export default function ManualSearchPanel({
   search,
@@ -17,6 +19,9 @@ export default function ManualSearchPanel({
 }) {
   const { isSearching, searchSuccess, searchError, lastSearchLabel, runSearch } =
     search;
+  // Sin rol el motor te saltaría igual: se bloquea aquí para no quemar créditos.
+  const { cv } = useCv();
+  const roleMissing = assessCvCompleteness(cv).missingFields.includes("targetRole");
 
   return (
     <div>
@@ -46,7 +51,8 @@ export default function ManualSearchPanel({
           </div>
           <button
             onClick={() => void runSearch()}
-            disabled={isSearching}
+            disabled={isSearching || roleMissing}
+            title={roleMissing ? "Define tu rol profesional en Mi Perfil → CV para buscar" : undefined}
             className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl font-bold text-xs sm:text-sm text-aplika-night-950 shadow-lg transition-all w-full sm:w-auto active:scale-95 cursor-pointer disabled:cursor-not-allowed bg-aplika-lima-500 hover:bg-aplika-lima-400 shadow-aplika-lima-500/25 hover:shadow-aplika-lima-500/40 disabled:opacity-60"
           >
             {isSearching ? (
@@ -63,6 +69,11 @@ export default function ManualSearchPanel({
           </button>
         </div>
       </div>
+      {roleMissing && (
+        <p className="mt-3 text-xs text-amber-300">
+          Define tu rol profesional en Mi Perfil → CV para activar la búsqueda. Sin rol, el motor te saltaría igualmente.
+        </p>
+      )}
     </div>
   );
 }

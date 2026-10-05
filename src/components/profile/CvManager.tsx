@@ -5,6 +5,7 @@
 import { useEffect, useRef, useState, type ChangeEvent } from "react";
 import {
   AlertCircle,
+  AlertTriangle,
   CheckCircle2,
   Languages,
   Loader2,
@@ -13,7 +14,7 @@ import {
 } from "lucide-react";
 import { useCv } from "../../hooks/useCv";
 import { useAuth } from "../../context/AuthContext";
-import { mapProfileCvToGeneratedCV } from "../../adapters/cvAdapter";
+import { mapProfileCvToGeneratedCV, assessCvCompleteness, CV_MISSING_LABELS } from "../../adapters/cvAdapter";
 import { translateBaseCv } from "../../services/userProfile.service";
 import type { GeneratedCV } from "../../types/cv";
 import CvViewer from "../ui/CvViewer";
@@ -168,6 +169,22 @@ export default function CvManager() {
           )}
         </div>
         <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => void handleFile(e)} />
+        {(() => {
+          const check = assessCvCompleteness(cv);
+          if (!check.needsReview) return null;
+          return (
+            <div className="mt-3 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs flex items-start gap-2">
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Tu CV necesita revisión (nada se inventó por ti).</p>
+                <p className="mt-0.5 text-amber-200/90">
+                  Completa: {check.missingFields.map((f) => CV_MISSING_LABELS[f]).join(", ")}.
+                  {check.missingFields.includes("targetRole") && " Pon tu rol en Datos abajo: sin rol no hay búsqueda ni CV adaptado."}
+                </p>
+              </div>
+            </div>
+          );
+        })()}
         {uploadError && (
           <p className="mt-2 text-xs text-red-400 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{uploadError}</p>
         )}

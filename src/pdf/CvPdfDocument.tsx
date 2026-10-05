@@ -82,16 +82,12 @@ export default function CvPdfDocument({ doc }: { doc: AtsCvDoc }) {
           <View style={s.section}>
             <Text style={s.h2}>{t.education}</Text>
             {doc.education.map((e, i) => (
-              <View key={i} style={{ marginBottom: 3 }}>
-                <View style={s.itemHead}>
-                  <Text style={s.itemTitle}>{e.institution}</Text>
-                  <Text>{e.period}</Text>
-                </View>
-                <Text style={s.itemSub}>{e.degree}</Text>
-                {e.details ? (
-                  <Text style={s.itemDetail}>{e.details}</Text>
-                ) : null}
-              </View>
+              <Text key={i} style={s.eduLine}>
+                <Text style={{ fontFamily: "Helvetica-Bold" }}>{e.degree}</Text>
+                {e.institution ? ` — ${e.institution}` : ""}
+                {e.period ? ` · ${e.period}` : ""}
+                {e.details ? ` (${e.details})` : ""}
+              </Text>
             ))}
           </View>
         ) : null}
