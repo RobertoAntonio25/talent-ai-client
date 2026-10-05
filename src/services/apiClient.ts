@@ -79,7 +79,9 @@ export async function apiClient<T>(
     "Content-Type": "application/json",
   };
 
-  if (token) {
+  // #144: los endpoints de auth son públicos; no mandar un Bearer viejo
+  // (p. ej. al canjear el token OAuth en /api/auth/oauth/exchange).
+  if (token && !endpoint.includes("/api/auth/")) {
     defaultHeaders["Authorization"] = `Bearer ${token}`;
   }
   const controller = new AbortController();
