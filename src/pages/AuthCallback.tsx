@@ -1,44 +1,116 @@
 // src/pages/AuthCallback.tsx
+// #142: callback robusto (PKCE + reintentos + errores por code).
 import { useEffect, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Loader2, AlertCircle } from "lucide-react";
+import type { Session } from "@supabase/supabase-js";
 import { supabase } from "../lib/supabase";
 import { exchangeOAuthToken } from "../services/authService";
+import { ApiError } from "../services/apiClient";
 import { useAuth } from "../context/AuthContext";
+
+const SESSION_RETRIES = 3;
+const RETRY_DELAY_MS = 500;
+const SIGNIN_EVENT_TIMEOUT_MS = 3000;
+
+function friendlyError(code: string | null, fallback: string): string {
+  if (code === "USER_CANCELLED") {
+    return "Cancelaste el inicio de sesión con el proveedor. Puedes intentarlo de nuevo o usar tu email.";
+  }
+  if (code === "RATE_LIMIT_EXCEEDED" || code === "AUTH_RATE_LIMIT_EXCEEDED") {
+    return "Demasiadas peticiones. Inténtalo de nuevo en 15 minutos.";
+  }
+  if (code === "TIMEOUT" || code === "NETWORK_ERROR") {
+    return "No se pudo conectar con el servidor. Si es la primera petición del día, Render tarda 30-50s en despertar: espera y reintenta.";
+  }
+  return fallback;
+}
+
+async function waitForSession(): Promise<Session | null> {
+  // El cliente Supabase procesa la URL (hash implicit) de forma async al
+  // cargar: reintentar antes de rendirse.
+  for (let attempt = 0; attempt < SESSION_RETRIES; attempt++) {
+    const { data, error: sessionError } = await supabase.auth.getSession();
+    if (sessionError) throw new Error(sessionError.message);
+    if (data.session?.access_token) return data.session;
+    await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+  }
+  // Fallback: esperar al evento SIGNED_IN por si llega tarde.
+  return new Promise((resolve) => {
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, s) => {
+      if (s?.access_token) {
+        sub.subscription.unsubscribe();
+        resolve(s);
+      }
+    });
+    setTimeout(() => {
+      sub.subscription.unsubscribe();
+      resolve(null);
+    }, SIGNIN_EVENT_TIMEOUT_MS);
+  });
+}
 
 export default function AuthCallback() {
   const navigate = useNavigate();
   const { login } = useAuth();
+  const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Flag anti-doble-ejecución (StrictMode en dev + re-renders).
+    let cancelled = false;
+
     const run = async () => {
       try {
-        // 1. Supabase ya procesó el ?code=... y guardó la sesión
-        const {
-          data: { session },
-          error: sessionError,
-        } = await supabase.auth.getSession();
+        // 0. El proveedor devolvió error (p. ej. cancelar en LinkedIn):
+        // mensaje amable, sin intentar exchange.
+        const urlError = searchParams.get("error");
+        if (urlError) {
+          const desc = searchParams.get("error_description");
+          if (/cancel/i.test(`${urlError} ${desc ?? ""}`)) {
+            throw new Error("USER_CANCELLED");
+          }
+          throw new Error(desc || "El proveedor denegó el acceso.");
+        }
 
-        if (sessionError) throw new Error(sessionError.message);
+        // 1. PKCE: ?code= -> canjear por sesión Supabase.
+        const code = searchParams.get("code");
+        if (code) {
+          const { error: exchangeError } =
+            await supabase.auth.exchangeCodeForSession(code);
+          if (exchangeError) throw new Error(exchangeError.message);
+        }
+
+        // 2. Sesión Supabase (reintentos + evento como fallback).
+        const session = await waitForSession();
         if (!session?.access_token) {
           throw new Error("No se pudo obtener la sesión de Supabase.");
         }
 
-        // 2. Canjeamos por JWT interno (mismo shape que login clásico)
+        // 3. Canjeamos por JWT interno (mismo shape que login clásico).
         const res = await exchangeOAuthToken(session.access_token);
 
-        // 3. Guardamos IGUAL que login clásico: clave "token", no "accessToken"
+        if (cancelled) return;
+        // Guardamos IGUAL que login clásico: clave "token", no "accessToken".
         login(res.data.accessToken, res.data.user);
-
-        // 4. A partir de aquí el front no cambia nada (como dice tu compi)
         navigate("/dashboard", { replace: true });
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Error en callback OAuth");
+        if (cancelled) return;
+        if (e instanceof Error && e.message === "USER_CANCELLED") {
+          setError(friendlyError("USER_CANCELLED", e.message));
+        } else if (e instanceof ApiError) {
+          setError(friendlyError(e.code ?? null, e.message));
+        } else {
+          setError(e instanceof Error ? e.message : "Error en callback OAuth");
+        }
       }
     };
     run();
-  }, [login, navigate]);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [login, navigate, searchParams]);
 
   if (error) {
     return (
