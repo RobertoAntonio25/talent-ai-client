@@ -43,11 +43,11 @@ export interface OptimizerPort {
   letterError: string | null;
   fetchOrGenerateCv: (
     jobOfferId: string,
-    opts?: { force?: boolean },
+    opts?: { force?: boolean; targetLanguage?: "es" | "en" },
   ) => Promise<OptimizedCv | null>;
   fetchOrGenerateLetter: (
     jobOfferId: string,
-    opts?: { force?: boolean },
+    opts?: { force?: boolean; targetLanguage?: "es" | "en" },
   ) => Promise<CoverLetterOutput | null>;
 }
 

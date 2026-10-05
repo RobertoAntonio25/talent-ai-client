@@ -50,7 +50,7 @@ export function useOptimizer() {
     }
   }, [uid]);
 
-  const fetchOrGenerateCv = useCallback(async (jobOfferId: string, opts?: { force?: boolean }) => {
+  const fetchOrGenerateCv = useCallback(async (jobOfferId: string, opts?: { force?: boolean; targetLanguage?: "es" | "en" }) => {
     if (!jobOfferId) {
       setCvError("jobOfferId es requerido.");
       return null;
@@ -86,7 +86,7 @@ export function useOptimizer() {
     }
   }, [cacheKey]);
 
-  const fetchOrGenerateLetter = useCallback(async (jobOfferId: string, opts?: { force?: boolean }) => {
+  const fetchOrGenerateLetter = useCallback(async (jobOfferId: string, opts?: { force?: boolean; targetLanguage?: "es" | "en" }) => {
     if (!jobOfferId) {
       setLetterError("jobOfferId es requerido.");
       return null;

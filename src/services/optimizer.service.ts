@@ -53,7 +53,7 @@ export function fetchOptimizedDocumentsByJobOffer(jobOfferId: string) {
 
 export async function fetchOrGenerateOptimizedCvByJobOffer(
   jobOfferId: string,
-  opts?: { force?: boolean },
+  opts?: { force?: boolean; targetLanguage?: "es" | "en" },
 ): Promise<OptimizedCv> {
   assertJobOfferId(jobOfferId);
   // force:true salta el GET y va directo al POST (el back regenera con
@@ -68,7 +68,11 @@ export async function fetchOrGenerateOptimizedCvByJobOffer(
   }
   const generated = await apiClient<OptimizePostResponse>("/api/ai/optimize", {
     method: "POST",
-    data: { jobOfferId, ...(opts?.force ? { forceRegenerate: true } : {}) },
+    data: {
+      jobOfferId,
+      ...(opts?.force ? { forceRegenerate: true } : {}),
+      ...(opts?.targetLanguage ? { targetLanguage: opts.targetLanguage } : {}),
+    },
     timeoutMs: OPTIMIZE_TIMEOUT_MS,
   });
   return generated.optimizedCv;
@@ -76,7 +80,7 @@ export async function fetchOrGenerateOptimizedCvByJobOffer(
 
 export async function fetchOrGenerateCoverLetterByJobOffer(
   jobOfferId: string,
-  opts?: { force?: boolean },
+  opts?: { force?: boolean; targetLanguage?: "es" | "en" },
 ): Promise<CoverLetterOutput> {
   assertJobOfferId(jobOfferId);
   if (!opts?.force) {
@@ -92,7 +96,11 @@ export async function fetchOrGenerateCoverLetterByJobOffer(
     "/api/ai/cover-letter",
     {
       method: "POST",
-      data: { jobOfferId, ...(opts?.force ? { forceRegenerate: true } : {}) },
+      data: {
+        jobOfferId,
+        ...(opts?.force ? { forceRegenerate: true } : {}),
+        ...(opts?.targetLanguage ? { targetLanguage: opts.targetLanguage } : {}),
+      },
       timeoutMs: OPTIMIZE_TIMEOUT_MS,
     },
   );
