@@ -7,6 +7,7 @@ export interface ExtractedCvData {
   targetCity?: string | null;
   wantsRemote?: boolean | null;
   careerTransition?: boolean | null;
+  sourceLanguage?: "es" | "en" | null;
   experiences?: Array<{
     role?: string | null;
     company?: string | null;

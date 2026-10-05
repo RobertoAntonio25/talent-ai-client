@@ -51,15 +51,20 @@ export default function CoverLetterViewer({
     .filter((value) => value.length > 0)
     .join(" • ");
 
-  const currentDate = new Date().toLocaleDateString("es-ES", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const currentDate = new Date().toLocaleDateString(
+    language === "en" ? "en-US" : "es-ES",
+    {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    },
+  );
 
   const subject =
     coverLetterData?.emailSubject ??
-    `Candidatura para la vacante de ${job.position}`;
+    (language === "en"
+      ? `Application for the ${job.position} position`
+      : `Candidatura para la vacante de ${job.position}`);
   // Defensa en profundidad: las cartas guardadas antes del fix del parser
   // traen "\n" literales. Se normalizan al renderizar (las nuevas ya llegan
   // limpias del back) y pre-wrap conserva los saltos simples dentro del párrafo.
@@ -76,7 +81,32 @@ export default function CoverLetterViewer({
   const skillsList =
     job.tags && job.tags.length > 0
       ? job.tags.slice(0, 4).join(", ")
-      : "las tecnologías de la oferta";
+      : language === "en"
+        ? "the job's technologies"
+        : "las tecnologías de la oferta";
+
+  // Plantilla pre-IA en el idioma del documento (transitoria: al llegar la
+  // carta IA se usa su texto). Misma fuente para copiar, pantalla y PDF.
+  const fbAttention =
+    language === "en"
+      ? `To the attention of the Hiring Team at ${job.company}`
+      : `A la atención del Equipo de Selección de ${job.company}`;
+  const fbParas: string[] =
+    language === "en"
+      ? [
+          `Dear ${job.company} hiring team,`,
+          `I am writing to apply for the ${job.position} position. My experience in modern software development and agile methodologies aligns with the team's technical requirements.`,
+          `As ${roleLine}, I have implemented scalable SaaS solutions and CI/CD pipelines. My expertise includes ${skillsList}, efficient architecture design, and automated testing.`,
+          `In recent projects, I led interactive platforms with PostgreSQL and Supabase, achieving notable optimizations. My experience with agile methodologies ensures immediate impact.`,
+          `Thank you for your consideration. I am available for an interview.`,
+        ]
+      : [
+          `Estimado equipo de ${job.company},`,
+          `Les escribo para presentar mi candidatura a la posición de ${job.position}. Mi experiencia en desarrollo de software moderno y metodologías ágiles se alinea con los requerimientos técnicos del equipo.`,
+          `Como ${roleLine}, he implementado soluciones SaaS escalables y pipelines de CI/CD. Cuento con dominio en ${skillsList}, diseño de arquitecturas eficientes y pruebas automatizadas.`,
+          `En mis proyectos recientes lideré plataformas SaaS con persistencia en PostgreSQL y Supabase, logrando optimizaciones en tiempos de respuesta y adopción. Mi experiencia con Scrum y Kanban me permite aportar valor inmediato.`,
+          `Agradezco su consideración y quedo a su disposición para una entrevista.`,
+        ];
 
   const coverLetterText = coverLetterData?.emailBody
     ? `${subject}\n\n${coverLetterData.emailBody}`
@@ -86,20 +116,11 @@ export default function CoverLetterViewer({
         "",
         currentDate,
         "",
-        `A la atención del Equipo de Selección de ${job.company}`,
-        `Asunto: ${subject}`,
+        fbAttention,
+        `${t.subject}: ${subject}`,
         "",
-        `Estimado equipo de ${job.company},`,
-        "",
-        `Les escribo para presentar mi candidatura a la posición de ${job.position}. Mi experiencia en desarrollo de software moderno y metodologías ágiles se alinea con los requerimientos técnicos del equipo.`,
-        "",
-        `Como ${roleLine}, he implementado soluciones SaaS escalables y pipelines de CI/CD. Cuento con dominio en ${skillsList}, diseño de arquitecturas eficientes y pruebas automatizadas.`,
-        "",
-        `En mis proyectos recientes lideré plataformas SaaS con persistencia en PostgreSQL y Supabase, logrando optimizaciones en tiempos de respuesta y adopción. Mi experiencia con Scrum y Kanban me permite aportar valor inmediato.`,
-        "",
-        `Agradezco su consideración y quedo a su disposición para una entrevista.`,
-        "",
-        `Atentamente,`,
+        ...fbParas.flatMap((p) => [p, ""]),
+        `${t.closing}`,
         identityName,
       ]
         .join("\n")
@@ -232,34 +253,9 @@ export default function CoverLetterViewer({
             ))
           ) : (
             <>
-              <p>
-                Estimado equipo de selección de{" "}
-                <strong className="text-slate-900">{job.company}</strong>,
-              </p>
-              <p>
-                Les escribo para presentar mi candidatura al puesto de{" "}
-                <strong className="text-slate-900">{job.position}</strong>.
-              </p>
-              <p>
-                Como{" "}
-                <span className="font-semibold text-slate-900">{roleLine}</span>
-                , he implementado plataformas SaaS escalables con dominio en{" "}
-                <span className="font-semibold text-slate-900">
-                  {skillsList}
-                </span>
-                , integrando diseño de arquitecturas eficientes, tests
-                automatizados y despliegues CI/CD.
-              </p>
-              <p>
-                En proyectos recientes lideré plataformas interactivas con
-                PostgreSQL y Supabase con notables optimizaciones. Mi
-                experiencia con metodologías ágiles garantiza una integración
-                inmediata.
-              </p>
-              <p>
-                Agradezco su consideración y quedo a su disposición para
-                profundizar en una entrevista.
-              </p>
+              {fbParas.map((p, i) => (
+                <p key={i}>{p}</p>
+              ))}
             </>
           )}
         </div>
