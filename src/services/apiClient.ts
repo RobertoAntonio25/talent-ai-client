@@ -75,13 +75,17 @@ export async function apiClient<T>(
   // Obtenemos el token guardado si existe
   const token = localStorage.getItem("token");
 
+  // Un único matcher para rutas de auth (vale "/api/auth/..." con o sin
+  // barra inicial): ni se envía Bearer ni se limpia sesión en 401.
+  const isAuthEndpoint = endpoint.includes("/auth/");
+
   const defaultHeaders: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
   // #144: los endpoints de auth son públicos; no mandar un Bearer viejo
   // (p. ej. al canjear el token OAuth en /api/auth/oauth/exchange).
-  if (token && !endpoint.includes("/api/auth/")) {
+  if (token && !isAuthEndpoint) {
     defaultHeaders["Authorization"] = `Bearer ${token}`;
   }
   const controller = new AbortController();
@@ -121,7 +125,7 @@ export async function apiClient<T>(
     const response = await fetch(`${API_BASE_URL}${cleanEndpoint}`, config);
     if (response.status === 401) {
       // Si la ruta no es de auth (login/register), limpiamos token inválido
-      if (!endpoint.includes("/auth/")) {
+      if (!isAuthEndpoint) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         window.dispatchEvent(new Event("auth:unauthorized"));
