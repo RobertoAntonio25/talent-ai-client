@@ -42,6 +42,27 @@ const getInitialAuth = (): { token: string | null; user: User | null } => {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+// Seguridad: al cerrar sesión se borra la caché de datos personales de esa
+// cuenta (CV scoped + owner + legacy + restos OAuth). Los marcadores de
+// borrado explícito se conservan (intención del usuario). Al volver a entrar,
+// la hidratación desde el back (#107) restaura lo que exista.
+function clearUserCache(uid: string | null): void {
+  try {
+    if (uid) {
+      localStorage.removeItem(`aplikaCv:${uid}`);
+      if (localStorage.getItem("aplikaCvOwner") === uid) {
+        localStorage.removeItem("aplikaCvOwner");
+      }
+    }
+    localStorage.removeItem("aplikaCv");
+    localStorage.removeItem("talentCv");
+    localStorage.removeItem("oauth_return_to");
+    sessionStorage.removeItem("oauth_return_to");
+  } catch {
+    // Disco ilegible: nada que limpiar.
+  }
+}
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -52,8 +73,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Sin esto la sesión SSO sobrevivía al logout y el siguiente OAuth
   // entraba directo con la cuenta vieja (auto-login fantasma).
   const logout = useCallback(async () => {
+    let uid: string | null = null;
+    try {
+      const raw = localStorage.getItem("user");
+      const parsed = raw ? (JSON.parse(raw) as { id?: unknown }) : null;
+      if (typeof parsed?.id === "string") uid = parsed.id;
+    } catch {
+      // Sin uid: limpieza genérica igualmente.
+    }
     localStorage.removeItem("token");
     localStorage.removeItem("user");
+    clearUserCache(uid);
     setAuth({ token: null, user: null });
     try {
       await supabase.auth.signOut();
