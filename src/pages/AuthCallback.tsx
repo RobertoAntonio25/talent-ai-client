@@ -1,6 +1,6 @@
 // src/pages/AuthCallback.tsx
 // #142: callback robusto (PKCE + reintentos + errores por code).
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Loader2, AlertCircle } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
@@ -52,6 +52,9 @@ export default function AuthCallback() {
   const { login } = useAuth();
   const [searchParams] = useSearchParams();
   const [error, setError] = useState<string | null>(null);
+  // El efecto se ejecuta 2 veces en dev (StrictMode): el destino de error
+  // se calcula una sola vez para que la 2ª ejecución no pise la 1ª.
+  const errorDestRef = useRef<string | null>(null);
 
   useEffect(() => {
     // Flag anti-doble-ejecución (StrictMode en dev + re-renders).
@@ -68,14 +71,20 @@ export default function AuthCallback() {
           const message = /cancel/i.test(`${urlError} ${desc ?? ""}`)
             ? "Cancelaste el inicio de sesión con el proveedor. Puedes intentarlo de nuevo o usar tu email."
             : (desc ?? "El proveedor denegó el acceso.");
-          const stored =
-            sessionStorage.getItem("oauth_return_to") ??
-            localStorage.getItem("oauth_return_to");
-          sessionStorage.removeItem("oauth_return_to");
-          localStorage.removeItem("oauth_return_to");
-          const to = stored === "/register" ? "/register" : "/login";
+          if (errorDestRef.current === null) {
+            const stored =
+              sessionStorage.getItem("oauth_return_to") ??
+              localStorage.getItem("oauth_return_to");
+            sessionStorage.removeItem("oauth_return_to");
+            localStorage.removeItem("oauth_return_to");
+            errorDestRef.current =
+              stored === "/register" ? "/register" : "/login";
+          }
           if (!cancelled) {
-            navigate(to, { replace: true, state: { oauthError: message } });
+            navigate(errorDestRef.current, {
+              replace: true,
+              state: { oauthError: message },
+            });
           }
           return;
         }
