@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { apiClient, ApiError } from "../services/apiClient";
+import { isSupabaseConfigured } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
@@ -253,11 +254,27 @@ export default function Login() {
             </div>
           )}
 
+          {/* #141: aviso cuando OAuth no está configurado */}
+          {!isSupabaseConfigured && (
+            <div className="mb-5 p-3.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm rounded-xl flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-400" />
+              <span>
+                Login social no disponible (falta configuración de Supabase).
+                Usa tu email.
+              </span>
+            </div>
+          )}
+
           {/* BOTONES OAUTH */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
             <button
               onClick={() => handleOAuthLogin("google")}
-              disabled={isLoading !== null}
+              disabled={isLoading !== null || !isSupabaseConfigured}
+              title={
+                isSupabaseConfigured
+                  ? undefined
+                  : "OAuth no configurado en este despliegue"
+              }
               type="button"
               className="flex items-center justify-center px-4 py-3 bg-slate-800/80 border border-slate-700 rounded-xl hover:bg-slate-800 hover:border-slate-600 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-medium text-xs sm:text-sm text-slate-200 shadow-sm"
             >
@@ -288,7 +305,12 @@ export default function Login() {
 
             <button
               onClick={() => handleOAuthLogin("linkedin")}
-              disabled={isLoading !== null}
+              disabled={isLoading !== null || !isSupabaseConfigured}
+              title={
+                isSupabaseConfigured
+                  ? undefined
+                  : "OAuth no configurado en este despliegue"
+              }
               type="button"
               className="flex items-center justify-center px-4 py-3 bg-[#0A66C2] text-white rounded-xl hover:bg-[#004182] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-medium text-xs sm:text-sm shadow-sm"
             >

@@ -1,6 +1,6 @@
 // src/services/authService.ts
 import { apiClient } from "./apiClient";
-import { supabase } from "../lib/supabase";
+import { isSupabaseConfigured, supabase } from "../lib/supabase";
 import type { User } from "../context/AuthContext";
 
 export interface AuthResponse {
@@ -50,6 +50,12 @@ export async function changePassword(currentPassword: string, newPassword: strin
 
 // Paso 1 OAuth: redirige a Google/LinkedIn vía Supabase
 export async function loginWithOAuth(provider: OAuthProvider) {
+  // #141: fallar en voz alta en vez de redirigir a un dominio fantasma
+  if (!isSupabaseConfigured) {
+    throw new Error(
+      "OAuth no configurado: faltan VIT_SUPABASE_URL / VIT_SUPABASE_ANON_KEY.",
+    );
+  }
   const { error } = await supabase.auth.signInWithOAuth({
     provider: mapToSupabaseProvider(provider),
     options: {
