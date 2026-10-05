@@ -20,7 +20,7 @@ import {
 import Modal from "../ui/Modal";
 import CvViewer from "../ui/CvViewer";
 import CoverLetterViewer from "../ui/CoverLetterViewer";
-import { detectOfferLanguage } from "../../pdf/buildAtsDoc";
+import { detectOfferLanguage, type DocLang } from "../../pdf/buildAtsDoc";
 import { useCv } from "../../hooks/useCv";
 import { evaluateMatch } from "../../services/aiService";
 import { getOfferDetail } from "../../services/jobsService";
@@ -114,6 +114,13 @@ export default function JobDetailModal({
   const [letterRequestedFor, setLetterRequestedFor] = useState<string | null>(
     null,
   );
+  // Override explícito del usuario (toggle ES/EN). null = idioma de la oferta.
+  const [langOverride, setLangOverride] = useState<DocLang | null>(null);
+
+  // Fuente única del idioma efectivo (declaración hoisted: vale usarla en handlers).
+  function getOfferLanguage(): DocLang {
+    return langOverride ?? detectOfferLanguage(detailDescription ?? job?.description ?? "");
+  }
   // Fase 3b (issue #129, kanban ligero): el listado ya no trae `description`
   // en las ofertas del motor; se pide aquí bajo demanda al abrir el modal.
   // Las manuales la traen en el listado (notas cortas) y no gastan llamada.
@@ -134,6 +141,7 @@ export default function JobDetailModal({
     setEvalMsg(null);
     setCvRequestedFor(null);
     setLetterRequestedFor(null);
+    setLangOverride(null);
     setDetailFor(null);
     setDetailDescription(null);
     setDetailError(null);
@@ -180,11 +188,11 @@ export default function JobDetailModal({
     if (!optimizer || !jobOfferId) return;
     if (tab === "cv") {
       setCvRequestedFor(jobOfferId);
-      void optimizer.fetchOrGenerateCv(jobOfferId);
+      void optimizer.fetchOrGenerateCv(jobOfferId, { targetLanguage: getOfferLanguage() });
     }
     if (tab === "cover_letter") {
       setLetterRequestedFor(jobOfferId);
-      void optimizer.fetchOrGenerateLetter(jobOfferId);
+      void optimizer.fetchOrGenerateLetter(jobOfferId, { targetLanguage: getOfferLanguage() });
     }
   };
 
@@ -213,7 +221,7 @@ export default function JobDetailModal({
     const jobOfferId = job?.jobOfferId;
     if (optimizer && jobOfferId) {
       setCvRequestedFor(jobOfferId);
-      void optimizer.fetchOrGenerateCv(jobOfferId, { force: true });
+      void optimizer.fetchOrGenerateCv(jobOfferId, { force: true, targetLanguage: getOfferLanguage() });
     }
   };
 
@@ -221,7 +229,24 @@ export default function JobDetailModal({
     const jobOfferId = job?.jobOfferId;
     if (optimizer && jobOfferId) {
       setLetterRequestedFor(jobOfferId);
-      void optimizer.fetchOrGenerateLetter(jobOfferId, { force: true });
+      void optimizer.fetchOrGenerateLetter(jobOfferId, { force: true, targetLanguage: getOfferLanguage() });
+    }
+  };
+
+  // Cambiar de idioma siempre regenera (la caché es por idioma, subissue #2).
+  // Si ya está en ese idioma, no se gasta Groq.
+  const handleLanguageSelect = (lang: DocLang) => {
+    if (lang === getOfferLanguage()) return;
+    setLangOverride(lang);
+    const jobOfferId = job?.jobOfferId;
+    if (!optimizer || !jobOfferId) return;
+    if (activeTab === "cv") {
+      setCvRequestedFor(jobOfferId);
+      void optimizer.fetchOrGenerateCv(jobOfferId, { force: true, targetLanguage: lang });
+    }
+    if (activeTab === "cover_letter") {
+      setLetterRequestedFor(jobOfferId);
+      void optimizer.fetchOrGenerateLetter(jobOfferId, { force: true, targetLanguage: lang });
     }
   };
 
@@ -235,13 +260,8 @@ export default function JobDetailModal({
   const legacyCv: GeneratedCV = cv ?? EMPTY_CV;
   const jobOfferId = job?.jobOfferId ?? null;
   const canOptimize = Boolean(jobOfferId && optimizer);
-  // Idioma de la oferta: todos los títulos de CV y carta lo siguen (nada de mezcla).
-  // Idioma de la oferta: se detecta del detalle cargado bajo demanda
-  // (con Kanban ligero job.description viene vacío) y lo siguen todos los
-  // títulos de CV y carta. Sin descripción aún → 'es' hasta que cargue.
-  const offerLanguage = detectOfferLanguage(
-    detailDescription ?? job?.description ?? "",
-  );
+  // Idioma efectivo para títulos y peticiones (una sola fuente de verdad).
+  const offerLanguage = getOfferLanguage();
 
   // Datos IA solo si pertenecen a la oferta abierta y no hay carga/error en
   // curso: el hook guarda el último documento cargado, sea de la oferta que sea.
@@ -313,6 +333,27 @@ export default function JobDetailModal({
               <Mail className="w-4 h-4" />
               <span>Carta de Presentación</span>
             </button>
+            <div
+              className="flex items-center gap-1 p-1 bg-slate-800 rounded-xl"
+              role="group"
+              aria-label="Idioma de generación"
+              title="Idioma del CV y la carta generados"
+            >
+              {(["es", "en"] as const).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => handleLanguageSelect(l)}
+                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                    getOfferLanguage() === l
+                      ? "bg-aplika-lima-500 text-aplika-night-950"
+                      : "text-slate-400 hover:text-white hover:bg-slate-700"
+                  }`}
+                >
+                  {l === "es" ? "ES" : "EN"}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* TAB 1: DETALLE DE LA VACANTE */}
