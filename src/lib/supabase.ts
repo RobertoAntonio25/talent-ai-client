@@ -6,11 +6,17 @@ const supabaseAnonKey =
   import.meta.env.VIT_SUPABASE_ANON_KEY ||
   import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn("[Supabase] Faltan claves. OAuth deshabilitado.");
+// #141: fail-fast sin fallback a dominio fantasma. Sin vars, OAuth queda
+// deshabilitado y loginWithOAuth falla en voz alta antes de redirigir.
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+
+if (!isSupabaseConfigured) {
+  console.warn(
+    "[Supabase] Faltan VIT_SUPABASE_URL / VIT_SUPABASE_ANON_KEY. OAuth deshabilitado.",
+  );
 }
 
 export const supabase = createClient(
-  supabaseUrl ?? "https://placeholder.supabase.co",
-  supabaseAnonKey ?? "placeholder-key",
+  supabaseUrl ?? "https://supabase-not-configured.invalid",
+  supabaseAnonKey ?? "supabase-not-configured",
 );

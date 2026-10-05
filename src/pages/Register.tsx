@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { apiClient } from "../services/apiClient";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -16,9 +16,11 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { loginWithOAuth } from "../services/authService";
+import { isSupabaseConfigured } from "../lib/supabase";
 
 export default function Register() {
   const navigate = useNavigate();
+  const routeLocation = useLocation();
   const { login } = useAuth();
 
   // Estados de carga y feedback
@@ -82,11 +84,25 @@ export default function Register() {
     "bg-emerald-500",
   ];
 
+  // #134: error devuelto por AuthCallback (p. ej. cancelar en el proveedor).
+  // Se consume una sola vez al montar (diferido a microtarea por lint).
+  useEffect(() => {
+    const oauthError = (routeLocation.state as { oauthError?: string } | null)
+      ?.oauthError;
+    if (oauthError) {
+      queueMicrotask(() => {
+        setErrorMessage(oauthError);
+        window.history.replaceState(null, "");
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Manejador OAuth
   const handleOAuthRegister = async (provider: "google" | "linkedin") => {
     try {
       setIsLoading(provider);
-      await loginWithOAuth(provider);
+      await loginWithOAuth(provider, "/register");
     } catch (e) {
       setErrorMessage(e instanceof Error ? e.message : "Error con OAuth");
       setIsLoading(null);
@@ -232,7 +248,7 @@ export default function Register() {
               </div>
               <div>
                 <h4 className="font-semibold text-slate-100 text-sm">
-                  Tablero Kanban Inteligente
+                  Panel de Empleos Inteligente
                 </h4>
                 <p className="text-xs text-slate-400">
                   Organiza todas tus postulaciones y entrevistas en tiempo real.
@@ -318,12 +334,28 @@ export default function Register() {
             </div>
           )}
 
+          {/* #141: aviso cuando OAuth no está configurado */}
+          {!isSupabaseConfigured && (
+            <div className="mb-5 p-3.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm rounded-xl flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-400" />
+              <span>
+                Registro social no disponible (falta configuración de Supabase).
+                Usa tu email.
+              </span>
+            </div>
+          )}
+
           {/* BOTONES OAUTH */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
             {/* Google */}
             <button
               onClick={() => handleOAuthRegister("google")}
-              disabled={isLoading !== null}
+              disabled={isLoading !== null || !isSupabaseConfigured}
+              title={
+                isSupabaseConfigured
+                  ? undefined
+                  : "OAuth no configurado en este despliegue"
+              }
               type="button"
               className="flex items-center justify-center px-4 py-3 bg-slate-800/80 border border-slate-700 rounded-xl hover:bg-slate-800 hover:border-slate-600 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-medium text-xs sm:text-sm text-slate-200 shadow-sm"
             >
@@ -355,7 +387,12 @@ export default function Register() {
             {/* LinkedIn */}
             <button
               onClick={() => handleOAuthRegister("linkedin")}
-              disabled={isLoading !== null}
+              disabled={isLoading !== null || !isSupabaseConfigured}
+              title={
+                isSupabaseConfigured
+                  ? undefined
+                  : "OAuth no configurado en este despliegue"
+              }
               type="button"
               className="flex items-center justify-center px-4 py-3 bg-[#0A66C2] text-white rounded-xl hover:bg-[#004182] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-medium text-xs sm:text-sm shadow-sm"
             >

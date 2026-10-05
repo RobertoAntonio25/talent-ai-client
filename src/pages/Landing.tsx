@@ -38,8 +38,11 @@ export default function Landing() {
             <a href="#features" className="hover:text-white transition-colors">
               Características
             </a>
-            <a href="#kanban" className="hover:text-white transition-colors">
-              Tablero Kanban
+            <a
+              href="#panel-empleo"
+              className="hover:text-white transition-colors"
+            >
+              Panel de Empleo
             </a>
             <a href="#ats" className="hover:text-white transition-colors">
               CV con IA
@@ -87,7 +90,7 @@ export default function Landing() {
 
         {/* Subtítulo */}
         <p className="mt-6 text-sm sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed font-light">
-          Tablero Kanban con respuesta instantánea, generador de currículums
+          Panel de Empleos con respuesta instantánea, generador de currículums
           técnicos optimizados para filtros ATS y agente de búsqueda en segundo
           plano.
         </p>
@@ -128,7 +131,7 @@ export default function Landing() {
             </div>
           </div>
 
-          {/* Mini preview Kanban */}
+          {/* Mini preview dashboard */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-left">
             {/* Columna 1 */}
             <div className="bg-slate-950/60 border border-slate-800/80 rounded-2xl p-3.5">
@@ -271,9 +274,9 @@ export default function Landing() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {/* Card 1: Kanban */}
+          {/* Card 1: Dashboard */}
           <div
-            id="kanban"
+            id="panel-empleo"
             className="bg-slate-900/70 border border-slate-800 rounded-3xl p-8 hover:border-slate-700 transition-all flex flex-col justify-between"
           >
             <div>
@@ -281,7 +284,7 @@ export default function Landing() {
                 <LayoutDashboard className="w-6 h-6" />
               </div>
               <h3 className="text-xl font-bold text-white mb-2">
-                Tablero Kanban Interactivo
+                Panel de Empleos Interactivo
               </h3>
               <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
                 Mueve tus postulaciones entre estados con drag-and-drop
@@ -375,10 +378,45 @@ export default function Landing() {
       <footer className="border-t border-slate-800/80 py-8 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <img src="/logo-aplika-horizontal-blanco.svg" alt="Aplika" className="h-8 w-auto" />
+            <a
+              href="https://www.linkedin.com/company/aplika-jobs/"
+              target="_blank"
+              title="Página de Aplika Jobs en Linkedin"
+            >
+              <img
+                src="/logo-aplika-horizontal-blanco.svg"
+                alt="Aplika"
+                className="h-8 w-auto"
+              />
+            </a>
             <span>• Plataforma de Gestión de Empleo con IA</span>
           </div>
-          <span>© 2026 Aplika. Desarrollado con React & Tailwind CSS.</span>
+          <span>
+            © 2026{" "}
+            <a
+              href="https://www.linkedin.com/company/aplika-jobs/"
+              target="_blank"
+              title="Página de Aplika Jobs en Linkedin"
+            >
+              Aplika
+            </a>
+            . Desarrollado por{" "}
+            <a
+              href="https://www.linkedin.com/in/edu84gp/"
+              target="_blank"
+              title="Eduardo García en Linkedin"
+            >
+              Eduardo García
+            </a>{" "}
+            &{" "}
+            <a
+              href="https://www.linkedin.com/in/robertoantoniolopez25/"
+              target="_blank"
+              title="Roberto Antonio en Linkedin"
+            >
+              Roberto Antonio
+            </a>
+          </span>
         </div>
       </footer>
     </div>

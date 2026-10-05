@@ -35,12 +35,11 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        // #140: ruta pública directa, fuera de PublicOnlyRoute.
+        // Con token viejo en localStorage el guard redirigía a /dashboard
+        // antes de que AuthCallback procesara ?code=/?error=.
         path: "auth/callback",
-        element: (
-          <PublicOnlyRoute>
-            <AuthCallback />
-          </PublicOnlyRoute>
-        ),
+        element: <AuthCallback />,
       },
       {
         path: "dashboard",
