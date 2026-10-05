@@ -58,13 +58,18 @@ export async function changePassword(currentPassword: string, newPassword: strin
   );
 }
 
-// Paso 1 OAuth: redirige a Google/LinkedIn vía Supabase
-export async function loginWithOAuth(provider: OAuthProvider) {
+// Paso 1 OAuth: redirige a Google/LinkedIn vía Supabase.
+// #134: guarda la página de origen para que el callback pueda devolver
+// los errores del proveedor (p. ej. cancelar) a login/register en inline.
+export async function loginWithOAuth(provider: OAuthProvider, returnTo?: string) {
   // #141: fallar en voz alta en vez de redirigir a un dominio fantasma
   if (!isSupabaseConfigured) {
     throw new Error(
       "OAuth no configurado: faltan VIT_SUPABASE_URL / VIT_SUPABASE_ANON_KEY.",
     );
+  }
+  if (returnTo) {
+    sessionStorage.setItem("oauth_return_to", returnTo);
   }
   const { error } = await supabase.auth.signInWithOAuth({
     provider: mapToSupabaseProvider(provider),

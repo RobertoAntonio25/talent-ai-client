@@ -14,9 +14,6 @@ const RETRY_DELAY_MS = 500;
 const SIGNIN_EVENT_TIMEOUT_MS = 3000;
 
 function friendlyError(code: string | null, fallback: string): string {
-  if (code === "USER_CANCELLED") {
-    return "Cancelaste el inicio de sesión con el proveedor. Puedes intentarlo de nuevo o usar tu email.";
-  }
   if (code === "RATE_LIMIT_EXCEEDED" || code === "AUTH_RATE_LIMIT_EXCEEDED") {
     return "Demasiadas peticiones. Inténtalo de nuevo en 15 minutos.";
   }
@@ -63,14 +60,21 @@ export default function AuthCallback() {
     const run = async () => {
       try {
         // 0. El proveedor devolvió error (p. ej. cancelar en LinkedIn):
-        // mensaje amable, sin intentar exchange.
+        // volver a login/register con el error en inline, sin página
+        // de error intermedia.
         const urlError = searchParams.get("error");
         if (urlError) {
           const desc = searchParams.get("error_description");
-          if (/cancel/i.test(`${urlError} ${desc ?? ""}`)) {
-            throw new Error("USER_CANCELLED");
+          const message = /cancel/i.test(`${urlError} ${desc ?? ""}`)
+            ? "Cancelaste el inicio de sesión con el proveedor. Puedes intentarlo de nuevo o usar tu email."
+            : (desc ?? "El proveedor denegó el acceso.");
+          const stored = sessionStorage.getItem("oauth_return_to");
+          sessionStorage.removeItem("oauth_return_to");
+          const to = stored === "/register" ? "/register" : "/login";
+          if (!cancelled) {
+            navigate(to, { replace: true, state: { oauthError: message } });
           }
-          throw new Error(desc || "El proveedor denegó el acceso.");
+          return;
         }
 
         // 1. PKCE: ?code= -> canjear por sesión Supabase.
@@ -91,14 +95,13 @@ export default function AuthCallback() {
         const res = await exchangeOAuthToken(session.access_token);
 
         if (cancelled) return;
+        sessionStorage.removeItem("oauth_return_to");
         // Guardamos IGUAL que login clásico: clave "token", no "accessToken".
         login(res.data.accessToken, res.data.user);
         navigate("/dashboard", { replace: true });
       } catch (e) {
         if (cancelled) return;
-        if (e instanceof Error && e.message === "USER_CANCELLED") {
-          setError(friendlyError("USER_CANCELLED", e.message));
-        } else if (e instanceof ApiError) {
+        if (e instanceof ApiError) {
           setError(friendlyError(e.code ?? null, e.message));
         } else {
           setError(e instanceof Error ? e.message : "Error en callback OAuth");

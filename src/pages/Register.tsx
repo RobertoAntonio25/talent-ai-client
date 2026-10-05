@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { apiClient } from "../services/apiClient";
 import { useAuth } from "../context/AuthContext";
 import {
@@ -20,6 +20,7 @@ import { isSupabaseConfigured } from "../lib/supabase";
 
 export default function Register() {
   const navigate = useNavigate();
+  const routeLocation = useLocation();
   const { login } = useAuth();
 
   // Estados de carga y feedback
@@ -83,11 +84,25 @@ export default function Register() {
     "bg-emerald-500",
   ];
 
+  // #134: error devuelto por AuthCallback (p. ej. cancelar en el proveedor).
+  // Se consume una sola vez al montar (diferido a microtarea por lint).
+  useEffect(() => {
+    const oauthError = (routeLocation.state as { oauthError?: string } | null)
+      ?.oauthError;
+    if (oauthError) {
+      queueMicrotask(() => {
+        setErrorMessage(oauthError);
+        window.history.replaceState(null, "");
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Manejador OAuth
   const handleOAuthRegister = async (provider: "google" | "linkedin") => {
     try {
       setIsLoading(provider);
-      await loginWithOAuth(provider);
+      await loginWithOAuth(provider, "/register");
     } catch (e) {
       setErrorMessage(e instanceof Error ? e.message : "Error con OAuth");
       setIsLoading(null);

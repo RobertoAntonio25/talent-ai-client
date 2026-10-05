@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { loginWithOAuth } from "../services/authService";
 import {
   Loader2,
@@ -18,6 +18,7 @@ import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
 
   const [isLoading, setIsLoading] = useState<
@@ -45,10 +46,24 @@ export default function Login() {
     };
   }, []);
 
+  // #134: error devuelto por AuthCallback (p. ej. cancelar en el proveedor).
+  // Se consume una sola vez al montar (diferido a microtarea por lint).
+  useEffect(() => {
+    const oauthError = (location.state as { oauthError?: string } | null)
+      ?.oauthError;
+    if (oauthError) {
+      queueMicrotask(() => {
+        setErrorMessage(oauthError);
+        window.history.replaceState(null, "");
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleOAuthLogin = async (provider: "google" | "linkedin") => {
     try {
       setIsLoading(provider);
-      await loginWithOAuth(provider);
+      await loginWithOAuth(provider, "/login");
     } catch (e) {
       setErrorMessage(e instanceof Error ? e.message : "Error con OAuth");
       setIsLoading(null);
