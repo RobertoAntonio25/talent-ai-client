@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { apiClient } from "../services/apiClient";
 import { useAuth } from "../context/AuthContext";
@@ -40,6 +40,21 @@ export default function Register() {
   // Visibilidad de contraseñas
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    const reset = () => setIsLoading(null);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") reset();
+    };
+    window.addEventListener("pageshow", reset);
+    window.addEventListener("focus", reset);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pageshow", reset);
+      window.removeEventListener("focus", reset);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
 
   // Cálculo de fortaleza de contraseña
   const getPasswordStrength = (pass: string) => {
