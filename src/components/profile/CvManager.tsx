@@ -2,9 +2,21 @@
 // Gestiona el CV base: subida PDF (la IA extrae tus datos) o edición
 // manual por bloques (datos, habilidades, estudios, experiencia,
 // proyectos e idiomas). Todo persiste en este dispositivo.
-import { useRef, useState, type ChangeEvent } from "react";
-import { AlertCircle, CheckCircle2, Loader2, Trash2, Upload } from "lucide-react";
+import { useEffect, useRef, useState, type ChangeEvent } from "react";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Languages,
+  Loader2,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { useCv } from "../../hooks/useCv";
+import { useAuth } from "../../context/AuthContext";
+import { mapProfileCvToGeneratedCV } from "../../adapters/cvAdapter";
+import { translateBaseCv } from "../../services/userProfile.service";
+import type { GeneratedCV } from "../../types/cv";
+import CvViewer from "../ui/CvViewer";
 import CvBasicsForm from "./CvBasicsForm";
 import SkillsEditor from "./SkillsEditor";
 import EducationEditor from "./EducationEditor";
@@ -26,6 +38,48 @@ export default function CvManager() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [msg, setMsg] = useState<string | null>(null);
   const [confirming, setConfirming] = useState(false);
+  const { user } = useAuth();
+
+  // Issue #11: vista traducida bajo demanda (no se guarda; las tablas siguen
+  // en el idioma original). Se descarta si el CV cambia por debajo.
+  const [translated, setTranslated] = useState<GeneratedCV | null>(null);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translateError, setTranslateError] = useState<string | null>(null);
+  useEffect(() => {
+    void Promise.resolve().then(() => {
+      setTranslated(null);
+      setTranslateError(null);
+    });
+  }, [cv]);
+
+  const otherLang = cv?.sourceLanguage === "en" ? "es" : "en";
+
+  const handleTranslate = async () => {
+    if (!cv || isTranslating) return;
+    setMsg(null);
+    setTranslateError(null);
+    setIsTranslating(true);
+    try {
+      const res = await translateBaseCv({
+        targetLanguage: otherLang,
+        ...(cv.sourceLanguage ? { sourceLanguage: cv.sourceLanguage } : {}),
+      });
+      const mapped = mapProfileCvToGeneratedCV(res.profile, user);
+      setTranslated({ ...mapped, sourceLanguage: res.targetLanguage });
+      setMsg(
+        res.translated
+          ? `✓ Vista en ${otherLang === "en" ? "English" : "Español"} (no guardada).`
+          : "Ya está en ese idioma.",
+      );
+    } catch (e) {
+      setTranslated(null);
+      setTranslateError(
+        e instanceof Error ? e.message : "No se pudo traducir el CV.",
+      );
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const handleFile = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -86,6 +140,32 @@ export default function CvManager() {
             <Trash2 className="w-4 h-4" />
             {confirming ? "¿Confirmar?" : "Eliminar"}
           </button>
+          {translated ? (
+            <button
+              type="button"
+              onClick={() => setTranslated(null)}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 cursor-pointer"
+            >
+              Volver al original
+            </button>
+          ) : (
+            <button
+              type="button"
+              onClick={() => void handleTranslate()}
+              disabled={!cv || isUploading || isTranslating}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold text-slate-200 bg-slate-800 hover:bg-slate-700 border border-slate-700 disabled:opacity-60 cursor-pointer"
+              title="Traduce el CV al otro idioma solo para verlo (no se guarda)"
+            >
+              {isTranslating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Languages className="w-4 h-4" />
+              )}
+              {isTranslating
+                ? "Traduciendo…"
+                : `Ver en ${otherLang === "en" ? "English" : "Español"}`}
+            </button>
+          )}
         </div>
         <input ref={fileRef} type="file" accept="application/pdf" className="hidden" onChange={(e) => void handleFile(e)} />
         {uploadError && (
@@ -94,10 +174,22 @@ export default function CvManager() {
         {syncError && (
           <p className="mt-2 text-xs text-amber-400 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{syncError}</p>
         )}
+        {translateError && (
+          <p className="mt-2 text-xs text-red-400 flex items-center gap-1"><AlertCircle className="w-3.5 h-3.5" />{translateError}</p>
+        )}
         {msg && !uploadError && (
           <p className="mt-2 text-xs text-emerald-400 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" />{msg}</p>
         )}
       </div>
+
+      {translated && (
+        <div className="rounded-2xl border border-violet-500/30 bg-violet-500/5 p-3">
+          <p className="mb-3 text-xs text-violet-200">
+            Vista traducida (no guardada): tus datos en BD siguen en el idioma original.
+          </p>
+          <CvViewer cv={translated} language={translated.sourceLanguage ?? "es"} />
+        </div>
+      )}
 
       <CvBasicsForm
         key={`basics-${cv?.fullName ?? ""}-${cv?.targetRole ?? ""}`}
