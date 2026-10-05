@@ -12,10 +12,13 @@ import UserDropdown from "../components/navigation/UserDropdown";
 export default function MainLayout() {
   const location = useLocation();
 
+  // El callback OAuth es página completa: sin header ni UserDropdown
+  // (mostraba "Sesión activa" incluso en la pantalla de error).
   const isFullPage =
     location.pathname === "/" ||
     location.pathname === "/login" ||
-    location.pathname === "/register";
+    location.pathname === "/register" ||
+    location.pathname === "/auth/callback";
 
   if (isFullPage) {
     return <Outlet />;
