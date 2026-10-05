@@ -1,5 +1,6 @@
 // aplika-client/src/context/AuthContext.tsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import { supabase } from "../lib/supabase";
 
 export interface User {
   id: string;
@@ -17,7 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (token: string, user: User) => void;
-  logout: () => void;
+  logout: () => Promise<void>;
   updateUser: (patch: Partial<User>) => void;
 }
 
@@ -47,10 +48,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [auth, setAuth] = useState(getInitialAuth);
   const [isLoading] = useState<boolean>(false);
 
-  const logout = useCallback(() => {
+  // #142: además de limpiar el JWT interno, cierra la sesión de Supabase.
+  // Sin esto la sesión SSO sobrevivía al logout y el siguiente OAuth
+  // entraba directo con la cuenta vieja (auto-login fantasma).
+  const logout = useCallback(async () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setAuth({ token: null, user: null });
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error("Error al cerrar sesión de Supabase:", e);
+    }
   }, []);
 
   useEffect(() => {
@@ -65,11 +74,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [logout]);
 
-  const login = (newToken: string, newUser: User) => {
+  // #142: memoizado para no re-disparar el efecto de AuthCallback.
+  const login = useCallback((newToken: string, newUser: User) => {
     localStorage.setItem("token", newToken);
     localStorage.setItem("user", JSON.stringify(newUser));
     setAuth({ token: newToken, user: newUser });
-  };
+  }, []);
 
   // Edición local del perfil (persiste en este dispositivo).
   const updateUser = useCallback(

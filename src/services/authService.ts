@@ -71,15 +71,23 @@ export async function loginWithOAuth(provider: OAuthProvider) {
     options: {
       // Al volver, Supabase te deja en /auth/callback
       redirectTo: `${window.location.origin}/auth/callback`,
+      // Google reutiliza su cookie SSO y entra directo; forzar el chooser.
+      queryParams:
+        provider === "google" ? { prompt: "select_account" } : undefined,
     },
   });
   if (error) throw new Error(error.message);
 }
 
-// Paso 2 OAuth: canjea session Supabase por JWT interno (API.md sec 1)
-export async function exchangeOAuthToken(supabaseToken: string) {
+// Paso 2 OAuth: canjea session Supabase por JWT interno (API.md sec 1).
+// Timeout amplio: Render tarda 30-50s en despertar en la 1ª petición del día.
+export async function exchangeOAuthToken(
+  supabaseToken: string,
+  timeoutMs = 60000,
+) {
   return apiClient<AuthResponse>("/api/auth/oauth/exchange", {
     method: "POST",
     data: { supabaseToken },
+    timeoutMs,
   });
 }

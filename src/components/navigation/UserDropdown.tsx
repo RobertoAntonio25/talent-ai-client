@@ -95,7 +95,8 @@ export default function UserDropdown() {
   };
 
   const handleLogout = () => {
-    logout();
+    // #142: logout ahora también cierra la sesión Supabase (async).
+    void logout();
     navigate("/login");
   };
 
