@@ -180,3 +180,47 @@ export function mapGeneratedCVToProfilePatch(cv: GeneratedCV): ProfileCvPatch {
   }
   return patch;
 }
+
+export type CvMissingField =
+  | "summary"
+  | "skills"
+  | "targetRole"
+  | "experiences";
+
+export const CV_MISSING_LABELS: Record<CvMissingField, string> = {
+  summary: "Resumen",
+  skills: "Habilidades",
+  targetRole: "Rol objetivo",
+  experiences: "Experiencia",
+};
+
+// needsReview calculado (no almacenado): sobrevive a hidratación, local y upload.
+export function assessCvCompleteness(
+  cv: {
+    summary?: string | null;
+    skills?: string[] | null;
+    targetRole?: string | null;
+    experience?: Array<unknown> | null;
+  } | null,
+): { needsReview: boolean; missingFields: CvMissingField[] } {
+  if (!cv) {
+    return {
+      needsReview: true,
+      missingFields: ["summary", "skills", "targetRole", "experiences"],
+    };
+  }
+  const missing: CvMissingField[] = [];
+  if (!cv.summary?.trim()) {
+    missing.push("summary");
+  }
+  if (!cv.skills || cv.skills.length === 0) {
+    missing.push("skills");
+  }
+  if (!cv.targetRole?.trim() || cv.targetRole.startsWith("[")) {
+    missing.push("targetRole");
+  }
+  if (!cv.experience || cv.experience.length === 0) {
+    missing.push("experiences");
+  }
+  return { needsReview: missing.length > 0, missingFields: missing };
+}
