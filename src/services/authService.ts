@@ -69,7 +69,10 @@ export async function loginWithOAuth(provider: OAuthProvider, returnTo?: string)
     );
   }
   if (returnTo) {
+    // Espejo en localStorage: el sessionStorage puede perderse en las
+    // idas y vueltas por el proveedor/Supabase.
     sessionStorage.setItem("oauth_return_to", returnTo);
+    localStorage.setItem("oauth_return_to", returnTo);
   }
   const { error } = await supabase.auth.signInWithOAuth({
     provider: mapToSupabaseProvider(provider),

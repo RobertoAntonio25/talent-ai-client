@@ -68,8 +68,11 @@ export default function AuthCallback() {
           const message = /cancel/i.test(`${urlError} ${desc ?? ""}`)
             ? "Cancelaste el inicio de sesión con el proveedor. Puedes intentarlo de nuevo o usar tu email."
             : (desc ?? "El proveedor denegó el acceso.");
-          const stored = sessionStorage.getItem("oauth_return_to");
+          const stored =
+            sessionStorage.getItem("oauth_return_to") ??
+            localStorage.getItem("oauth_return_to");
           sessionStorage.removeItem("oauth_return_to");
+          localStorage.removeItem("oauth_return_to");
           const to = stored === "/register" ? "/register" : "/login";
           if (!cancelled) {
             navigate(to, { replace: true, state: { oauthError: message } });
@@ -96,6 +99,7 @@ export default function AuthCallback() {
 
         if (cancelled) return;
         sessionStorage.removeItem("oauth_return_to");
+        localStorage.removeItem("oauth_return_to");
         // Guardamos IGUAL que login clásico: clave "token", no "accessToken".
         login(res.data.accessToken, res.data.user);
         navigate("/dashboard", { replace: true });
