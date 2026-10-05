@@ -161,7 +161,7 @@ export default function Login() {
           </h1>
           <p className="text-lg text-slate-300 max-w-lg mb-10 leading-relaxed font-light">
             Inicia sesión para gestionar tus procesos de selección, optimizar
-            tus postulaciones y dar seguimiento en tu tablero Kanban.
+            tus postulaciones y dar seguimiento en tu panel de empleos.
           </p>
 
           <div className="space-y-4 max-w-md">

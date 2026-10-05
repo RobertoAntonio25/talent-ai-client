@@ -248,7 +248,7 @@ export default function Register() {
               </div>
               <div>
                 <h4 className="font-semibold text-slate-100 text-sm">
-                  Tablero Kanban Inteligente
+                  Panel de Empleos Inteligente
                 </h4>
                 <p className="text-xs text-slate-400">
                   Organiza todas tus postulaciones y entrevistas en tiempo real.
@@ -339,8 +339,8 @@ export default function Register() {
             <div className="mb-5 p-3.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm rounded-xl flex items-center space-x-2">
               <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-400" />
               <span>
-                Registro social no disponible (falta configuración de
-                Supabase). Usa tu email.
+                Registro social no disponible (falta configuración de Supabase).
+                Usa tu email.
               </span>
             </div>
           )}
