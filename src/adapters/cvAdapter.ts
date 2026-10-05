@@ -1,6 +1,9 @@
 import type { GeneratedCV } from "../types/cv";
 import type { ExtractedCvData } from "../services/aiService";
-import type { ProfileCvData, ProfileCvPatch } from "../services/userProfile.service";
+import type {
+  ProfileCvData,
+  ProfileCvPatch,
+} from "../services/userProfile.service";
 import type { User } from "../context/AuthContext";
 
 function formatPeriod(start?: string | null, end?: string | null): string {
@@ -46,6 +49,7 @@ export function mapExtractedToGeneratedCV(
     fullName,
     targetRole: data.targetRole || "Perfil profesional",
     summary: data.summary || "Resumen generado por IA a partir de tu PDF.",
+    sourceLanguage: data.sourceLanguage ?? undefined,
     contact: {
       email: user?.email || "[tu email]",
       phone: "[tu teléfono]",
@@ -138,9 +142,7 @@ export function mapProfileCvToGeneratedCV(
 
 /** GeneratedCV → PATCH /api/profile/cv (solo claves con contenido real;
  * los "[tu …]" no viajan para no ensuciar la BD). */
-export function mapGeneratedCVToProfilePatch(
-  cv: GeneratedCV,
-): ProfileCvPatch {
+export function mapGeneratedCVToProfilePatch(cv: GeneratedCV): ProfileCvPatch {
   const patch: ProfileCvPatch = {};
   if (cv.summary?.trim()) patch.summary = cv.summary.trim();
   if (Array.isArray(cv.skills)) patch.skills = cv.skills;

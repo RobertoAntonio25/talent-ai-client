@@ -117,9 +117,17 @@ export default function JobDetailModal({
   // Override explícito del usuario (toggle ES/EN). null = idioma de la oferta.
   const [langOverride, setLangOverride] = useState<DocLang | null>(null);
 
-  // Fuente única del idioma efectivo (declaración hoisted: vale usarla en handlers).
+  // Fuente única del idioma efectivo: override del usuario → idioma de la
+  // oferta (detalle bajo demanda) → idioma del CV → español.
+  // Se resuelve en llamada (no al renderizar) porque detailDescription vive más abajo.
   function getOfferLanguage(): DocLang {
-    return langOverride ?? detectOfferLanguage(detailDescription ?? job?.description ?? "");
+    const desc = detailDescription ?? job?.description ?? "";
+    return (
+      langOverride ??
+      (desc.trim() ? detectOfferLanguage(desc) : null) ??
+      cv?.sourceLanguage ??
+      "es"
+    );
   }
   // Fase 3b (issue #129, kanban ligero): el listado ya no trae `description`
   // en las ofertas del motor; se pide aquí bajo demanda al abrir el modal.

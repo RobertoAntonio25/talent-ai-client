@@ -55,5 +55,6 @@ export interface GeneratedCV {
   experience: JobExperience[];
   education?: EducationItem[];
   languages?: LanguageItem[];
+  sourceLanguage?: "es" | "en";
   projects?: CvProject[];
 }
