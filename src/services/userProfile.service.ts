@@ -142,6 +142,25 @@ interface ProfileCvEnvelope {
   data: ProfileCvData;
 }
 
+/** POST /api/profile/cv/translate — vista traducida del CV base (no persiste). */
+export interface TranslateBaseCvResult {
+  profile: ProfileCvData;
+  sourceLanguage: "es" | "en";
+  targetLanguage: "es" | "en";
+  translated: boolean;
+}
+
+export async function translateBaseCv(args: {
+  targetLanguage: "es" | "en";
+  sourceLanguage?: "es" | "en";
+}): Promise<TranslateBaseCvResult> {
+  return apiClient<TranslateBaseCvResult>("/api/profile/cv/translate", {
+    method: "POST",
+    data: args,
+    // Traducción Groq completa: como una extracción.
+    timeoutMs: 90000,
+  });
+}
 /** GET /api/profile/cv — CV completo para hidratar (404 sin perfil). */
 export async function getProfileCv(): Promise<ProfileCvData> {
   const res = await apiClient<ProfileCvEnvelope>("/api/profile/cv", {
