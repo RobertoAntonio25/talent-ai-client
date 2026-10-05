@@ -41,10 +41,20 @@ export async function registerWithEmail(payload: {
 }
 
 // Cambio de contraseña (requiere el endpoint POST /api/auth/change-password).
+// #144: apiClient ya no adjunta Bearer a /api/auth/*, así que esta llamada
+// autenticada lo manda explícito.
 export async function changePassword(currentPassword: string, newPassword: string) {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("Sesión no encontrada. Inicia sesión de nuevo.");
+  }
   return apiClient<{ success: boolean; message: string }>(
     "/api/auth/change-password",
-    { method: "POST", data: { currentPassword, newPassword } },
+    {
+      method: "POST",
+      data: { currentPassword, newPassword },
+      headers: { Authorization: `Bearer ${token}` },
+    },
   );
 }
 
