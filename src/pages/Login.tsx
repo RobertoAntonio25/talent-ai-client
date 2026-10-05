@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { loginWithOAuth } from "../services/authService";
 import {
@@ -28,6 +28,21 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    const reset = () => setIsLoading(null);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") reset();
+    };
+    window.addEventListener("pageshow", reset);
+    window.addEventListener("focus", reset);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pageshow", reset);
+      window.removeEventListener("focus", reset);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
 
   const handleOAuthLogin = async (provider: "google" | "linkedin") => {
     try {
