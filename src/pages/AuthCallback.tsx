@@ -21,7 +21,7 @@ function friendlyError(code: string | null, fallback: string): string {
     return "Demasiadas peticiones. Inténtalo de nuevo en 15 minutos.";
   }
   if (code === "TIMEOUT" || code === "NETWORK_ERROR") {
-    return "No se pudo conectar con el servidor. Si es la primera petición del día, Render tarda 30-50s en despertar: espera y reintenta.";
+    return "No se pudo conectar con el servidor. Reinténtalo de nuevo en unos minutos.";
   }
   return fallback;
 }

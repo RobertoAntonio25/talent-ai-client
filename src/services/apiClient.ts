@@ -180,10 +180,10 @@ export async function apiClient<T>(
         "TIMEOUT",
       );
     }
-    // Fallo de red / CORS / Render dormido
+    // Fallo de red / CORS / backend dormido
     if (e instanceof TypeError) {
       throw new ApiError(
-        "No se pudo conectar con el servidor. Si es la primera petición del día, Render tarda 30-50s en despertar: espera y reintenta.",
+        "No se pudo conectar con el servidor. Reinténtalo de nuevo en unos minutos.",
         0,
         "NETWORK_ERROR",
       );
