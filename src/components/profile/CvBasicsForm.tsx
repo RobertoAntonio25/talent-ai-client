@@ -15,7 +15,11 @@ export default function CvBasicsForm({
   fullName: string;
   targetRole: string;
   summary: string;
-  onSave: (patch: { fullName: string; targetRole: string; summary: string }) => void;
+  onSave: (patch: {
+    fullName: string;
+    targetRole: string;
+    summary: string;
+  }) => void;
 }) {
   const [name, setName] = useState(fullName);
   const [role, setRole] = useState(targetRole);
@@ -30,16 +34,29 @@ export default function CvBasicsForm({
       <div className="grid sm:grid-cols-2 gap-3">
         <label className="block">
           <span className="text-xs text-slate-400">Nombre completo</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} className={inputCls} />
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className={inputCls}
+          />
         </label>
         <label className="block">
           <span className="text-xs text-slate-400">Rol objetivo</span>
-          <input value={role} onChange={(e) => setRole(e.target.value)} className={inputCls} />
+          <input
+            value={role}
+            onChange={(e) => setRole(e.target.value)}
+            className={inputCls}
+          />
         </label>
       </div>
       <label className="block mt-3">
         <span className="text-xs text-slate-400">Resumen</span>
-        <textarea value={sum} onChange={(e) => setSum(e.target.value)} rows={3} className={inputCls} />
+        <textarea
+          value={sum}
+          onChange={(e) => setSum(e.target.value)}
+          rows={3}
+          className={inputCls}
+        />
       </label>
       <button
         type="button"
@@ -54,7 +71,8 @@ export default function CvBasicsForm({
       </button>
       {saved && (
         <p className="mt-2 text-xs text-emerald-400 flex items-center gap-1">
-          <CheckCircle2 className="w-3.5 h-3.5" /> Guardado (se sincroniza con tu cuenta).
+          <CheckCircle2 className="w-3.5 h-3.5" /> Guardado (se sincroniza con
+          tu cuenta).
         </p>
       )}
     </div>
