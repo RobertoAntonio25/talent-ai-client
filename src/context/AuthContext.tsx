@@ -10,6 +10,9 @@ export interface User {
   role?: string;
   location?: string;
   phone?: string;
+  // Issue #189: el back lo envía en login/register/exchange (undefined en
+  // sesiones guardadas antes del cambio → modo cambio clásico).
+  hasPassword?: boolean;
 }
 
 interface AuthContextType {
