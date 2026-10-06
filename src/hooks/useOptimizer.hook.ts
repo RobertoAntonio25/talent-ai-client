@@ -1,7 +1,8 @@
 // src/hooks/useOptimizer.hook.ts
 // Puente controller<->view: state machine + caché reactiva por jobOfferId.
 // La persistencia real vive en el backend (Prisma/Supabase); aquí solo caché memoria.
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
+import { useAuth } from "../context/AuthContext";
 import type {
   OptimizedCv,
   CoverLetterOutput,
@@ -32,27 +33,47 @@ export function useOptimizer() {
   const inflightCvRef = useRef(new Map<string, Promise<OptimizedCv>>());
   const inflightLetterRef = useRef(new Map<string, Promise<CoverLetterOutput>>());
 
-  const fetchOrGenerateCv = useCallback(async (jobOfferId: string) => {
+  // La caché es por cuenta: el mismo jobOfferId no puede servir el CV de otro usuario.
+  const { user } = useAuth();
+  const uid = user?.id ?? "anon";
+  const cacheKey = useCallback((jobOfferId: string) => `${uid}::${jobOfferId}`, [uid]);
+
+  // Al cambiar de cuenta se limpia lo mostrado (la caché vieja queda huérfana por su prefijo).
+  const uidRef = useRef(uid);
+  useEffect(() => {
+    if (uidRef.current !== uid) {
+      uidRef.current = uid;
+      setOptimizedCv(null);
+      setCoverLetter(null);
+      setCvError(null);
+      setLetterError(null);
+    }
+  }, [uid]);
+
+  const fetchOrGenerateCv = useCallback(async (jobOfferId: string, opts?: { force?: boolean; targetLanguage?: "es" | "en" }) => {
     if (!jobOfferId) {
       setCvError("jobOfferId es requerido.");
       return null;
     }
-    const cached = cacheRef.current.get(jobOfferId)?.cv;
-    if (cached) {
-      setOptimizedCv(cached);
-      setCvError(null);
-      return cached;
+    const key = cacheKey(jobOfferId);
+    if (!opts?.force) {
+      const cached = cacheRef.current.get(key)?.cv;
+      if (cached) {
+        setOptimizedCv(cached);
+        setCvError(null);
+        return cached;
+      }
+      const inflight = inflightCvRef.current.get(key);
+      if (inflight) return inflight;
     }
-    const inflight = inflightCvRef.current.get(jobOfferId);
-    if (inflight) return inflight;
 
     setIsLoadingCv(true);
     setCvError(null);
-    const request = fetchOrGenerateOptimizedCvByJobOffer(jobOfferId);
-    inflightCvRef.current.set(jobOfferId, request);
+    const request = fetchOrGenerateOptimizedCvByJobOffer(jobOfferId, opts);
+    inflightCvRef.current.set(key, request);
     try {
       const cv = await request;
-      cacheRef.current.set(jobOfferId, { ...cacheRef.current.get(jobOfferId), cv });
+      cacheRef.current.set(key, { ...cacheRef.current.get(key), cv });
       setOptimizedCv(cv);
       return cv;
     } catch (e) {
@@ -60,32 +81,35 @@ export function useOptimizer() {
       setCvError(msg);
       return null;
     } finally {
-      inflightCvRef.current.delete(jobOfferId);
+      inflightCvRef.current.delete(key);
       setIsLoadingCv(false);
     }
-  }, []);
+  }, [cacheKey]);
 
-  const fetchOrGenerateLetter = useCallback(async (jobOfferId: string) => {
+  const fetchOrGenerateLetter = useCallback(async (jobOfferId: string, opts?: { force?: boolean; targetLanguage?: "es" | "en" }) => {
     if (!jobOfferId) {
       setLetterError("jobOfferId es requerido.");
       return null;
     }
-    const cached = cacheRef.current.get(jobOfferId)?.letter;
-    if (cached) {
-      setCoverLetter(cached);
-      setLetterError(null);
-      return cached;
+    const key = cacheKey(jobOfferId);
+    if (!opts?.force) {
+      const cached = cacheRef.current.get(key)?.letter;
+      if (cached) {
+        setCoverLetter(cached);
+        setLetterError(null);
+        return cached;
+      }
+      const inflight = inflightLetterRef.current.get(key);
+      if (inflight) return inflight;
     }
-    const inflight = inflightLetterRef.current.get(jobOfferId);
-    if (inflight) return inflight;
 
     setIsLoadingLetter(true);
     setLetterError(null);
-    const request = fetchOrGenerateCoverLetterByJobOffer(jobOfferId);
-    inflightLetterRef.current.set(jobOfferId, request);
+    const request = fetchOrGenerateCoverLetterByJobOffer(jobOfferId, opts);
+    inflightLetterRef.current.set(key, request);
     try {
       const letter = await request;
-      cacheRef.current.set(jobOfferId, { ...cacheRef.current.get(jobOfferId), letter });
+      cacheRef.current.set(key, { ...cacheRef.current.get(key), letter });
       setCoverLetter(letter);
       return letter;
     } catch (e) {
@@ -93,16 +117,17 @@ export function useOptimizer() {
       setLetterError(msg);
       return null;
     } finally {
-      inflightLetterRef.current.delete(jobOfferId);
+      inflightLetterRef.current.delete(key);
       setIsLoadingLetter(false);
     }
-  }, []);
+  }, [cacheKey]);
 
   const saveCvPatch = useCallback(async (jobOfferId: string, patch: CvPatch) => {
     if (!jobOfferId) {
       setCvError("jobOfferId es requerido.");
       return false;
     }
+    const key = cacheKey(jobOfferId);
     setIsSavingPatch(true);
     setCvError(null);
     try {
@@ -110,7 +135,7 @@ export function useOptimizer() {
       setOptimizedCv((prev) => {
         if (!prev) return prev;
         const merged = { ...prev, ...patch };
-        cacheRef.current.set(jobOfferId, { ...cacheRef.current.get(jobOfferId), cv: merged });
+        cacheRef.current.set(key, { ...cacheRef.current.get(key), cv: merged });
         return merged;
       });
       return true;
@@ -120,7 +145,7 @@ export function useOptimizer() {
     } finally {
       setIsSavingPatch(false);
     }
-  }, []);
+  }, [cacheKey]);
 
   return {
     optimizedCv,

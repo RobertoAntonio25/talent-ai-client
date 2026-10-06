@@ -11,6 +11,10 @@ export interface BackendJobOffer {
   id: string; // ¡OJO! string de JSearch, NO uuid
   title: string;
   company: string;
+  // Fase 3b (issue #129, kanban ligero): el listado (`GET /results`) ya NO
+  // trae `description` en las ofertas del motor (HTML pesado). Las manuales
+  // sí la traen (notas cortas del usuario) y el detalle completo se pide a
+  // `GET /offers/:jobOfferId` al abrir la tarjeta.
   description?: string | null;
   city?: string | null;
   country?: string | null;
@@ -68,6 +72,37 @@ export interface ManualApplicationPayload {
   technologies?: string[];
 }
 
+// Fase 3a (issue #128): trigger asíncrono 202 + polling.
+export interface ManualTriggerData {
+  runId: string;
+  status: "RUNNING";
+}
+
+export interface ManualTriggerResponse {
+  success: boolean;
+  data: ManualTriggerData;
+  message?: string;
+}
+
+export type SearchCycleRunStatus = "RUNNING" | "DONE" | "ERROR";
+
+export interface SearchCycleRun {
+  id: string;
+  origin: "CRON" | "MANUAL";
+  status: SearchCycleRunStatus;
+  startedAt: string;
+  finishedAt: string | null;
+  usersProcessed: number;
+  jsearchCalls: number;
+  offersNew: number;
+  offersUpdated: number;
+  offersExpired: number;
+  offersPurged: number;
+  aiEvaluated: number;
+  aiMatches: number;
+  error: string | null;
+}
+
 export function getUserResults(page = 1, limit = 20) {
   return apiClient<PaginatedResults>(
     `/api/jobs/results?page=${page}&limit=${limit}`,
@@ -75,10 +110,51 @@ export function getUserResults(page = 1, limit = 20) {
 }
 
 export function triggerManualSearch() {
-  // El back saca userId del JWT, body vacío {} pasa el Zod (userId opcional)
-  return apiClient<{ data: PaginatedResults; message: string }>(
-    `/api/jobs/manual-trigger`,
-    { method: "POST", data: {}, timeoutMs: 180000 },
+  // Fase 3a (issue #128, BREAKING): el back responde 202 al instante con el
+  // runId y lanza el ciclo en segundo plano. El hook sondea GET /runs/:runId
+  // cada 5 s hasta DONE y luego lee GET /results. Timeout corto: el 202 no
+  // espera 1-3 min como antes (se acabó el timeout de 180 s).
+  return apiClient<ManualTriggerResponse>(`/api/jobs/manual-trigger`, {
+    method: "POST",
+    data: {},
+    timeoutMs: 10000,
+  });
+}
+
+export function getSearchCycleRun(runId: string) {
+  return apiClient<{ success: boolean; data: SearchCycleRun }>(
+    `/api/jobs/runs/${encodeURIComponent(runId)}`,
+  );
+}
+
+// Fase 3b (issue #129): última sincronización real desde SearchCycleRun.
+// Sustituye a `localStorage lastManualSearchAt`. 404 = aún no hay ciclos.
+export function getLatestSearchCycleRun() {
+  return apiClient<{ success: boolean; data: SearchCycleRun }>(
+    `/api/jobs/runs/latest`,
+  );
+}
+
+// Fase 3b (issue #129): detalle por oferta con `description` completa.
+// El kanban ligero no la trae en el listado; el modal la pide al abrir.
+export interface OfferDetailData {
+  jobOffer: BackendJobOffer;
+  result: {
+    id: string;
+    status: BackendResultStatus;
+    matchScore: number | null;
+    matchReason: string | null;
+    missingSkills: string[];
+    evaluatedAt: string | null;
+    dismissed: boolean;
+    createdAt: string;
+  } | null;
+  application: Pick<BackendApplication, "id" | "status"> | null;
+}
+
+export function getOfferDetail(jobOfferId: string) {
+  return apiClient<{ success: boolean; data: OfferDetailData }>(
+    `/api/jobs/offers/${encodeURIComponent(jobOfferId)}`,
   );
 }
 

@@ -5,7 +5,7 @@
 //   3. Carta de presentación generada por IA, lista para copiar al email.
 // c3 conecta los viewers (CvViewer / CoverLetterViewer) con los datos reales
 // del hook useOptimizer (Fase 2) a través del puerto OptimizerPort.
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -20,8 +20,10 @@ import {
 import Modal from "../ui/Modal";
 import CvViewer from "../ui/CvViewer";
 import CoverLetterViewer from "../ui/CoverLetterViewer";
+import { detectOfferLanguage, type DocLang } from "../../pdf/buildAtsDoc";
 import { useCv } from "../../hooks/useCv";
 import { evaluateMatch } from "../../services/aiService";
+import { getOfferDetail } from "../../services/jobsService";
 import type {
   CoverLetterOutput,
   OptimizedCv,
@@ -39,9 +41,13 @@ export interface OptimizerPort {
   isLoadingLetter: boolean;
   cvError: string | null;
   letterError: string | null;
-  fetchOrGenerateCv: (jobOfferId: string) => Promise<OptimizedCv | null>;
+  fetchOrGenerateCv: (
+    jobOfferId: string,
+    opts?: { force?: boolean; targetLanguage?: "es" | "en" },
+  ) => Promise<OptimizedCv | null>;
   fetchOrGenerateLetter: (
     jobOfferId: string,
+    opts?: { force?: boolean; targetLanguage?: "es" | "en" },
   ) => Promise<CoverLetterOutput | null>;
 }
 
@@ -108,6 +114,34 @@ export default function JobDetailModal({
   const [letterRequestedFor, setLetterRequestedFor] = useState<string | null>(
     null,
   );
+  // Override explícito del usuario (toggle ES/EN). null = idioma de la oferta.
+  const [langOverride, setLangOverride] = useState<DocLang | null>(null);
+
+  // Fuente única del idioma efectivo: override del usuario → idioma de la
+  // oferta (detalle bajo demanda) → idioma del CV → español.
+  // Se resuelve en llamada (no al renderizar) porque detailDescription vive más abajo.
+  function getOfferLanguage(): DocLang {
+    const desc = detailDescription ?? job?.description ?? "";
+    return (
+      langOverride ??
+      (desc.trim() ? detectOfferLanguage(desc) : null) ??
+      cv?.sourceLanguage ??
+      "es"
+    );
+  }
+  // Fase 3b (issue #129, kanban ligero): el listado ya no trae `description`
+  // en las ofertas del motor; se pide aquí bajo demanda al abrir el modal.
+  // Las manuales la traen en el listado (notas cortas) y no gastan llamada.
+  // `detailFor` recuerda para qué oferta vale el detalle cargado (o en
+  // curso): el arranque del fetch se hace ajustando estado durante el render
+  // (patrón oficial, como el bloque lastJobId de arriba), el efecto solo
+  // ejecuta la llamada y sus callbacks.
+  const [detailFor, setDetailFor] = useState<string | null>(null);
+  const [detailDescription, setDetailDescription] = useState<string | null>(
+    null,
+  );
+  const [isLoadingDetail, setIsLoadingDetail] = useState(false);
+  const [detailError, setDetailError] = useState<string | null>(null);
   const currentJobId = job?.id ?? null;
   if (currentJobId !== lastJobId) {
     setLastJobId(currentJobId);
@@ -115,7 +149,43 @@ export default function JobDetailModal({
     setEvalMsg(null);
     setCvRequestedFor(null);
     setLetterRequestedFor(null);
+    setLangOverride(null);
+    setDetailFor(null);
+    setDetailDescription(null);
+    setDetailError(null);
+    setIsLoadingDetail(false);
   }
+
+  const detailJobOfferId = job?.jobOfferId ?? null;
+  const needsDetailFetch =
+    isOpen && Boolean(detailJobOfferId) && !job?.description;
+  if (needsDetailFetch && detailFor !== detailJobOfferId && detailJobOfferId) {
+    setDetailFor(detailJobOfferId);
+    setDetailDescription(null);
+    setDetailError(null);
+    setIsLoadingDetail(true);
+  }
+  useEffect(() => {
+    if (!needsDetailFetch || !detailJobOfferId) return;
+    if (detailFor !== detailJobOfferId || !isLoadingDetail) return;
+    let cancelled = false;
+    void getOfferDetail(detailJobOfferId)
+      .then((res) => {
+        if (cancelled) return;
+        setDetailDescription(res.data.jobOffer.description ?? null);
+        setIsLoadingDetail(false);
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        setDetailError(
+          e instanceof Error ? e.message : "No se pudo cargar el detalle.",
+        );
+        setIsLoadingDetail(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [needsDetailFetch, detailJobOfferId, detailFor, isLoadingDetail]);
 
   // Fase 3 (c3): al entrar a la pestaña se pide a la IA el documento de esta
   // oferta. El hook deduplica peticiones en vuelo y cachea por jobOfferId, así
@@ -126,11 +196,11 @@ export default function JobDetailModal({
     if (!optimizer || !jobOfferId) return;
     if (tab === "cv") {
       setCvRequestedFor(jobOfferId);
-      void optimizer.fetchOrGenerateCv(jobOfferId);
+      void optimizer.fetchOrGenerateCv(jobOfferId, { targetLanguage: getOfferLanguage() });
     }
     if (tab === "cover_letter") {
       setLetterRequestedFor(jobOfferId);
-      void optimizer.fetchOrGenerateLetter(jobOfferId);
+      void optimizer.fetchOrGenerateLetter(jobOfferId, { targetLanguage: getOfferLanguage() });
     }
   };
 
@@ -155,11 +225,36 @@ export default function JobDetailModal({
     }
   };
 
+  const handleRegenerateCv = () => {
+    const jobOfferId = job?.jobOfferId;
+    if (optimizer && jobOfferId) {
+      setCvRequestedFor(jobOfferId);
+      void optimizer.fetchOrGenerateCv(jobOfferId, { force: true, targetLanguage: getOfferLanguage() });
+    }
+  };
+
   const handleRegenerateLetter = () => {
     const jobOfferId = job?.jobOfferId;
     if (optimizer && jobOfferId) {
       setLetterRequestedFor(jobOfferId);
-      void optimizer.fetchOrGenerateLetter(jobOfferId);
+      void optimizer.fetchOrGenerateLetter(jobOfferId, { force: true, targetLanguage: getOfferLanguage() });
+    }
+  };
+
+  // Cambiar de idioma siempre regenera (la caché es por idioma, subissue #2).
+  // Si ya está en ese idioma, no se gasta Groq.
+  const handleLanguageSelect = (lang: DocLang) => {
+    if (lang === getOfferLanguage()) return;
+    setLangOverride(lang);
+    const jobOfferId = job?.jobOfferId;
+    if (!optimizer || !jobOfferId) return;
+    if (activeTab === "cv") {
+      setCvRequestedFor(jobOfferId);
+      void optimizer.fetchOrGenerateCv(jobOfferId, { force: true, targetLanguage: lang });
+    }
+    if (activeTab === "cover_letter") {
+      setLetterRequestedFor(jobOfferId);
+      void optimizer.fetchOrGenerateLetter(jobOfferId, { force: true, targetLanguage: lang });
     }
   };
 
@@ -173,6 +268,8 @@ export default function JobDetailModal({
   const legacyCv: GeneratedCV = cv ?? EMPTY_CV;
   const jobOfferId = job?.jobOfferId ?? null;
   const canOptimize = Boolean(jobOfferId && optimizer);
+  // Idioma efectivo para títulos y peticiones (una sola fuente de verdad).
+  const offerLanguage = getOfferLanguage();
 
   // Datos IA solo si pertenecen a la oferta abierta y no hay carga/error en
   // curso: el hook guarda el último documento cargado, sea de la oferta que sea.
@@ -211,37 +308,60 @@ export default function JobDetailModal({
               onClick={() => handleSelectTab("overview")}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                 activeTab === "overview"
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/25"
+                  ? "bg-aplika-lima-500 text-aplika-night-950 shadow-md shadow-aplika-lima-500/25"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/60"
               }`}
             >
               <LayoutGrid className="w-4 h-4" />
               <span>Detalle de la Vacante</span>
             </button>
+            {/* 🟣 Acento IA: CV generado por IA (ver paleta en Landing) */}
             <button
               type="button"
               onClick={() => handleSelectTab("cv")}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                 activeTab === "cv"
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/25"
+                  ? "bg-purple-600 text-white shadow-md shadow-purple-500/25"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/60"
               }`}
             >
               <FileText className="w-4 h-4" />
               <span>Currículum Vitae ATS</span>
             </button>
+            {/* 🟣 Acento IA: carta generada por IA (ver paleta en Landing) */}
             <button
               type="button"
               onClick={() => handleSelectTab("cover_letter")}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                 activeTab === "cover_letter"
-                  ? "bg-blue-600 text-white shadow-md shadow-blue-500/25"
+                  ? "bg-purple-600 text-white shadow-md shadow-purple-500/25"
                   : "text-slate-400 hover:text-white hover:bg-slate-800/60"
               }`}
             >
               <Mail className="w-4 h-4" />
               <span>Carta de Presentación</span>
             </button>
+            <div
+              className="flex items-center gap-1 p-1 bg-slate-800 rounded-xl"
+              role="group"
+              aria-label="Idioma de generación"
+              title="Idioma del CV y la carta generados"
+            >
+              {(["es", "en"] as const).map((l) => (
+                <button
+                  key={l}
+                  type="button"
+                  onClick={() => handleLanguageSelect(l)}
+                  className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                    getOfferLanguage() === l
+                      ? "bg-aplika-lima-500 text-aplika-night-950"
+                      : "text-slate-400 hover:text-white hover:bg-slate-700"
+                  }`}
+                >
+                  {l === "es" ? "ES" : "EN"}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* TAB 1: DETALLE DE LA VACANTE */}
@@ -361,21 +481,50 @@ export default function JobDetailModal({
                 </div>
               )}
 
-              {/* Descripción */}
+              {/* Descripción (Fase 3b: bajo demanda, el listado no la trae) */}
               <div className="flex flex-col gap-2">
                 <h4 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
                   Descripción del puesto
                 </h4>
-                {job.description ? (
-                  <p className="text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line max-h-56 overflow-y-auto pr-1 custom-scrollbar">
-                    {job.description}
-                  </p>
-                ) : (
-                  <p className="text-xs text-slate-500 italic">
-                    La oferta no trae descripción. Ábrela en su web original
-                    para ver el detalle completo.
-                  </p>
-                )}
+                {(() => {
+                  const fullDescription = detailDescription ?? job.description;
+                  if (isLoadingDetail && !fullDescription) {
+                    return (
+                      <p className="text-xs text-slate-500 italic">
+                        Cargando descripción completa…
+                      </p>
+                    );
+                  }
+                  if (fullDescription) {
+                    return (
+                      <>
+                        {detailError && (
+                          <p className="text-xs text-amber-400">
+                            No se pudo refrescar el detalle ({detailError});
+                            se muestra la copia del listado.
+                          </p>
+                        )}
+                        <p className="text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-line max-h-56 overflow-y-auto pr-1 custom-scrollbar">
+                          {fullDescription}
+                        </p>
+                      </>
+                    );
+                  }
+                  if (detailError) {
+                    return (
+                      <p className="text-xs text-red-400">
+                        {detailError} Ábrela en su web original para ver el
+                        detalle completo.
+                      </p>
+                    );
+                  }
+                  return (
+                    <p className="text-xs text-slate-500 italic">
+                      La oferta no trae descripción. Ábrela en su web original
+                      para ver el detalle completo.
+                    </p>
+                  );
+                })()}
                 {job.originalUrl && (
                   <a
                     href={job.originalUrl}
@@ -403,7 +552,7 @@ export default function JobDetailModal({
                         onClick={() => onMoveStatus?.(job.id, opt.id)}
                         className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition-colors cursor-pointer ${
                           job.status === opt.id
-                            ? "bg-blue-600 text-white"
+                            ? "bg-aplika-lima-500 text-aplika-night-950"
                             : "bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700"
                         }`}
                       >
@@ -415,7 +564,7 @@ export default function JobDetailModal({
                 <button
                   type="button"
                   onClick={() => handleSelectTab("cv")}
-                  className="sm:ml-auto mt-1 sm:mt-3 inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors cursor-pointer"
+                  className="sm:ml-auto mt-1 sm:mt-3 inline-flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-aplika-lima-500 hover:bg-aplika-lima-400 text-aplika-night-950 text-xs font-bold transition-colors cursor-pointer"
                 >
                   <Sparkles className="w-3.5 h-3.5" />
                   Ver CV optimizado para esta vacante
@@ -441,6 +590,8 @@ export default function JobDetailModal({
                   cvRequestMatches && optimizer?.isLoadingCv,
                 )}
                 optimizedError={cvErrorForThisJob}
+                onRegenerate={canOptimize ? handleRegenerateCv : undefined}
+                language={offerLanguage}
               />
             </div>
           )}
@@ -464,6 +615,8 @@ export default function JobDetailModal({
                   letterRequestMatches && optimizer?.isLoadingLetter,
                 )}
                 onRegenerate={canOptimize ? handleRegenerateLetter : undefined}
+                targetRole={cv?.targetRole}
+                language={offerLanguage}
               />
             </div>
           )}

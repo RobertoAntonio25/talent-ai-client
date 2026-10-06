@@ -6,6 +6,7 @@ import Register from "../pages/Register";
 import AuthCallback from "../pages/AuthCallback";
 import Dashboard from "../pages/Dashboard";
 import Settings from "../pages/Settings";
+import Profile from "../pages/Profile";
 import { ProtectedRoute, PublicOnlyRoute } from "./RouteGuards";
 
 export const router = createBrowserRouter([
@@ -34,12 +35,11 @@ export const router = createBrowserRouter([
         ),
       },
       {
+        // #140: ruta pública directa, fuera de PublicOnlyRoute.
+        // Con token viejo en localStorage el guard redirigía a /dashboard
+        // antes de que AuthCallback procesara ?code=/?error=.
         path: "auth/callback",
-        element: (
-          <PublicOnlyRoute>
-            <AuthCallback />
-          </PublicOnlyRoute>
-        ),
+        element: <AuthCallback />,
       },
       {
         path: "dashboard",
@@ -54,6 +54,14 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <Settings />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: "profile",
+        element: (
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         ),
       },

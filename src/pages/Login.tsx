@@ -1,5 +1,5 @@
-import { useState, type FormEvent } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect, type FormEvent } from "react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { loginWithOAuth } from "../services/authService";
 import {
   Loader2,
@@ -13,10 +13,12 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { apiClient, ApiError } from "../services/apiClient";
+import { isSupabaseConfigured } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login } = useAuth();
 
   const [isLoading, setIsLoading] = useState<
@@ -29,10 +31,39 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  useEffect(() => {
+    const reset = () => setIsLoading(null);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") reset();
+    };
+    window.addEventListener("pageshow", reset);
+    window.addEventListener("focus", reset);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.removeEventListener("pageshow", reset);
+      window.removeEventListener("focus", reset);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+
+  // #134: error devuelto por AuthCallback (p. ej. cancelar en el proveedor).
+  // Se consume una sola vez al montar (diferido a microtarea por lint).
+  useEffect(() => {
+    const oauthError = (location.state as { oauthError?: string } | null)
+      ?.oauthError;
+    if (oauthError) {
+      queueMicrotask(() => {
+        setErrorMessage(oauthError);
+        window.history.replaceState(null, "");
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleOAuthLogin = async (provider: "google" | "linkedin") => {
     try {
       setIsLoading(provider);
-      await loginWithOAuth(provider);
+      await loginWithOAuth(provider, "/login");
     } catch (e) {
       setErrorMessage(e instanceof Error ? e.message : "Error con OAuth");
       setIsLoading(null);
@@ -93,12 +124,12 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-slate-50 font-sans">
+    <div className="flex min-h-screen w-full bg-aplika-night-950 font-sans">
       {/* 🌟 SECCIÓN IZQUIERDA: Branding, Beneficios y Confianza */}
-      <div className="hidden lg:flex lg:w-1/2 bg-slate-900 justify-between items-start flex-col p-16 text-white relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-aplika-night-950 via-slate-900 to-aplika-night-900 justify-between items-start flex-col p-16 text-white relative overflow-hidden border-r border-slate-800/60">
         {/* Luces de fondo decorativas */}
-        <div className="absolute top-[-15%] left-[-15%] w-[450px] h-[450px] bg-blue-600 rounded-full mix-blend-screen filter blur-[120px] opacity-25 animate-pulse"></div>
-        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-indigo-600 rounded-full mix-blend-screen filter blur-[100px] opacity-20"></div>
+        <div className="absolute top-[-15%] left-[-15%] w-[450px] h-[450px] bg-aplika-lima-500 rounded-full mix-blend-screen filter blur-[120px] opacity-25 animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-aplika-night-800 rounded-full mix-blend-screen filter blur-[100px] opacity-20"></div>
 
         {/* Top: Logo & Badge */}
         <div className="z-10 w-full flex items-center justify-between">
@@ -107,15 +138,14 @@ export default function Login() {
             className="flex items-center space-x-3 group transition-transform hover:scale-105"
             title="Volver a la página principal"
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-xl shadow-lg shadow-blue-500/30">
-              T
-            </div>
-            <span className="text-2xl font-black tracking-tight">
-              Talent-AI
-            </span>
+            <img
+              src="/logo-aplika-horizontal-blanco.svg"
+              alt="Aplika"
+              className="h-14 w-auto"
+            />
           </Link>
 
-          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 backdrop-blur-sm">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-aplika-lima-500/10 text-aplika-lima-400 border border-aplika-lima-500/20 backdrop-blur-sm">
             <Sparkles className="w-3.5 h-3.5 mr-1.5" /> Potenciado con IA
           </span>
         </div>
@@ -124,19 +154,19 @@ export default function Login() {
         <div className="z-10 my-auto py-8">
           <h1 className="text-4xl xl:text-5xl font-extrabold mb-6 tracking-tight leading-tight">
             Bienvenido a tu{" "}
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-aplika-lima-300 via-aplika-lima-400 to-aplika-lima-500">
               futuro profesional
             </span>
             .
           </h1>
           <p className="text-lg text-slate-300 max-w-lg mb-10 leading-relaxed font-light">
             Inicia sesión para gestionar tus procesos de selección, optimizar
-            tus postulaciones y dar seguimiento en tu tablero Kanban.
+            tus postulaciones y dar seguimiento en tu panel de empleos.
           </p>
 
           <div className="space-y-4 max-w-md">
             <div className="flex items-start space-x-3.5">
-              <div className="p-1 rounded-lg bg-blue-500/10 text-blue-400 mt-0.5">
+              <div className="p-1 rounded-lg bg-aplika-lima-500/10 text-aplika-lima-400 mt-0.5">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
@@ -149,8 +179,9 @@ export default function Login() {
               </div>
             </div>
 
+            {/* 🟣 Acento IA: recomendación inteligente (ver paleta en Landing) */}
             <div className="flex items-start space-x-3.5">
-              <div className="p-1 rounded-lg bg-blue-500/10 text-blue-400 mt-0.5">
+              <div className="p-1 rounded-lg bg-purple-500/10 text-purple-400 mt-0.5">
                 <CheckCircle2 className="w-5 h-5" />
               </div>
               <div>
@@ -167,7 +198,7 @@ export default function Login() {
 
         {/* Bottom: Seguridad */}
         <div className="z-10 w-full flex items-center text-xs text-slate-400 space-x-2 border-t border-slate-800/80 pt-6">
-          <ShieldCheck className="w-4 h-4 text-blue-400" />
+          <ShieldCheck className="w-4 h-4 text-aplika-lima-400" />
           <span>
             Acceso seguro y protegido con cifrado SSL de extremo a extremo.
           </span>
@@ -175,13 +206,15 @@ export default function Login() {
       </div>
 
       {/* ⚡ SECCIÓN DERECHA: Formulario de Login */}
-      <div className="flex w-full lg:w-1/2 justify-center items-center p-6 sm:p-10 lg:p-12 overflow-y-auto">
-        <div className="w-full max-w-lg bg-white rounded-3xl shadow-xl shadow-slate-200/60 p-8 sm:p-10 border border-slate-100 relative">
+      <div className="flex w-full lg:w-1/2 justify-center items-center p-6 sm:p-10 lg:p-12 overflow-y-auto bg-gradient-to-bl from-aplika-steel-700 via-aplika-steel-800 to-aplika-night-900 relative lg:border-l lg:border-slate-700/40">
+        {/* Resplandor lima sutil que baña la card desde arriba */}
+        <div className="absolute top-[-10%] right-[10%] w-[380px] h-[280px] bg-aplika-lima-500/10 rounded-full filter blur-[110px] pointer-events-none"></div>
+        <div className="w-full max-w-lg bg-aplika-night-950/60 backdrop-blur-xl rounded-3xl shadow-2xl shadow-black/50 p-8 sm:p-10 border border-slate-700/60 relative text-slate-200">
           {/* Botón Volver al inicio */}
           <div className="mb-6 flex items-center justify-between">
             <Link
               to="/"
-              className="inline-flex items-center text-xs font-semibold text-slate-500 hover:text-blue-600 transition-colors group"
+              className="inline-flex items-center text-xs font-semibold text-slate-400 hover:text-aplika-lima-400 transition-colors group"
             >
               <span className="mr-1 group-hover:-translate-x-0.5 transition-transform">
                 ←
@@ -191,29 +224,28 @@ export default function Login() {
 
             {/* Logo visible en pantallas pequeñas */}
             <Link to="/" className="lg:hidden flex items-center space-x-2">
-              <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center font-black text-white text-xs shadow-md">
-                T
-              </div>
-              <span className="text-sm font-black text-slate-800">
-                Talent-AI
-              </span>
+              <img
+                src="/logo-aplika-horizontal-blanco.svg"
+                alt="Aplika"
+                className="h-8 w-auto"
+              />
             </Link>
           </div>
 
           <div className="text-center mb-8">
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight mb-2">
+            <h2 className="text-3xl font-extrabold text-white tracking-tight mb-2">
               Bienvenido de nuevo
             </h2>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-400">
               Ingresa tus credenciales para acceder a tu cuenta
             </p>
           </div>
 
           {/* Banner de Error (6.2: CTA específico según code) */}
           {errorMessage && (
-            <div className="mb-5 p-3.5 bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl flex flex-col gap-2">
+            <div className="mb-5 p-3.5 bg-red-500/10 border border-red-500/30 text-red-300 text-sm rounded-xl flex flex-col gap-2">
               <div className="flex items-center space-x-2">
-                <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-500" />
+                <AlertCircle className="w-4 h-4 flex-shrink-0 text-red-400" />
                 <span>{errorMessage}</span>
               </div>
               {errorCode === "OAUTH_ONLY_ACCOUNT" && (
@@ -221,14 +253,14 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={() => handleOAuthLogin("google")}
-                    className="px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold hover:bg-slate-700 transition-colors"
+                    className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-100 text-xs font-semibold hover:bg-slate-700 transition-colors"
                   >
                     Entrar con Google
                   </button>
                   <button
                     type="button"
                     onClick={() => handleOAuthLogin("linkedin")}
-                    className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-xs font-semibold hover:bg-blue-500 transition-colors"
+                    className="px-3 py-1.5 rounded-lg bg-aplika-lima-500 text-aplika-night-950 text-xs font-semibold hover:bg-aplika-lima-400 transition-colors"
                   >
                     Entrar con LinkedIn
                   </button>
@@ -237,16 +269,32 @@ export default function Login() {
             </div>
           )}
 
+          {/* #141: aviso cuando OAuth no está configurado */}
+          {!isSupabaseConfigured && (
+            <div className="mb-5 p-3.5 bg-amber-500/10 border border-amber-500/30 text-amber-300 text-sm rounded-xl flex items-center space-x-2">
+              <AlertCircle className="w-4 h-4 flex-shrink-0 text-amber-400" />
+              <span>
+                Login social no disponible (falta configuración de Supabase).
+                Usa tu email.
+              </span>
+            </div>
+          )}
+
           {/* BOTONES OAUTH */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
             <button
               onClick={() => handleOAuthLogin("google")}
-              disabled={isLoading !== null}
+              disabled={isLoading !== null || !isSupabaseConfigured}
+              title={
+                isSupabaseConfigured
+                  ? undefined
+                  : "OAuth no configurado en este despliegue"
+              }
               type="button"
-              className="flex items-center justify-center px-4 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 hover:border-slate-300 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-medium text-xs sm:text-sm text-slate-700 shadow-sm"
+              className="flex items-center justify-center px-4 py-3 bg-slate-800/80 border border-slate-700 rounded-xl hover:bg-slate-800 hover:border-slate-600 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-medium text-xs sm:text-sm text-slate-200 shadow-sm"
             >
               {isLoading === "google" ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2 text-slate-600" />
+                <Loader2 className="w-4 h-4 animate-spin mr-2 text-aplika-lima-400" />
               ) : (
                 <svg className="w-4 h-4 mr-2 flex-shrink-0" viewBox="0 0 24 24">
                   <path
@@ -272,7 +320,12 @@ export default function Login() {
 
             <button
               onClick={() => handleOAuthLogin("linkedin")}
-              disabled={isLoading !== null}
+              disabled={isLoading !== null || !isSupabaseConfigured}
+              title={
+                isSupabaseConfigured
+                  ? undefined
+                  : "OAuth no configurado en este despliegue"
+              }
               type="button"
               className="flex items-center justify-center px-4 py-3 bg-[#0A66C2] text-white rounded-xl hover:bg-[#004182] transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-medium text-xs sm:text-sm shadow-sm"
             >
@@ -293,10 +346,10 @@ export default function Login() {
           {/* Divisor */}
           <div className="relative my-6">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-slate-200"></div>
+              <div className="w-full border-t border-slate-700"></div>
             </div>
             <div className="relative flex justify-center text-xs">
-              <span className="px-3 bg-white text-slate-400 font-medium uppercase tracking-wider">
+              <span className="px-2 text-slate-400 font-medium uppercase tracking-wider">
                 O ingresa con tu email
               </span>
             </div>
@@ -305,17 +358,17 @@ export default function Login() {
           {/* FORMULARIO */}
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
                 Correo electrónico
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
                 <input
                   type="email"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all placeholder:text-slate-400"
+                  className="w-full pl-10 pr-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500"
                   placeholder="tu@email.com"
                   disabled={isLoading !== null}
                 />
@@ -324,31 +377,31 @@ export default function Login() {
 
             <div>
               <div className="flex justify-between items-center mb-1">
-                <label className="block text-xs font-semibold text-slate-700">
+                <label className="block text-xs font-semibold text-slate-300">
                   Contraseña
                 </label>
                 <a
                   href="#"
-                  className="text-xs text-blue-600 font-semibold hover:underline"
+                  className="text-xs text-aplika-lima-400 font-semibold hover:underline"
                 >
                   ¿Olvidaste tu contraseña?
                 </a>
               </div>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
                 <input
                   type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-900 focus:bg-white focus:ring-2 focus:ring-slate-900 focus:border-slate-900 outline-none transition-all placeholder:text-slate-400"
+                  className="w-full pl-10 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500"
                   placeholder="••••••••"
                   disabled={isLoading !== null}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600 focus:outline-none"
+                  className="absolute right-3 top-3 text-slate-500 hover:text-aplika-lima-400 focus:outline-none"
                 >
                   {showPassword ? (
                     <EyeOff className="w-4 h-4" />
@@ -362,22 +415,22 @@ export default function Login() {
             <button
               type="submit"
               disabled={isLoading !== null}
-              className="flex items-center justify-center w-full px-4 py-3.5 bg-slate-900 text-white rounded-xl hover:bg-slate-800 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-semibold text-sm shadow-md shadow-slate-900/10 hover:shadow-lg hover:shadow-slate-900/20 active:scale-[0.99] mt-2"
+              className="flex items-center justify-center w-full px-4 py-3.5 bg-aplika-lima-500 text-aplika-night-950 rounded-xl hover:bg-aplika-lima-400 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed font-semibold text-sm shadow-md shadow-aplika-lima-500/20 hover:shadow-lg hover:shadow-aplika-lima-500/30 active:scale-[0.99] mt-2"
             >
               {isLoading === "email" ? (
-                <Loader2 className="w-4 h-4 animate-spin mr-2 text-white" />
+                <Loader2 className="w-4 h-4 animate-spin mr-2 text-aplika-night-900" />
               ) : null}
               Iniciar sesión
             </button>
           </form>
 
           {/* Footer */}
-          <div className="mt-8 pt-6 border-t border-slate-100 flex items-center justify-center">
-            <span className="text-xs text-slate-500">
+          <div className="mt-8 pt-6 border-t border-slate-800 flex items-center justify-center">
+            <span className="text-xs text-slate-400">
               ¿No tienes una cuenta?{" "}
               <Link
                 to="/register"
-                className="text-blue-600 font-semibold hover:underline"
+                className="text-aplika-lima-400 font-semibold hover:underline"
               >
                 Regístrate gratis
               </Link>

@@ -1,8 +1,16 @@
-// Base URL: soporta VIT_ (Vercel) y VITE_ (estándar Vite) + fallback prod
-export const API_BASE_URL =
-  import.meta.env.VIT_API_URL ||
-  import.meta.env.VITE_API_URL ||
-  "https://talent-ai-4j4j.onrender.com";
+// Base URL: SOLO desde variables de entorno (nada hardcodeado en el código).
+// Local → .env (VIT_API_URL o VITE_API_URL). Vercel → Settings → Environment Variables.
+// Sin esta variable la app no arranca: falla rápido con un mensaje claro.
+const ENV_API_URL: string | undefined =
+  import.meta.env.VIT_API_URL || import.meta.env.VITE_API_URL;
+
+if (!ENV_API_URL) {
+  throw new Error(
+    "[apiClient] Falta la URL del backend: define VIT_API_URL (o VITE_API_URL) en tu .env local o en las Environment Variables de Vercel.",
+  );
+}
+
+export const API_BASE_URL: string = ENV_API_URL;
 
 /**
  * Error tipado para no perder status/code del backend.
@@ -36,14 +44,19 @@ function combineSignals(
   // Camino moderno: AbortSignal.any (Chrome 116+, FF 120+, Safari 17.4+)
   const anyFn = (AbortSignal as unknown as Record<string, unknown>)["any"];
   if (typeof anyFn === "function") {
-    return (AbortSignal as unknown as {
-      any: (signals: AbortSignal[]) => AbortSignal;
-    }).any([customSignal, controller.signal]);
+    return (
+      AbortSignal as unknown as {
+        any: (signals: AbortSignal[]) => AbortSignal;
+      }
+    ).any([customSignal, controller.signal]);
   }
 
   // Fallback navegadores viejos: propaga el abort manual
   if (customSignal.aborted) controller.abort();
-  else customSignal.addEventListener("abort", () => controller.abort(), { once: true });
+  else
+    customSignal.addEventListener("abort", () => controller.abort(), {
+      once: true,
+    });
   return controller.signal;
 }
 
@@ -62,11 +75,17 @@ export async function apiClient<T>(
   // Obtenemos el token guardado si existe
   const token = localStorage.getItem("token");
 
+  // Un único matcher para rutas de auth (vale "/api/auth/..." con o sin
+  // barra inicial): ni se envía Bearer ni se limpia sesión en 401.
+  const isAuthEndpoint = endpoint.includes("/auth/");
+
   const defaultHeaders: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
-  if (token) {
+  // #144: los endpoints de auth son públicos; no mandar un Bearer viejo
+  // (p. ej. al canjear el token OAuth en /api/auth/oauth/exchange).
+  if (token && !isAuthEndpoint) {
     defaultHeaders["Authorization"] = `Bearer ${token}`;
   }
   const controller = new AbortController();
@@ -106,7 +125,7 @@ export async function apiClient<T>(
     const response = await fetch(`${API_BASE_URL}${cleanEndpoint}`, config);
     if (response.status === 401) {
       // Si la ruta no es de auth (login/register), limpiamos token inválido
-      if (!endpoint.includes("/auth/")) {
+      if (!isAuthEndpoint) {
         localStorage.removeItem("token");
         localStorage.removeItem("user");
         window.dispatchEvent(new Event("auth:unauthorized"));
@@ -161,10 +180,10 @@ export async function apiClient<T>(
         "TIMEOUT",
       );
     }
-    // Fallo de red / CORS / Render dormido
+    // Fallo de red / CORS / backend dormido
     if (e instanceof TypeError) {
       throw new ApiError(
-        "No se pudo conectar con el servidor. Si es la primera petición del día, Render tarda 30-50s en despertar: espera y reintenta.",
+        "No se pudo conectar con el servidor. Reinténtalo de nuevo en unos minutos.",
         0,
         "NETWORK_ERROR",
       );
@@ -174,4 +193,3 @@ export async function apiClient<T>(
     if (timeoutId) clearTimeout(timeoutId);
   }
 }
-

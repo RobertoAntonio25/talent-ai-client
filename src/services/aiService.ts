@@ -7,6 +7,7 @@ export interface ExtractedCvData {
   targetCity?: string | null;
   wantsRemote?: boolean | null;
   careerTransition?: boolean | null;
+  sourceLanguage?: "es" | "en" | null;
   experiences?: Array<{
     role?: string | null;
     company?: string | null;
@@ -51,21 +52,11 @@ export interface SingleMatchResponse {
   persisted: boolean;
   applicationCreated: boolean;
 }
-//ATS KILLER Tipos
-export interface OptimizedExperience {
-  role: string;
-  company: string;
-  description: string;
-}
-
-export interface OptimizedCv {
-  summary: string;
-  experiences: OptimizedExperience[];
-  skillsMatched: string[];
-  keywordsInjected: string[];
-  keywordsSkipped: string[];
-}
-
+import type {
+  OptimizedExperience,
+  OptimizedCv,
+} from "../models/optimizer.model";
+export type { OptimizedExperience, OptimizedCv } from "../models/optimizer.model";
 export interface CoverLetterOutput {
   letter: string;
   emailSubject: string;

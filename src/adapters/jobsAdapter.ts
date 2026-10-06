@@ -67,12 +67,13 @@ export function mapResultToJob(r: BackendSearchResult): JobApplication {
     salary: offer.salaryString || undefined,
     matchScore: r.matchScore ?? undefined,
     tags,
-    // Notas: en las manuales las escribió el usuario (viven en description);
-    // en las del motor mostramos la razón del matcher (o un recorte de la
-    // descripción como último recurso).
+    // Fase 3b (issue #129, kanban ligero): el listado ya no trae
+    // `description` en las ofertas del motor (las manuales sí, notas cortas).
+    // Notas = razón del matcher; la descripción completa la pide el modal a
+    // GET /offers/:jobOfferId al abrir la tarjeta.
     notes: isManual
       ? offer.description || undefined
-      : r.matchReason || offer.description?.slice(0, 140) || undefined,
+      : r.matchReason || undefined,
     jobOfferId: r.jobOfferId,
     backendStatus: r.status,
     matchReason: r.matchReason || undefined,
