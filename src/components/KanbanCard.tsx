@@ -82,7 +82,7 @@ export default function KanbanCard({ job, onClick, onEdit, onDelete }: Props) {
     if (dragStartPos.current) {
       const dist = Math.hypot(
         e.clientX - dragStartPos.current.x,
-        e.clientY - dragStartPos.current.y
+        e.clientY - dragStartPos.current.y,
       );
       if (dist > 6) return;
     }
@@ -130,23 +130,30 @@ export default function KanbanCard({ job, onClick, onEdit, onDelete }: Props) {
         </div>
 
         <div className="flex items-center gap-1 flex-shrink-0">
-          {job.matchScore && (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-sm">
-              <Sparkles className="w-2.5 h-2.5 mr-1 text-emerald-400" />
+          {typeof job.matchScore === "number" && (
+            <span
+              className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border shadow-sm ${
+                job.matchScore >= 75
+                  ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                  : job.matchScore >= 50
+                    ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
+                    : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+              }`}
+              title={
+                job.matchScore < 50
+                  ? "Esta oferta encaja poco con tu perfil"
+                  : undefined
+              }
+            >
+              {job.matchScore >= 75 && (
+                <Sparkles className="w-2.5 h-2.5 mr-1 text-emerald-400" />
+              )}
               {job.matchScore}%
+              {job.matchScore < 50 && (
+                <span className="ml-1 text-[9px] opacity-80">(bajo)</span>
+              )}
             </span>
           )}
-          {/* Fase 2b: ofertas repescadas con score <50 avisan de match bajo. */}
-          {job.matchScore !== undefined &&
-            job.matchScore !== null &&
-            job.matchScore < 50 && (
-              <span
-                title="Esta oferta encaja poco con tu perfil"
-                className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20 shadow-sm"
-              >
-                match bajo
-              </span>
-            )}
 
           {/* Menú de Acciones (Editar / Eliminar) */}
           {(onEdit || onDelete) && (
