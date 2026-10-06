@@ -61,7 +61,13 @@ export async function fetchOrGenerateOptimizedCvByJobOffer(
   if (!opts?.force) {
     try {
       const cached = await fetchOptimizedDocumentsByJobOffer(jobOfferId);
-      if (cached.optimizedCv) return cached.optimizedCv;
+      if (
+        cached.optimizedCv &&
+        (!opts?.targetLanguage ||
+          cached.optimizedCv.language === opts.targetLanguage)
+      ) {
+        return cached.optimizedCv;
+      }
     } catch (e) {
       if (!(e instanceof ApiError) || e.status !== 404) throw e;
     }
@@ -87,7 +93,12 @@ export async function fetchOrGenerateCoverLetterByJobOffer(
     try {
       const cached = await fetchOptimizedDocumentsByJobOffer(jobOfferId);
       const parsed = parseCoverLetterRaw(cached.coverLetter);
-      if (parsed) return parsed;
+      if (
+        parsed &&
+        (!opts?.targetLanguage || parsed.language === opts.targetLanguage)
+      ) {
+        return parsed;
+      }
     } catch (e) {
       if (!(e instanceof ApiError) || e.status !== 404) throw e;
     }
@@ -99,7 +110,9 @@ export async function fetchOrGenerateCoverLetterByJobOffer(
       data: {
         jobOfferId,
         ...(opts?.force ? { forceRegenerate: true } : {}),
-        ...(opts?.targetLanguage ? { targetLanguage: opts.targetLanguage } : {}),
+        ...(opts?.targetLanguage
+          ? { targetLanguage: opts.targetLanguage }
+          : {}),
       },
       timeoutMs: OPTIMIZE_TIMEOUT_MS,
     },

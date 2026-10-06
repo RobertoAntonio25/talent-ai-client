@@ -412,9 +412,13 @@ export default function CvViewer({
             Formato ATS Compatible
           </span>
           <span className="text-slate-500">•</span>
-          <span className="text-purple-400 flex items-center gap-1 font-medium">
-            <Sparkles className="w-3 h-3" />{" "}
-            {optimizedData ? "CV optimizado" : "98% Match IA"}
+          <span
+            className={`flex items-center gap-1 font-medium ${
+              optimizedData ? "text-purple-400" : "text-slate-400"
+            }`}
+          >
+            {optimizedData && <Sparkles className="w-3 h-3 text-purple-400" />}
+            {optimizedData ? "CV Optimizado" : "CV Base / Plantilla ATS"}
           </span>
         </div>
         <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
@@ -509,19 +513,25 @@ export default function CvViewer({
                 <div className="text-[11px] text-black space-y-0.5">
                   {optSkillsShown.languages.length > 0 && (
                     <p>
-                      <strong className="font-bold">{t.skillGroups.languages}:</strong>{" "}
+                      <strong className="font-bold">
+                        {t.skillGroups.languages}:
+                      </strong>{" "}
                       {optSkillsShown.languages.join(", ")}
                     </p>
                   )}
                   {optSkillsShown.frameworks.length > 0 && (
                     <p>
-                      <strong className="font-bold">{t.skillGroups.frameworks}:</strong>{" "}
+                      <strong className="font-bold">
+                        {t.skillGroups.frameworks}:
+                      </strong>{" "}
                       {optSkillsShown.frameworks.join(", ")}
                     </p>
                   )}
                   {optSkillsShown.databases.length > 0 && (
                     <p>
-                      <strong className="font-bold">{t.skillGroups.databases}:</strong>{" "}
+                      <strong className="font-bold">
+                        {t.skillGroups.databases}:
+                      </strong>{" "}
                       {optSkillsShown.databases.join(", ")}
                     </p>
                   )}
@@ -535,7 +545,9 @@ export default function CvViewer({
                   )}
                   {optSkillsShown.practices.length > 0 && (
                     <p>
-                      <strong className="font-bold">{t.skillGroups.practices}:</strong>{" "}
+                      <strong className="font-bold">
+                        {t.skillGroups.practices}:
+                      </strong>{" "}
                       {optSkillsShown.practices.join(", ")}
                     </p>
                   )}
@@ -631,7 +643,10 @@ export default function CvViewer({
                 <div className="text-[11px] text-black">
                   <p>
                     {(optimizedData.languages ?? [])
-                      .map((l) => `${l.language}: ${formatLevel(l.level, language)}`)
+                      .map(
+                        (l) =>
+                          `${l.language}: ${formatLevel(l.level, language)}`,
+                      )
                       .join(" · ")}
                   </p>
                 </div>
@@ -679,19 +694,25 @@ export default function CvViewer({
                 <div className="text-[11px] text-black space-y-0.5">
                   {classicSkillsShown.languages.length > 0 && (
                     <p>
-                      <strong className="font-bold">{t.skillGroups.languages}:</strong>{" "}
+                      <strong className="font-bold">
+                        {t.skillGroups.languages}:
+                      </strong>{" "}
                       {classicSkillsShown.languages.join(", ")}
                     </p>
                   )}
                   {classicSkillsShown.frameworks.length > 0 && (
                     <p>
-                      <strong className="font-bold">{t.skillGroups.frameworks}:</strong>{" "}
+                      <strong className="font-bold">
+                        {t.skillGroups.frameworks}:
+                      </strong>{" "}
                       {classicSkillsShown.frameworks.join(", ")}
                     </p>
                   )}
                   {classicSkillsShown.databases.length > 0 && (
                     <p>
-                      <strong className="font-bold">{t.skillGroups.databases}:</strong>{" "}
+                      <strong className="font-bold">
+                        {t.skillGroups.databases}:
+                      </strong>{" "}
                       {classicSkillsShown.databases.join(", ")}
                     </p>
                   )}
@@ -705,7 +726,9 @@ export default function CvViewer({
                   )}
                   {classicSkillsShown.practices.length > 0 && (
                     <p>
-                      <strong className="font-bold">{t.skillGroups.practices}:</strong>{" "}
+                      <strong className="font-bold">
+                        {t.skillGroups.practices}:
+                      </strong>{" "}
                       {classicSkillsShown.practices.join(", ")}
                     </p>
                   )}

@@ -58,6 +58,23 @@ export async function changePassword(currentPassword: string, newPassword: strin
   );
 }
 
+// Crear contraseña en cuentas solo-OAuth (issue #189, requiere Bearer
+// explícito por ser /api/auth/*).
+export async function setPassword(newPassword: string) {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    throw new Error("Sesión no encontrada. Inicia sesión de nuevo.");
+  }
+  return apiClient<{ success: boolean; message: string }>(
+    "/api/auth/set-password",
+    {
+      method: "POST",
+      data: { newPassword },
+      headers: { Authorization: `Bearer ${token}` },
+    },
+  );
+}
+
 // Paso 1 OAuth: redirige a Google/LinkedIn vía Supabase.
 // #134: guarda la página de origen para que el callback pueda devolver
 // los errores del proveedor (p. ej. cancelar) a login/register en inline.

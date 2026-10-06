@@ -50,6 +50,7 @@ export interface OptimizedCv {
   projects?: OptimizedProject[];
   education?: OptimizedEducation[];
   languages?: OptimizedLanguage[];
+  language?: "es" | "en";
   coverage?: { injected: number; verified: number };
   generatedAt?: string;
   schemaVersion?: number;
@@ -58,6 +59,7 @@ export interface CoverLetterOutput {
   letter: string;
   emailSubject: string;
   emailBody: string;
+  language: "es" | "en";
 }
 export type CvPatch = Partial<OptimizedCv>;
 export interface OptimizerCacheEntry {
