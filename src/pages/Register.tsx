@@ -146,6 +146,7 @@ export default function Register() {
             firstName: string;
             lastName: string;
             role: string;
+            hasPassword: boolean;
           };
         };
         message: string;

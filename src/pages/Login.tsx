@@ -87,6 +87,7 @@ export default function Login() {
             firstName: string;
             lastName: string;
             role: string;
+            hasPassword: boolean;
           };
         };
         message: string;
