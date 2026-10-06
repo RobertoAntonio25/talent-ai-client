@@ -1,14 +1,12 @@
 import { useMemo, useState } from "react";
-import {
-  Copy,
-  CheckCheck,
-  Sparkles,
-  Building2,
-  UserCheck,
-} from "lucide-react";
+import { Copy, CheckCheck, Sparkles, Building2, UserCheck } from "lucide-react";
 import { PDFDownloadLink } from "@react-pdf/renderer";
 import CoverLetterPdfDocument from "../../pdf/CoverLetterPdfDocument";
-import { buildLetterAtsDoc, DOC_TITLES, type DocLang } from "../../pdf/buildAtsDoc";
+import {
+  buildLetterAtsDoc,
+  DOC_TITLES,
+  type DocLang,
+} from "../../pdf/buildAtsDoc";
 import type { JobApplication } from "../../types/kanban";
 import type { CoverLetterOutput } from "../../services/aiService";
 import { useAuth } from "../../context/AuthContext";
@@ -78,55 +76,14 @@ export default function CoverLetterViewer({
         .filter(Boolean)
     : null;
 
-  const skillsList =
-    job.tags && job.tags.length > 0
-      ? job.tags.slice(0, 4).join(", ")
-      : language === "en"
-        ? "the job's technologies"
-        : "las tecnologías de la oferta";
-
-  // Plantilla pre-IA en el idioma del documento (transitoria: al llegar la
-  // carta IA se usa su texto). Misma fuente para copiar, pantalla y PDF.
-  const fbAttention =
-    language === "en"
-      ? `To the attention of the Hiring Team at ${job.company}`
-      : `A la atención del Equipo de Selección de ${job.company}`;
-  const fbParas: string[] =
-    language === "en"
-      ? [
-          `Dear ${job.company} hiring team,`,
-          `I am writing to apply for the ${job.position} position. My experience in modern software development and agile methodologies aligns with the team's technical requirements.`,
-          `As ${roleLine}, I have implemented scalable SaaS solutions and CI/CD pipelines. My expertise includes ${skillsList}, efficient architecture design, and automated testing.`,
-          `In recent projects, I led interactive platforms with PostgreSQL and Supabase, achieving notable optimizations. My experience with agile methodologies ensures immediate impact.`,
-          `Thank you for your consideration. I am available for an interview.`,
-        ]
-      : [
-          `Estimado equipo de ${job.company},`,
-          `Les escribo para presentar mi candidatura a la posición de ${job.position}. Mi experiencia en desarrollo de software moderno y metodologías ágiles se alinea con los requerimientos técnicos del equipo.`,
-          `Como ${roleLine}, he implementado soluciones SaaS escalables y pipelines de CI/CD. Cuento con dominio en ${skillsList}, diseño de arquitecturas eficientes y pruebas automatizadas.`,
-          `En mis proyectos recientes lideré plataformas SaaS con persistencia en PostgreSQL y Supabase, logrando optimizaciones en tiempos de respuesta y adopción. Mi experiencia con Scrum y Kanban me permite aportar valor inmediato.`,
-          `Agradezco su consideración y quedo a su disposición para una entrevista.`,
-        ];
-
-  const coverLetterText = coverLetterData?.emailBody
-    ? `${subject}\n\n${coverLetterData.emailBody}`
-    : [
-        identityName,
-        identityLine,
-        "",
-        currentDate,
-        "",
-        fbAttention,
-        `${t.subject}: ${subject}`,
-        "",
-        ...fbParas.flatMap((p) => [p, ""]),
-        `${t.closing}`,
-        identityName,
-      ]
-        .join("\n")
-        .replace(/\n{3,}/g, "\n\n");
+  const coverLetterText = coverLetterData
+    ? coverLetterData.emailBody
+      ? `${subject}\n\n${coverLetterData.emailBody}`
+      : `${subject}\n\n${coverLetterData.letter}`
+    : "";
 
   const handleCopy = async () => {
+    if (!coverLetterData) return;
     try {
       await navigator.clipboard.writeText(coverLetterText);
       setCopied(true);
@@ -151,7 +108,16 @@ export default function CoverLetterViewer({
         letter: letterBodyText,
         lang: language,
       }),
-    [identityName, roleLine, identityLine, currentDate, job.company, subject, letterBodyText, language],
+    [
+      identityName,
+      roleLine,
+      identityLine,
+      currentDate,
+      job.company,
+      subject,
+      letterBodyText,
+      language,
+    ],
   );
 
   const cleanLetterName = identityName
@@ -163,14 +129,37 @@ export default function CoverLetterViewer({
     <div className="flex flex-col gap-4">
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-900/90 border border-slate-800 p-3 rounded-2xl">
         <div className="flex items-center gap-2 text-xs text-slate-300">
-          <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+          <span
+            className={`w-2 h-2 rounded-full ${
+              isLoading
+                ? "bg-amber-400 animate-ping"
+                : coverLetterData
+                  ? "bg-purple-400"
+                  : "bg-slate-500"
+            }`}
+          />
           <span className="font-semibold text-white flex items-center gap-1.5">
             <Building2 className="w-3.5 h-3.5 text-purple-400" />
             Para {job.company}
           </span>
           <span className="text-slate-500">•</span>
-          <span className="text-emerald-400 flex items-center gap-1 font-medium">
-            <Sparkles className="w-3 h-3" /> Carta Lista
+          <span
+            className={`flex items-center gap-1 font-medium ${
+              coverLetterData ? "text-emerald-400" : "text-slate-400"
+            }`}
+          >
+            <Sparkles className="w-3 h-3" />
+            {isLoading
+              ? language === "en"
+                ? "Generating…"
+                : "Generando…"
+              : coverLetterData
+                ? language === "en"
+                  ? "Letter Ready"
+                  : "Carta Lista"
+                : language === "en"
+                  ? "Pending Generation"
+                  : "Pendiente de Generar"}
           </span>
         </div>
 
@@ -181,12 +170,25 @@ export default function CoverLetterViewer({
             disabled={isLoading}
             className="flex items-center gap-1.5 px-4 py-2 bg-slate-700 hover:bg-slate-600 disabled:opacity-50 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 cursor-pointer"
           >
-            <span>{isLoading ? "Generando…" : "↻ Regenerar con IA"}</span>
+            <span>
+              {isLoading
+                ? language === "en"
+                  ? "Generating…"
+                  : "Generando…"
+                : coverLetterData
+                  ? language === "en"
+                    ? "↻ Regenerate with AI"
+                    : "↻ Regenerar con IA"
+                  : language === "en"
+                    ? "✨ Generate with AI"
+                    : "✨ Generar con IA"}
+            </span>
           </button>
         )}
         <button
           onClick={handleCopy}
-          className="flex items-center gap-1.5 px-4 py-2 bg-aplika-lima-500 hover:bg-aplika-lima-400 text-aplika-night-950 text-xs font-semibold rounded-xl transition-all active:scale-95 shadow-md shadow-aplika-lima-500/20 cursor-pointer"
+          disabled={!coverLetterData || isLoading}
+          className="flex items-center gap-1.5 px-4 py-2 bg-aplika-lima-500 hover:bg-aplika-lima-400 disabled:opacity-40 disabled:cursor-not-allowed text-aplika-night-950 text-xs font-semibold rounded-xl transition-all active:scale-95 shadow-md shadow-aplika-lima-500/20 cursor-pointer"
         >
           {copied ? (
             <>
@@ -210,7 +212,9 @@ export default function CoverLetterViewer({
             fileName={`${cleanLetterName}_Carta_Presentacion.pdf`}
             className="flex items-center gap-1.5 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs font-semibold rounded-xl transition-all active:scale-95 cursor-pointer"
           >
-            {({ loading }) => <span>{loading ? "Generando PDF…" : "Descargar PDF (A4)"}</span>}
+            {({ loading }) => (
+              <span>{loading ? "Generando PDF…" : "Descargar PDF (A4)"}</span>
+            )}
           </PDFDownloadLink>
         )}
       </div>
@@ -219,9 +223,7 @@ export default function CoverLetterViewer({
         <p className="text-xs text-purple-400">Generando carta con IA…</p>
       )}
 
-      <div
-        className="bg-white text-slate-900 p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-200 font-sans text-xs sm:text-sm leading-relaxed max-w-[794px] mx-auto w-full select-text"
-      >
+      <div className="bg-white text-slate-900 p-6 sm:p-8 rounded-2xl shadow-xl border border-slate-200 font-sans text-xs sm:text-sm leading-relaxed max-w-[794px] mx-auto w-full select-text">
         <div className="border-b border-slate-200 pb-3 mb-4">
           <h2 className="text-lg sm:text-xl font-black text-slate-900 tracking-tight">
             {identityName}
@@ -247,16 +249,40 @@ export default function CoverLetterViewer({
         </div>
 
         <div className="space-y-3 text-justify text-slate-700 leading-relaxed font-normal whitespace-pre-wrap">
-          {bodyParagraphs ? (
+          {isLoading ? (
+            <div className="py-12 flex flex-col items-center justify-center text-center space-y-3">
+              <div className="w-8 h-8 border-3 border-indigo-500 border-t-transparent rounded-full animate-spin" />
+              <p className="text-xs font-medium text-slate-500">
+                {language === "en"
+                  ? "Drafting tailored cover letter with AI..."
+                  : "Redactando carta de presentación personalizada con IA..."}
+              </p>
+            </div>
+          ) : bodyParagraphs && bodyParagraphs.length > 0 ? (
             bodyParagraphs.map((paragraph, index) => (
               <p key={index}>{paragraph}</p>
             ))
           ) : (
-            <>
-              {fbParas.map((p, i) => (
-                <p key={i}>{p}</p>
-              ))}
-            </>
+            <div className="py-12 flex flex-col items-center justify-center text-center space-y-3 px-4">
+              <Sparkles className="w-8 h-8 text-indigo-400 opacity-60" />
+              <p className="text-xs font-medium text-slate-600">
+                {language === "en"
+                  ? "No cover letter has been generated for this position yet."
+                  : "Aún no se ha generado una carta de presentación para esta vacante."}
+              </p>
+              {onRegenerate && (
+                <button
+                  type="button"
+                  onClick={onRegenerate}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-white bg-indigo-600 hover:bg-indigo-500 rounded-lg transition-colors cursor-pointer"
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  {language === "en"
+                    ? "Generate Cover Letter with AI"
+                    : "Generar Carta con IA"}
+                </button>
+              )}
+            </div>
           )}
         </div>
 
