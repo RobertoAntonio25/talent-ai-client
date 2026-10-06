@@ -52,7 +52,7 @@ export function mapExtractedToGeneratedCV(
     sourceLanguage: data.sourceLanguage ?? undefined,
     contact: {
       email: user?.email || "[tu email]",
-      phone: "[tu teléfono]",
+      phone: user?.phone || "[tu teléfono]",
       location: user?.location || data.targetCity || "[tu ubicación]",
       linkedin: "[tu linkedin]",
       portfolio: "[tu portfolio]",
