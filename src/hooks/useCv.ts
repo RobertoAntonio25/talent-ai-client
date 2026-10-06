@@ -1,10 +1,7 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import type { GeneratedCV } from "../types/cv";
 import { uploadCv } from "../services/aiService";
-import {
-  getProfileCv,
-  updateProfileCv,
-} from "../services/userProfile.service";
+import { getProfileCv, updateProfileCv } from "../services/userProfile.service";
 import {
   mapExtractedToGeneratedCV,
   mapGeneratedCVToProfilePatch,
@@ -66,7 +63,8 @@ function loadStoredCv(userId: string | null): GeneratedCV | null {
     // esta cuenta aún no tiene CV (no se muestra el de otro usuario).
     try {
       if (localStorage.getItem(CV_OWNER_KEY) === userId) {
-        const legacy = readJson(CV_STORAGE_KEY) ?? readJson(LEGACY_CV_STORAGE_KEY);
+        const legacy =
+          readJson(CV_STORAGE_KEY) ?? readJson(LEGACY_CV_STORAGE_KEY);
         if (legacy) {
           localStorage.setItem(keyFor(userId), JSON.stringify(legacy));
           localStorage.removeItem(CV_STORAGE_KEY);
@@ -103,50 +101,50 @@ export function useCv() {
   const userIdRef = useRef<string | null>(userId);
   const syncTimer = useRef<number | null>(null);
 
-  const persistLocal = useCallback((uid: string | null, next: GeneratedCV | null) => {
-    if (next) {
-      localStorage.setItem(keyFor(uid), JSON.stringify(next));
-      try {
-        if (uid) {
-          localStorage.setItem(CV_OWNER_KEY, uid);
-          localStorage.removeItem(deletedKeyFor(uid));
+  const persistLocal = useCallback(
+    (uid: string | null, next: GeneratedCV | null) => {
+      if (next) {
+        localStorage.setItem(keyFor(uid), JSON.stringify(next));
+        try {
+          if (uid) {
+            localStorage.setItem(CV_OWNER_KEY, uid);
+            localStorage.removeItem(deletedKeyFor(uid));
+          }
+        } catch {
+          // Sin dueño registrado: la adopción legacy no aplica.
         }
-      } catch {
-        // Sin dueño registrado: la adopción legacy no aplica.
+      } else if (uid) {
+        // Borrar es por cuenta: el CV de otros usuarios no se toca.
+        localStorage.removeItem(keyFor(uid));
+      } else {
+        localStorage.removeItem(CV_STORAGE_KEY);
+        localStorage.removeItem(LEGACY_CV_STORAGE_KEY);
       }
-    } else if (uid) {
-      // Borrar es por cuenta: el CV de otros usuarios no se toca.
-      localStorage.removeItem(keyFor(uid));
-    } else {
-      localStorage.removeItem(CV_STORAGE_KEY);
-      localStorage.removeItem(LEGACY_CV_STORAGE_KEY);
-    }
-  }, []);
-
-  // Issue #107: persiste el CV editado a mano en el back (con retardo).
-  // Sin perfil en el back, el PATCH lo crea (upsert); el 404 no aplica aquí.
-  const scheduleSync = useCallback(
-    (uid: string | null, next: GeneratedCV) => {
-      if (!uid) return;
-      if (syncTimer.current !== null) window.clearTimeout(syncTimer.current);
-      syncTimer.current = window.setTimeout(() => {
-        syncTimer.current = null;
-        // Evita escribir en la cuenta equivocada si se cambió de sesión.
-        if (userIdRef.current !== uid) return;
-        void updateProfileCv(mapGeneratedCVToProfilePatch(next)).catch(
-          (e: unknown) => {
-            if (userIdRef.current !== uid) return;
-            setSyncError(
-              e instanceof Error
-                ? `No se pudo guardar en el servidor: ${e.message}`
-                : "No se pudo guardar en el servidor.",
-            );
-          },
-        );
-      }, SYNC_DEBOUNCE_MS);
     },
     [],
   );
+
+  // Issue #107: persiste el CV editado a mano en el back (con retardo).
+  // Sin perfil en el back, el PATCH lo crea (upsert); el 404 no aplica aquí.
+  const scheduleSync = useCallback((uid: string | null, next: GeneratedCV) => {
+    if (!uid) return;
+    if (syncTimer.current !== null) window.clearTimeout(syncTimer.current);
+    syncTimer.current = window.setTimeout(() => {
+      syncTimer.current = null;
+      // Evita escribir en la cuenta equivocada si se cambió de sesión.
+      if (userIdRef.current !== uid) return;
+      void updateProfileCv(mapGeneratedCVToProfilePatch(next)).catch(
+        (e: unknown) => {
+          if (userIdRef.current !== uid) return;
+          setSyncError(
+            e instanceof Error
+              ? `No se pudo guardar en el servidor: ${e.message}`
+              : "No se pudo guardar en el servidor.",
+          );
+        },
+      );
+    }, SYNC_DEBOUNCE_MS);
+  }, []);
 
   const persistCv = useCallback(
     (next: GeneratedCV | null, opts?: { sync?: boolean }) => {
@@ -185,35 +183,45 @@ export function useCv() {
     }
   }, [userId]);
 
-  // Issue #107: hidratación — si esta cuenta no tiene CV en este
-  // dispositivo (y no lo borró a mano), se trae el persistido en el back.
-  // 404 = sin perfil: se queda en vacío sin mostrar error. El arranque se
-  // hace ajustando estado durante el render (patrón oficial); el efecto
-  // solo ejecuta la llamada y sus callbacks.
-  const [hydrateFor, setHydrateFor] = useState<string | null>(null);
-  const shouldHydrate =
-    Boolean(userId) && !cv && hydrateFor !== userId && !deletedMarker(userId);
-  if (shouldHydrate && userId) {
-    setHydrateFor(userId);
-    setIsHydrating(true);
-  }
+  // Issue #107: hidratación — si esta cuenta no tiene CV en este dispositivo
+  // (y no lo borró a mano), se trae el persistido en el back.
+  // Diferido a microtarea (Promise.resolve) para evitar setState síncrono en efecto.
+  const hydratedForRef = useRef<string | null>(null);
+
   useEffect(() => {
-    if (!userId || hydrateFor !== userId || !isHydrating) return;
+    if (
+      !userId ||
+      cv ||
+      hydratedForRef.current === userId ||
+      deletedMarker(userId)
+    ) {
+      return;
+    }
+
+    hydratedForRef.current = userId;
     let cancelled = false;
-    void getProfileCv()
-      .then((data) => {
-        if (cancelled) return;
-        persistCv(mapProfileCvToGeneratedCV(data, user), { sync: false });
-        setIsHydrating(false);
-      })
-      .catch(() => {
-        // 404 sin perfil u otro fallo: se mantiene el vacío local.
-        if (!cancelled) setIsHydrating(false);
-      });
+
+    void Promise.resolve().then(() => {
+      if (cancelled) return;
+      setIsHydrating(true);
+
+      return getProfileCv()
+        .then((data) => {
+          if (cancelled) return;
+          persistCv(mapProfileCvToGeneratedCV(data, user), { sync: false });
+        })
+        .catch(() => {
+          // 404 sin perfil u otro fallo: se mantiene el vacío local.
+        })
+        .finally(() => {
+          if (!cancelled) setIsHydrating(false);
+        });
+    });
+
     return () => {
       cancelled = true;
     };
-  }, [userId, hydrateFor, isHydrating, persistCv, user]);
+  }, [userId, cv, persistCv, user]);
 
   useEffect(() => {
     return () => {
@@ -261,10 +269,18 @@ export function useCv() {
     (patch: Partial<GeneratedCV> & { skillsText?: string }) => {
       const { skillsText, ...rest } = patch;
       const skills = skillsText?.trim()
-        ? skillsText.split(",").map((s) => s.trim()).filter(Boolean)
+        ? skillsText
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean)
         : undefined;
-      const base: GeneratedCV =
-        cv ?? { fullName: "", targetRole: "", summary: "", skills: [], experience: [] };
+      const base: GeneratedCV = cv ?? {
+        fullName: "",
+        targetRole: "",
+        summary: "",
+        skills: [],
+        experience: [],
+      };
       persistCv({ ...base, ...rest, ...(skills ? { skills } : {}) });
     },
     [cv, persistCv],
@@ -273,8 +289,13 @@ export function useCv() {
   // Actualización parcial del CV (la usa la edición manual en /profile).
   const updateCv = useCallback(
     (patch: Partial<GeneratedCV>) => {
-      const base: GeneratedCV =
-        cv ?? { fullName: "", targetRole: "", summary: "", skills: [], experience: [] };
+      const base: GeneratedCV = cv ?? {
+        fullName: "",
+        targetRole: "",
+        summary: "",
+        skills: [],
+        experience: [],
+      };
       persistCv({ ...base, ...patch });
     },
     [cv, persistCv],
