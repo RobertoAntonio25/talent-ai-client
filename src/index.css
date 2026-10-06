@@ -1,0 +1,23 @@
+@import "tailwindcss";
+
+@theme {
+  /* 🎨 Aplika — tokens de marca (extraídos del logo).
+     Estrategia gradual: la base azul/indigo se mantiene de momento;
+     los acentos nuevos usan estos tokens (lima sobre navy). */
+  --color-aplika-night-950: #03022b;
+  --color-aplika-night-900: #0b0a45;
+  --color-aplika-night-800: #17165e;
+  --color-aplika-night-700: #23237a;
+  --color-aplika-night-600: #30339a;
+
+  /* 🔵 Azul acero: puente entre el navy y el azul LinkedIn (#0A66C2).
+     Solo para fondos en transición (panel auth derecho). No es CTA. */
+  --color-aplika-steel-700: #1d4e89;
+  --color-aplika-steel-800: #173e6e;
+
+  --color-aplika-lima-300: #d4f584;
+  --color-aplika-lima-400: #c6ee5b;
+  --color-aplika-lima-500: #b7e346;
+  --color-aplika-lima-600: #9ccd2e;
+  --color-aplika-lima-700: #7fa821;
+}
