@@ -436,6 +436,7 @@ export default function Register() {
                   <input
                     type="text"
                     required
+                    autoComplete="given-name"
                     value={firstName}
                     onChange={(e) => setFirstName(e.target.value)}
                     className="w-full pl-10 pr-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500"
@@ -454,6 +455,7 @@ export default function Register() {
                   <input
                     type="text"
                     required
+                    autoComplete="family-name"
                     value={lastName}
                     onChange={(e) => setLastName(e.target.value)}
                     className="w-full pl-10 pr-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500"
@@ -474,6 +476,7 @@ export default function Register() {
                 <input
                   type="email"
                   required
+                  autoComplete="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full pl-10 pr-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500"
@@ -495,6 +498,7 @@ export default function Register() {
                 <MapPin className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />
                 <input
                   type="text"
+                  autoComplete="address-level2"
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
                   className="w-full pl-10 pr-3.5 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500"
@@ -515,6 +519,7 @@ export default function Register() {
                   type={showPassword ? "text" : "password"}
                   required
                   minLength={6}
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-10 pr-10 py-2.5 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:ring-aplika-lima-500 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500"
@@ -570,6 +575,7 @@ export default function Register() {
                   type={showConfirmPassword ? "text" : "password"}
                   required
                   minLength={6}
+                  autoComplete="new-password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className={`w-full pl-10 pr-10 py-2.5 bg-slate-900 border rounded-xl text-sm text-slate-100 focus:bg-slate-900 focus:ring-2 focus:border-aplika-lima-500 outline-none transition-all placeholder:text-slate-500 ${
